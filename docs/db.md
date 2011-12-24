@@ -1,4 +1,4 @@
-## This file contains description of the NoSQL database.
+## This file contains description of the NoSQL database
 
 ### users
 
@@ -51,18 +51,6 @@
     + **count**     - *Number*
 + **created_at**  - *ISODate*
 
-### tacktics
-
-+ **_id**           - *Objectid*
-+ **creator**       - *ObjectId*
-+ **name**          - *String*
-+ **map**           - *ObjectId*
-+ **army**          - *ObjectId*
-+ **placement**     - *Object*
-    + **pl1**         - *PlPlacement* 
-    + **pl2**         - *PlPlacement* 
-+ **created_at**    - *ISODate*
-
 ### games
 
 + **_id**           - *Objectid*
@@ -79,6 +67,18 @@
 + **moves**         - *PlPlacement*
     + **pl1**         - *PlMove*
     + **pl2**         - *PlMove*
++ **created_at**    - *ISODate*
+
+### tacktics
+
++ **_id**           - *Objectid*
++ **creator**       - *ObjectId*
++ **name**          - *String*
++ **map**           - *ObjectId*
++ **army**          - *ObjectId*
++ **placement**     - *Object*
+    + **pl1**         - *PlPlacement* 
+    + **pl2**         - *PlPlacement* 
 + **created_at**    - *ISODate*
 
 #### Declarated special types
