@@ -10,10 +10,10 @@ class RequestHandler
 
     #----- Auth -----
     'signup',
-=begin
     'login',
     'logout', 
 
+=begin
     #----- Maps -----
     'createMap',
     'editMap',
@@ -72,23 +72,22 @@ class RequestHandler
         raise ResponseBadRequest, 'Incorrect json'
       end
       cmd = process_header req
-      resp, multicast_resp = cmd.handle req
+      resp, extra_resp, reg = cmd.handle req
     rescue ResponseError => ex
       return {
-        :status => ex.status,
-        :message => ex.message
+        'status' => ex.status,
+        'message' => ex.message
       }
     rescue Exception => ex
       return {
-        :status => 'internallError',
+        'status' => 'internallError',
         #:message => 'Internal error on sever side. Maybe request contains illegal data'
-        :message => ex.message
+        'message' => ex.message
       }
     end
-    resp[:status] = 'OK'
+    resp['status'] = 'ok'
 
-    [resp, multicast_resp]
-    resp
+    [resp, extra_resp, reg]
   end
 
   def self.bad_request?(req)

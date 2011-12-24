@@ -40,6 +40,11 @@ class Cmd
   def exist?(coll, sel)
     @@db[coll].count(sel) > 0
   end
+
+  def encode(val, salt)
+    Digest::SHA2.hexdigest "#{val}--#{salt}"
+  end
+  private :encode
 end
 
 
@@ -62,25 +67,71 @@ class CmdSignup < Cmd
   def handle(req)
     Validator.validate @@db['users'], req, V_USER
 
-    encode = ->(val) do
-      Digest::SHA2.hexdigest "#{val}--#{Time.now.utc}"
-    end
+    t = Time.now.utc
+    e_passw = encode req['password'], t
+    sid = encode req['login'], Time.now.utc
 
-    e_passw = encode.(req['password'])
-    sid = encode.(e_passw)
-    @@db['users'].insert({
+    id = @@db['users'].insert({
       'login' => req['login'],
       'password' => e_passw,
       'status' => :online,
       'sid' => sid,
-      'created_at' => Time.now.utc
+      'created_at' => t
     })
 
     [
       { 'sid' => sid },
-      {}
+      { 'addUserOnline' => req['login'] },
+      { 'reg' => id }
     ]
   end
 end
 
+class CmdLogin < Cmd
+  def_init self, 'login', 'password'
+
+  def handle(req)
+    user = @@db['users'].find_one 'login' => Regexp.new(req['login'], true)
+
+    if user.nil?
+      raise ResponseBadAction, 'Incorrect login'
+    end
+
+    e_passw = encode req['password'], user['created_at']
+    unless e_passw == user['password']
+      raise ResponseBadAction, 'Incorrect password'
+    end
+
+    sid = encode user['login'], Time.now.utc
+
+    @@db['users'].update(
+      { '_id' => user['_id'] },
+      { '$set' => { 'status' => :online, 'sid' => sid } }
+    )
+
+    [
+      { 'sid' => sid },
+      { 'addUserOnline' => user['login'] },
+      { 'reg' => user['_id'] }
+    ]
+  end
+end
+
+class CmdLogout < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = @@db['users'].find_one 'sid' => req['sid']
+
+    if user.nil?
+      raise ResponseBadAction, 'Incorrect session id'
+    end
+
+    [
+      {},
+      { 'delUserOnline' => user['login'] },
+      { 'unreg' => user['_id'] }
+    ]
+  end
+end
 

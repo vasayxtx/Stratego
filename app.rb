@@ -15,14 +15,19 @@
 ].each { |gem| require gem }
 
 $LOAD_PATH << File.dirname(__FILE__)
-require File.join('src', 'request_handler')
-require File.join('src', 'response_status')
+%w[
+  request_handler
+  response_status
+  clients_container
+].each { |src_f| require File.join('src', src_f) }
 
 cnfg = YAML.load_file 'configure.yml'
 
 db_conn = Mongo::Connection.new
 db = db_conn.db cnfg['db']['name']
+
 RequestHandler.set_db db_conn, db
+ClContainer.set_db db_conn, db
 
 class App < Sinatra::Base
   configure do
@@ -61,16 +66,45 @@ EventMachine.run do
 
     ws.onclose do
       puts "Connection closed"
+      ClContainer.unreg_client ws
     end
 
     ws.onmessage do |msg|
       puts msg
       begin
-        resp = RequestHandler.handle JSON.parse(msg)
+        resp, extra_resp, reg = RequestHandler.handle JSON.parse(msg)
+
+=begin
+        puts "RESP: #{resp}"
+        puts "EXTRA_RESP: #{extra_resp}"
+        puts "REG: #{reg}"
+=end
+
+        unless reg.nil?
+          if reg.has_key?('reg')
+            ClContainer.reg_client ws, reg['reg']
+          end
+          if reg.has_key?('unreg')
+            ClContainer.unreg_client_by_id reg['unreg']
+          end
+        end
+
+        unless extra_resp.nil? || extra_resp.empty?
+          if extra_resp.instance_of?(Hash)
+            websockets = ClContainer.get_all_websockets
+            websockets.each_key do |w|
+              next if w == ws
+              w.send extra_resp.to_json
+            end
+          else
+            #extra_resp is instance of the Array class
+          end
+        end
       rescue Exception => ex
        resp = { 
           'status' => 'badRequest',
-          'message' => 'Incorrect json'
+          'message' => ex.message
+          #'message' => 'Incorrect json'
         }
       end
       ws.send resp.to_json

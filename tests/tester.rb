@@ -32,74 +32,83 @@ class Tester
     end
 
     @tests = []
+    @tests << [[
+      0,
+      { 'cmd' => 'dropDB' },
+      { 0 => { 'status' => 'ok' } }
+    ]]
+
+    init_fiber
   end
 
   def push_test(test)
     @tests << test
   end
 
-  def t_fiber
-    Fiber.new do
-      @fb_senders[0].transfer 'cmd' => 'dropDB'
-      @fb_streams[0].transfer :exp_resp => { 'status' => 'OK' }
-
+  def init_fiber
+    @fb = Fiber.new do
       @tests.each_with_index do |test, i|
         test.each do |t|
           cl_i = t[0]
           req = t[1]
 
+          @resps_num = t[2].size
+
+          @queue = {}
           @fb_senders[cl_i].transfer req
 
-          t[2].each do |exp_resps|
-            @fb_streams[exp_resps[0]].transfer({
-              :num => i,
-              :exp_resp => exp_resps[1]
-            })
+          Fiber.yield
+         
+          t[2].each_pair do |cl_j, exp_resp|
+            resp = @queue[cl_j]
+            if resp.has_key?('sid')
+              @clients[cl_j].sid = resp.delete 'sid'
+            end
+            unless exp_resp == resp
+              puts "TEST##{i}: ERROR"
+              puts "USER##{cl_j}"
+              puts "EXP_RESP:\n#{exp_resp}"
+              puts "RESP:\n#{resp}"
+            end
           end
         end
-        puts "TEST##{i}: OK"
+        puts "TEST##{i}: OK" 
       end
+      @fb_stop.resume
     end
   end
+  private :init_fiber
 
   def run
     EM.run do
-      f = t_fiber
+      @fb_stop = Fiber.new do 
+        EM::stop_event_loop
+      end
 
       c = 0
       @clients.size.times do |j|
         conn = EventMachine::WebSocketClient.connect("ws://#{HOST}:#{PORT}/")
 
-        @fb_senders[j] = Fiber.new do |h|
+        @fb_senders[j] = Fiber.new do |req|
           loop do
-            if h.instance_of?(Hash) && @clients[j].sid
-              h['sid'] = @clietns[j].sid
+            if req.instance_of?(Hash) && @clients[j].sid
+              req['sid'] = @clients[j].sid
             end
-            conn.send_msg h.to_json
-            h = f.transfer
-          end
-        end
-
-        @fb_streams[j] = Fiber.new do |test|
-          loop do
-            resp = Fiber.yield
-            @clients[j].sid = resp.delete 'sid'
-            unless test[:exp_resp] == resp
-              puts "TEST##{test[:num]}: ERROR"
-              puts "EXP_RESP:\n#{test[:exp_resp]}"
-              puts "RESP:\n#{resp}"
-              EM::stop_event_loop
+            if req['cmd'] == 'logout'
+              @clients[j].sid = nil
             end
-            test = f.transfer
+            conn.send_msg req.to_json
+            req = @fb.transfer
           end
         end
 
         conn.callback do
-          f.transfer if (c += 1) == @clients.size
+          @fb.resume if (c += 1) == @clients.size
         end
 
         conn.stream do |msg|
-          @fb_streams[j].resume JSON.parse(msg)
+          @queue.merge! j => JSON.parse(msg)
+          @fb.resume if @queue.size == @resps_num
         end
       end
     end
@@ -115,22 +124,28 @@ def make_test(t, &b)
 end
 
 def auth(t, cmd = 'signup')
-  make_test(t) do |cl, i| 
-    [
-      i, 
-      {
-        'cmd' => cmd,
-        'login' => cl.login,
-        'password' => cl.passw,
-      }, 
-      [[
-        i,
-        { 'status' => 'OK' }
-      ]]
-    ]
+  make_test(t) do |cl, i|
+    resp = { i => { 'status' => 'ok' } }
+    0.upto(i-1) do |j|
+      resp.merge! j => { 'addUserOnline' => "User#{i}" }
+    end
+    req = {
+      'cmd' => cmd,
+      'login' => cl.login,
+      'password' => cl.passw
+    }
+    [i, req, resp]
   end
 end
 
 def logout(t)
+  make_test(t) do |cl, i|
+    resp = { i => { 'status' => 'ok' } }
+    (i+1).upto(t.clients.size-1) do |j|
+      resp.merge! j => { 'delUserOnline' => "User#{i}" }
+    end
+    req = { 'cmd' => 'logout' }
+    [i, req, resp]
+  end
 end
 

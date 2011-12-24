@@ -14,7 +14,7 @@ resp = {
   'message' => 'Incorrect json'
 }
 t.push_test([
-  [0, req, [[0, resp]]]
+  [0, req, { 0 =>  resp }]
 ])
 
 req = '{'
@@ -23,7 +23,7 @@ resp = {
   'message' => 'Incorrect json'
 }
 t.push_test([
-  [0, req, [[0, resp]]]
+  [0, req, { 0 => resp }]
 ])
 
 t.run
