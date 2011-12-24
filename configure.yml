@@ -1,0 +1,11 @@
+app_server:
+  host: 'localhost'
+  port: 4567
+
+ws_server:
+  host: 'localhost'
+  port: 9001
+
+db:
+  name: 'stratego'
+
