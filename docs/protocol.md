@@ -123,7 +123,7 @@
 #### Response
     {
         "status": "OK",
-        "name": [...]
+        "maps": [...]
     }
 
 ## Getting params of the map

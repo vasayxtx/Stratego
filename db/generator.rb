@@ -27,7 +27,7 @@ class Generator
     'structure' => {
       'pl1' => (0..11).to_a,
       'pl2' => (36..47).to_a,
-      'obstr' => [12, 23, 24, 35]
+      'obst' => [12, 23, 24, 35]
     }
   }
 
