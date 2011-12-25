@@ -3,8 +3,6 @@
 require File.join(File.dirname(__FILE__), 'generator')
 
 class Seed
-  @@gen = Generator.new
-
   ADMIN = ['Admin', 'password']
 
   def self.seed_all(db)
@@ -40,7 +38,7 @@ class Seed
       Digest::SHA2.hexdigest "#{val}--#{salt}"
     end
 
-    users = @@gen.make_users
+    users = Generator.make_users
     users << ADMIN
 
     users.each do |user|
@@ -71,7 +69,7 @@ class Seed
     coll = db['units']
     h = {}
 
-    units = @@gen.make_units
+    units = Generator.make_units
 
     units.each_pair do |k, v|
       h[k] = coll.insert({
@@ -108,7 +106,7 @@ class Seed
     coll = db['maps']
     admin = db['users'].find_one 'login' => ADMIN[0]
     
-    @@gen.make_maps.each do |map|
+    Generator.make_maps.each do |map|
       map['created_at'] = Time.now.utc
       map['creator'] = admin['_id']
       coll.insert map
@@ -118,7 +116,7 @@ class Seed
   def self.seed_armies(db)
     coll = db['armies']
     admin = db['users'].find_one 'login' => ADMIN[0]
-    armies = @@gen.make_armies
+    armies = Generator.make_armies
 
     armies.each do |army|
       coll.insert({

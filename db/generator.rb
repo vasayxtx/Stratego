@@ -90,7 +90,7 @@ class Generator
 
   #***** Methods *****
 
-  def make_users(num = USERS_NUM)
+  def self.make_users(num = USERS_NUM)
     users = Array.new(num) { |i| USER.call(i) }
   end
 
@@ -107,15 +107,15 @@ class Generator
   end
 =end
 
-  def make_units
+  def self.make_units
     UNITS
   end
 
-  def make_maps(map_name = MAP_CL[:name])
+  def self.make_maps(map_name = MAP_CL[:name])
     [MAP_CL, MAP_MINI]
   end
 
-  def make_armies(map_army = ARMY_CL[:name])
+  def self.make_armies(map_army = ARMY_CL[:name])
     [ARMY_CL, ARMY_MINI]
   end
 end
