@@ -22,10 +22,12 @@
 + **name**        - *String*
 + **rank**        - *Number*
 + **move_length** - *Number*
++ **min_count**   - *Number*
++ **max_count**   - *Number*
 + **description** - *String*
 + **win_duels**   - *Object*
-    + **attack**    - *Array of 'ObjectId's*
-    + **protect**   - *Array of 'ObjectId's*
+    + **attack**    - *Array of 'ObjectId's || String(all)*
+    + **protect**   - *Array of 'ObjectId's || String(all)*
 + **created_at**  - *ISODate*
 
 ### maps

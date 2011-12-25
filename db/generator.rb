@@ -5,14 +5,10 @@ class Generator
   #***** Users *****
   
   USERS_NUM = 10
-
-  USER = Proc.new { |i| "User#{i}" }
-  PASSW = Proc.new { |i| "password#{i}" }
+  USER = Proc.new { |i| ["User#{i}", 'password'] }
 
   #***** Maps *****
   
-  M_MAX_SIZE = 50
-
   MAP_CL = {
     :name => "ClassicalMap",
     :width => 10,
@@ -36,18 +32,18 @@ class Generator
   U_RANGE = 0..50
 
   UNITS = {
-    :Flag         => [0,  0,          1..1], 
-    :Spy          => [1,  1,          U_RANGE, [:Marshal]], 
-    :Scout        => [2,  M_MAX_SIZE, U_RANGE], 
-    :Miner        => [3,  1,          U_RANGE, [:Bomb]],
-    :Sergeant     => [4,  1,          U_RANGE], 
-    :Lieutenant   => [5,  1,          U_RANGE], 
-    :Captain      => [6,  1,          U_RANGE], 
-    :Major        => [7,  1,          U_RANGE], 
-    :Colonel      => [8,  1,          U_RANGE], 
-    :General      => [9,  1,          U_RANGE], 
-    :Marshal      => [10, 1,          U_RANGE], 
-    :Bomb         => [-1, 0,          U_RANGE, nil, :all]
+    :Flag         => [0,  0,  1..1], 
+    :Spy          => [1,  1,  U_RANGE, [:Marshal]], 
+    :Scout        => [2,  99, U_RANGE], 
+    :Miner        => [3,  1,  U_RANGE, [:Bomb]],
+    :Sergeant     => [4,  1,  U_RANGE], 
+    :Lieutenant   => [5,  1,  U_RANGE], 
+    :Captain      => [6,  1,  U_RANGE], 
+    :Major        => [7,  1,  U_RANGE], 
+    :Colonel      => [8,  1,  U_RANGE], 
+    :General      => [9,  1,  U_RANGE], 
+    :Marshal      => [10, 1,  U_RANGE], 
+    :Bomb         => [-1, 0,  U_RANGE, nil, :all]
   }
 
   #***** Armies *****
@@ -91,9 +87,7 @@ class Generator
   #***** Methods *****
 
   def make_users(num = USERS_NUM)
-    users = Array.new(num) do |i|
-      [USER.call(i), PASSW.call(i)]
-    end
+    users = Array.new(num) { |i| USER.call(i) }
   end
 
 =begin

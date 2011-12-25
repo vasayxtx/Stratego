@@ -16,7 +16,7 @@ task :seed do
   connection.drop_database DB_NAME
   db = connection.db DB_NAME
 
-  Seed::create_indexes db
-  Seed::seed_all db
+  Seed.create_indexes db
+  Seed.seed_all db
 end
 

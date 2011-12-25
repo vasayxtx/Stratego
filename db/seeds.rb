@@ -15,26 +15,35 @@ class Seed
     db['users'].create_index 'sid', :unique => true
     db['users'].create_index 'login', :unique => true
 
-    db['messages'].create_index 'owner'
+    db['messages'].create_index 'creator'
 
     db['units'].create_index 'name', :unique => true
     db['units'].create_index 'rank', :unique => true
+
+    db['maps'].create_index 'name', :unique => true
+
+    db['armies'].create_index 'name', :unique => true
+
+    db['games'].create_index 'name', :unique => true
+
+    db['tacktics'].create_index 'name', :unique => true
   end
 
   def self.seed_users(db)
-    encode = ->(val) do
-      Digest::SHA2.hexdigest "#{val}--#{Time.now.utc}"
+    encode = ->(val, salt) do
+      Digest::SHA2.hexdigest "#{val}--#{salt}"
     end
 
     coll = db['users']
     @@gen.make_users.each do |user|
-      e_passw = encode.(user[1])
+      t = Time.now.utc
+      e_passw = encode.(user[1], t)
       coll.insert({
         'login' => user[0],
         'password' => e_passw,
         'status' => 'offline',
-        'sid' => encode.(e_passw),
-        'created_at' => Time.now.utc
+        'sid' => encode.(user[0], Time.now.utc),
+        'created_at' => t
       })
     end
   end
@@ -43,7 +52,7 @@ class Seed
     coll = db['messages']
     db['users'].find.each do |user|
       coll.insert({
-        'owner' => user['_id'],
+        'creator' => user['_id'],
         'text' => "Hello, I'm #{user['login']}",
         'created_at' => Time.now.utc
       })
@@ -52,21 +61,38 @@ class Seed
 
   def self.seed_units(db)
     coll = db['units']
+    h = {}
+
     units = @@gen.make_units
+
     units.each_pair do |k, v|
-      win_duels = {}
-      win_duels['attacks'] = v[3] unless v[3].nil?
-      win_duels['protects'] = v[4] unless v[4].nil?
-      coll.insert({
+      h[k] = coll.insert({
         'name' => k,
         'rank' => v[0],
         'move_length' => v[1],
         'min_count' => v[2].min,
         'max_count' => v[2].max,
-        'win_duels' => win_duels,
         'description' => v[5],
         'created_at' => Time.now.utc
       })
+    end
+
+    units.each_pair do |k, v|
+      init_wd = ->(wd) do 
+        return [] if wd.nil?
+        return :all unless wd.instance_of?(Array)
+        wd.map { |el| h[el] }
+      end
+
+      win_duels = {
+        'attack' => init_wd.(v[3]),
+        'protect' => init_wd.(v[4]),
+      }
+      
+      coll.update(
+        { 'name' => k },
+        {"$set" => { "win_duels" => win_duels } }
+      )
     end
   end
 end
