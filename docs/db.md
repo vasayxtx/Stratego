@@ -45,13 +45,12 @@
 
 ### armies
 
-+ **_id**         - *Objectid*
-+ **creator**     - *ObjectId*
-+ **name**        - *String*
-+ **units**       - *Object*
-    + **unit**      - *ObjectId*
-    + **count**     - *Number*
-+ **created_at**  - *ISODate*
++ **_id**           - *Objectid*
++ **creator**       - *ObjectId*
++ **name**          - *String*
++ **units**         - *Object*
+    + **<unit_name>**   - *Number*
++ **created_at**    - *ISODate*
 
 ### games
 

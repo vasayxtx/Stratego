@@ -10,21 +10,25 @@ class Generator
   #***** Maps *****
   
   MAP_CL = {
-    :name => "ClassicalMap",
-    :width => 10,
-    :height => 10,
-    :pl1 => 0..39,
-    :pl2 => 60..99,
-    :obst => [42, 43, 46, 47, 52, 53, 56, 57]
+    'name' => 'ClassicalMap',
+    'width' => 10,
+    'height' => 10,
+    'structure' => {
+      'pl1' => (0..39).to_a,
+      'pl2' => (60..99).to_a,
+      'obst' => [42, 43, 46, 47, 52, 53, 56, 57]
+    }
   }
 
   MAP_MINI = {
-    :n => "MiniMap",
-    :w => 12,
-    :h => 4,
-    :pl1 => 0..11,
-    :pl2 => 36..47,
-    :obst => [12, 23, 24, 35]
+    'name' => 'MiniMap',
+    'width' => 12,
+    'height' => 4,
+    'structure' => {
+      'pl1' => (0..11).to_a,
+      'pl2' => (36..47).to_a,
+      'obstr' => [12, 23, 24, 35]
+    }
   }
 
   #***** Units *****
@@ -49,39 +53,39 @@ class Generator
   #***** Armies *****
   
   ARMY_CL = {
-    :name => "ClassicalArmy",
-    :units => [
-      [:Flag, 1], 
-      [:Bomb, 6], 
-      [:Spy, 1], 
-      [:Scout, 8], 
-      [:Miner, 5], 
-      [:Sergeant, 4], 
-      [:Lieutenant, 4], 
-      [:Captain, 4], 
-      [:Major, 3], 
-      [:Colonel, 2], 
-      [:General, 1], 
-      [:Marshal, 1]
-    ]
+    'name' => "ClassicalArmy",
+    'units' => {
+      :Flag => 1, 
+      :Bomb => 6, 
+      :Spy => 1, 
+      :Scout => 8, 
+      :Miner => 5, 
+      :Sergeant => 4, 
+      :Lieutenant => 4, 
+      :Captain => 4, 
+      :Major => 3, 
+      :Colonel => 2, 
+      :General => 1, 
+      :Marshal => 1
+    }
   }
 
   ARMY_MINI = {
-    :name => "MiniArmy",
-    :units => [
-      [:Flag, 1], 
-      [:Bomb, 1], 
-      [:Spy, 1], 
-      [:Scout, 1], 
-      [:Miner, 1], 
-      [:Sergeant, 1], 
-      [:Lieutenant, 1], 
-      [:Captain, 1], 
-      [:Major, 1], 
-      [:Colonel, 1], 
-      [:General, 1], 
-      [:Marshal, 1]
-    ]
+    'name' => "MiniArmy",
+    'units' => {
+      :Flag => 1, 
+      :Bomb => 1, 
+      :Spy => 1, 
+      :Scout => 1,
+      :Miner => 1, 
+      :Sergeant => 1, 
+      :Lieutenant => 1, 
+      :Captain => 1, 
+      :Major => 1, 
+      :Colonel => 1, 
+      :General => 1, 
+      :Marshal => 1
+    }
   }
 
   #***** Methods *****
@@ -107,8 +111,12 @@ class Generator
     UNITS
   end
 
-  def make_map(map_name = MAP_CL[:name])
+  def make_maps(map_name = MAP_CL[:name])
+    [MAP_CL, MAP_MINI]
+  end
 
+  def make_armies(map_army = ARMY_CL[:name])
+    [ARMY_CL, ARMY_MINI]
   end
 end
 

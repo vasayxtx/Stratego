@@ -5,10 +5,14 @@ require File.join(File.dirname(__FILE__), 'generator')
 class Seed
   @@gen = Generator.new
 
+  ADMIN = ['Admin', 'password']
+
   def self.seed_all(db)
     Seed.seed_users db
     Seed.seed_messages db
     Seed.seed_units db
+    Seed.seed_maps db
+    Seed.seed_armies db
   end
 
   def self.create_indexes(db)
@@ -30,12 +34,16 @@ class Seed
   end
 
   def self.seed_users(db)
+    coll = db['users']
+
     encode = ->(val, salt) do
       Digest::SHA2.hexdigest "#{val}--#{salt}"
     end
 
-    coll = db['users']
-    @@gen.make_users.each do |user|
+    users = @@gen.make_users
+    users << ADMIN
+
+    users.each do |user|
       t = Time.now.utc
       e_passw = encode.(user[1], t)
       coll.insert({
@@ -93,6 +101,32 @@ class Seed
         { 'name' => k },
         {"$set" => { "win_duels" => win_duels } }
       )
+    end
+  end
+
+  def self.seed_maps(db)
+    coll = db['maps']
+    admin = db['users'].find_one 'login' => ADMIN[0]
+    
+    @@gen.make_maps.each do |map|
+      map['created_at'] = Time.now.utc
+      map['creator'] = admin['_id']
+      coll.insert map
+    end
+  end
+
+  def self.seed_armies(db)
+    coll = db['armies']
+    admin = db['users'].find_one 'login' => ADMIN[0]
+    armies = @@gen.make_armies
+
+    armies.each do |army|
+      coll.insert({
+        'name' => army['name'],
+        'creator' => admin['_id'],
+        'units' => army['units'],
+        'created_at' => Time.now.utc
+      })
     end
   end
 end
