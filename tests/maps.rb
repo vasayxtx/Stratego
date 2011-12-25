@@ -190,6 +190,37 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
+#Test11
+#--------------------------------
+map = Generator::MAP_CL
+req = {
+  'cmd' => 'editMap',
+  'name' => 'habrahabr',  #Not exists
+  'width' => map['width'],
+  'height' => map['height'],
+  'structure' => map['structure']
+}
+resp = {
+  0 => {
+    'status' => 'badResource',
+    'message' => 'Resource is\'t exist'
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test12
+#--------------------------------
+map = Generator::MAP_CL
+req = {
+  'cmd' => 'editMap',
+  'name' => map['name'],  #Not exists
+  'width' => map['width'],
+  'height' => map['height'],
+  'structure' => map['structure']
+}
+resp = { 0 => { 'status' => 'ok' } }
+t.push_test([[0, req, resp]])
+
 #Test
 #--------------------------------
 logout t

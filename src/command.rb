@@ -50,6 +50,11 @@ class Cmd
   end
   private :encode
 
+  def clone(obj)
+    Marshal.load Marshal.dump(obj)
+  end
+  private :clone
+
   def get_user(sid)
     user = @@db['users'].find_one 'sid' => sid
     if user.nil?
@@ -57,6 +62,24 @@ class Cmd
     end
 
     user
+  end
+  private :get_user
+
+  def get_by_name(db_name, name, case_sensitive = false)
+    sel = case_sensitive ? Regexp.new(name, true) : name
+    res = @@db[db_name].find_one 'name' => sel
+    if res.nil?
+      raise ResponseBadResource, 'Resource is\'t exist'
+    end
+
+    res
+  end
+  private :get_by_name
+
+  def check_access(user, res)
+    unless user['_id'] == res['creator']
+      raise ResponseBadAccess, 'Illegal access'
+    end
   end
 end
 
@@ -209,6 +232,36 @@ class CmdCreateMap < Cmd
       'structure' => req['structure'],
       'created_at' => Time.now.utc
     })
+
+    [{},{},{}]
+  end
+end
+
+class CmdEditMap < Cmd
+  include Map
+
+  def_init self, "sid", "name", "width", "height", "structure"
+
+  def handle(req)
+    v_map = clone V_MAP
+    v_map.delete 'name'
+    Validator.validate @@db['maps'], req, v_map
+
+    check_map req['width'], req['height'], req['structure']
+    
+    user = get_user req['sid']
+    map = get_by_name 'maps', req['name']
+
+    check_access user, map
+
+    @@db['maps'].update(
+      { '_id' => map['_id'] },
+      { '$set' => { 
+        'width' => req['width'], 
+        'hegiht' => req['height'], 
+        'structure' => req['structure'], 
+      } }
+    )
 
     [{},{},{}]
   end

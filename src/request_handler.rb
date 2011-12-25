@@ -15,8 +15,8 @@ class RequestHandler
 
     #----- Maps -----
     'createMap',
-=begin
     'editMap',
+=begin
     'getListAllMaps',
     'getListMaps',
     'destroyMap',
