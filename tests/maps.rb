@@ -15,13 +15,9 @@ auth t
 
 #Test2
 #--------------------------------
-req = {
-  'cmd' => 'createMap',
-  'name' => Generator::MAP_CL['name'],
-  'width' => 2,
-  'height' => 10,
-  'structure' => Generator::MAP_CL['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['width'] = 2 #Bad value of the width
 resp = {
   0 => {
     'status' => 'badFieldValue',
@@ -32,13 +28,9 @@ t.push_test([[0, req, resp]])
 
 #Test3
 #--------------------------------
-req = {
-  'cmd' => 'createMap',
-  'name' => Generator::MAP_CL['name'],
-  'width' => 10,
-  'height' => 2,
-  'structure' => Generator::MAP_CL['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['height'] = 2 #Bad value of the height
 resp = {
   0 => {
     'status' => 'badFieldValue',
@@ -49,15 +41,9 @@ t.push_test([[0, req, resp]])
 
 #Test4
 #--------------------------------
-map = clone Generator::MAP_CL
-map['structure']['pl1'] << 40 #Different sizes
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['structure']['pl1'] << 40 #Different sizes
 resp = {
   0 => {
     'status' => 'badMap',
@@ -68,15 +54,9 @@ t.push_test([[0, req, resp]])
 
 #Test5
 #--------------------------------
-map = clone Generator::MAP_CL
-map['structure']['pl1'][0] = 100  #Incorrect value
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['structure']['pl1'][0] = 100  #Incorrect value
 resp = {
   0 => {
     'status' => 'badMap',
@@ -87,15 +67,9 @@ t.push_test([[0, req, resp]])
 
 #Test6
 #--------------------------------
-map = clone Generator::MAP_CL
-map['structure']['pl1'][1] = 0  #Not unique values
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['structure']['pl1'][1] = 0  #Not unique values
 resp = {
   0 => {
     'status' => 'badMap',
@@ -106,15 +80,9 @@ t.push_test([[0, req, resp]])
 
 #Test7
 #--------------------------------
-map = clone Generator::MAP_CL
-map['structure']['pl1'][1] = 60  #Collisions
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['structure']['pl1'][1] = 60  #Collisions
 resp = {
   0 => {
     'status' => 'badMap',
@@ -125,14 +93,9 @@ t.push_test([[0, req, resp]])
 
 #Test8
 #--------------------------------
-map = clone Generator::MAP_CL
-req = {
-  'cmd' => 'createMap',
-  'name' => 'ab',
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['name'] = 'ab' #Bad length
 resp = {
   0 => {
     'status' => 'badFieldLenght',
@@ -143,14 +106,9 @@ t.push_test([[0, req, resp]])
 
 #Test9
 #--------------------------------
-map = clone Generator::MAP_CL
-req = {
-  'cmd' => 'createMap',
-  'name' => 'abcd!~#sdf',
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
+req['name'] = 'abcd!~#sdf' #Bad format
 resp = {
   0 => {
     'status' => 'badFieldFormat',
@@ -161,27 +119,15 @@ t.push_test([[0, req, resp]])
 
 #Test10
 #--------------------------------
-map = clone Generator::MAP_CL
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
 resp = { 0 => { 'status' => 'ok' } }
 t.push_test([[0, req, resp]])
 
 #Test11
 #--------------------------------
-map = Generator::MAP_CL
-req = {
-  'cmd' => 'createMap',
-  'name' => map['name'],  #Not unique name
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'createMap'
 resp = {
   0 => {
     'status' => 'badFieldUnique',
@@ -190,16 +136,11 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test11
+#Test12
 #--------------------------------
-map = Generator::MAP_CL
-req = {
-  'cmd' => 'editMap',
-  'name' => 'habrahabr',  #Not exists
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'editMap'
+req['name'] = 'habrahabr'  #Not exists
 resp = {
   0 => {
     'status' => 'badResource',
@@ -208,16 +149,10 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test12
+#Test13
 #--------------------------------
-map = Generator::MAP_CL
-req = {
-  'cmd' => 'editMap',
-  'name' => map['name'],  #Not exists
-  'width' => map['width'],
-  'height' => map['height'],
-  'structure' => map['structure']
-}
+req = clone Generator::MAP_CL
+req['cmd'] = 'editMap'
 resp = { 0 => { 'status' => 'ok' } }
 t.push_test([[0, req, resp]])
 
