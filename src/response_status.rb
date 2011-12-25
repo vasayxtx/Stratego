@@ -16,7 +16,9 @@ end
   'badAction',  #Class for response status "badAction"
   'badFieldLenght',
   'badFieldFormat',
-  'badFieldUnique'
+  'badFieldUnique',
+  'badFieldValue',
+  'badMap'
 ].each do |st|
   cl_const = Object::const_set(
     "Response#{st.chr.upcase + st[1..st.size-1]}",

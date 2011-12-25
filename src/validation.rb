@@ -20,6 +20,12 @@ class Validator
         unless p[0] =~ req[f]
           raise ResponseBadFieldFormat, p[1]
         end
+      end),
+
+      'range_value' => (->(f, p) do
+        unless p[0].include? req[f]
+          raise ResponseBadFieldValue, p[1]
+        end
       end)
     }
 
@@ -51,6 +57,35 @@ module VALIDATIONS
       'length' => [
         6..255,
         'Length of password must be in 6..255 characters'
+      ]
+    }
+  }
+
+  V_MAP = {
+    'name' => {
+      'unique' => [
+        true,
+        'Map with this name already exists'
+      ],
+      'length' => [
+        3..20, 
+        'Length of the name of the must be in 3..20 characters'
+      ],
+      'format' => [
+        /^\w+$/,
+        'Invalid format of name of the map. It must contain only word characters (letter, number, underscore)'
+      ]
+    },
+    'width' => {
+      'range_value' => [
+        3..30,
+        'Width of the map must be in 3..30'
+      ]
+    },
+    'height' => {
+      'range_value' => [
+        3..30,
+        'Height of the map must be in 3..30'
       ]
     }
   }

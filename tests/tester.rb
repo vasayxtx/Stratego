@@ -66,7 +66,8 @@ class Tester
             end
             unless exp_resp == resp
               puts "TEST##{i}: ERROR"
-              puts "USER##{cl_j}"
+              puts "USER: ##{cl_j}"
+              puts "REQUEST: #{req}"
               puts "EXP_RESP:\n#{exp_resp}"
               puts "RESP:\n#{resp}"
             end
@@ -127,7 +128,12 @@ def auth(t, cmd = 'signup')
   make_test(t) do |cl, i|
     resp = { i => { 'status' => 'ok' } }
     0.upto(i-1) do |j|
-      resp.merge! j => { 'addUserOnline' => "User#{i}" }
+      resp.merge!(
+        j => { 
+          'cmd' => 'addUserOnline',
+          'login' => "User#{i}"
+        }
+      )
     end
     req = {
       'cmd' => cmd,
@@ -142,10 +148,18 @@ def logout(t)
   make_test(t) do |cl, i|
     resp = { i => { 'status' => 'ok' } }
     (i+1).upto(t.clients.size-1) do |j|
-      resp.merge! j => { 'delUserOnline' => "User#{i}" }
+      resp.merge!(
+        j => { 
+          'cmd'=> 'delUserOnline',
+          'login' => "User#{i}"
+        }
+      )
     end
     req = { 'cmd' => 'logout' }
     [i, req, resp]
   end
 end
 
+def clone(obj)
+  Marshal.load Marshal.dump(obj)
+end

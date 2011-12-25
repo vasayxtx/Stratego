@@ -32,9 +32,13 @@ class Cmd
 
   def check_fields(req, fields)
     fields.each do |f|
-      raise ResponseBadCommand, MSGS[:flds_num_l] unless req.has_key? f
+      unless req.has_key? f
+        raise ResponseBadCommand, MSGS[:flds_num_l]
+      end
     end
-    raise ResponseBadCommand, MSGS[:flds_num_g] if req.size > fields.size 
+    if req.size > fields.size
+      raise ResponseBadCommand, MSGS[:flds_num_g]
+    end
   end
 
   def exist?(coll, sel)
@@ -45,8 +49,16 @@ class Cmd
     Digest::SHA2.hexdigest "#{val}--#{salt}"
   end
   private :encode
-end
 
+  def get_user(sid)
+    user = @@db['users'].find_one 'sid' => sid
+    if user.nil?
+      raise ResponseBadAction, 'Incorrect session id'
+    end
+
+    user
+  end
+end
 
 #--------------------- Dev --------------------- 
 #
@@ -81,7 +93,7 @@ class CmdSignup < Cmd
 
     [
       { 'sid' => sid },
-      { 'addUserOnline' => req['login'] },
+      { 'cmd' => 'addUserOnline', 'login' => req['login'] },
       { 'reg' => id }
     ]
   end
@@ -111,7 +123,7 @@ class CmdLogin < Cmd
 
     [
       { 'sid' => sid },
-      { 'addUserOnline' => user['login'] },
+      { 'cmd' => 'addUserOnline', 'login' => user['login'] },
       { 'reg' => user['_id'] }
     ]
   end
@@ -121,17 +133,84 @@ class CmdLogout < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = @@db['users'].find_one 'sid' => req['sid']
-
-    if user.nil?
-      raise ResponseBadAction, 'Incorrect session id'
-    end
+    user = get_user req['sid']
 
     [
       {},
-      { 'delUserOnline' => user['login'] },
+      { 'cmd' => 'delUserOnline', 'login' => user['login'] },
       { 'unreg' => user['_id'] }
     ]
+  end
+end
+
+#--------------------- Maps --------------------- 
+
+module Map
+  def check_map(width, height, struct)
+    #Check values
+    check_value = ->(a) do
+      max_val = width * height
+      a.each do |val|  
+        return false unless (0...max_val).include?(val)
+      end
+      true
+    end
+
+    #Check collisions
+    check_collisions = ->(a1, a2) do
+      (a1.select { |p| a2.include? p }).empty?
+    end
+
+    #Check unique values into arrays
+    check_unique = ->(a) do
+      h = Hash.new(0)
+      a.each { |v| h[v] += 1; return false if h[v] > 1 }
+      true
+    end
+
+    is_correct = struct['pl1'].size == struct['pl2'].size
+
+    is_correct &&=
+      check_value.(struct['pl1']) &&
+      check_value.(struct['pl2']) &&
+      check_value.(struct['obst']) &&
+
+    is_correct &&=
+      check_unique.(struct['pl1']) &&
+      check_unique.(struct['pl2']) &&
+      check_unique.(struct['obst'])
+
+    is_correct &&= 
+      check_collisions.(struct['pl1'], struct['pl2']) &&
+      check_collisions.(struct['pl1'], struct['obst']) &&
+      check_collisions.(struct['pl2'], struct['obst'])
+
+    raise ResponseBadMap, 'Incorrect map' unless is_correct
+  end
+end
+
+class CmdCreateMap < Cmd
+  include Map
+
+  def_init self, "sid", "name", "width", "height", "structure"
+
+  def handle(req)
+    Validator.validate @@db['maps'], req, V_MAP
+
+    check_map req['width'], req['height'], req['structure']
+    
+    user = get_user req['sid']
+
+    @@db['maps'].insert({
+      'name' => req['name'],
+      'creator' => user['_id'],
+      'width' => req['width'],
+      'hegiht' => req['height'],
+      'structure' => req['structure'],
+      'created_at' => Time.now.utc
+    })
+
+    [{},{},{}]
   end
 end
 

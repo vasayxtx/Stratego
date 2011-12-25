@@ -13,9 +13,9 @@ class RequestHandler
     'login',
     'logout', 
 
-=begin
     #----- Maps -----
     'createMap',
+=begin
     'editMap',
     'getListAllMaps',
     'getListMaps',
@@ -82,7 +82,7 @@ class RequestHandler
       return {
         'status' => 'internallError',
         #:message => 'Internal error on sever side. Maybe request contains illegal data'
-        'message' => ex.message
+        'message' => "#{ex.message}\n#{ex.backtrace[0].split(',').first}"
       }
     end
     resp['status'] = 'ok'
