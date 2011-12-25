@@ -16,11 +16,11 @@ class RequestHandler
     #----- Maps -----
     'createMap',
     'editMap',
-=begin
+    'destroyMap',
     'getListAllMaps',
     'getListMaps',
-    'destroyMap',
     'getMapParams',
+=begin
 
     #----- Armies -----
     'createArmy',

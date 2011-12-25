@@ -156,6 +156,96 @@ req['cmd'] = 'editMap'
 resp = { 0 => { 'status' => 'ok' } }
 t.push_test([[0, req, resp]])
 
+#Test14
+#--------------------------------
+req1 = clone Generator::MAP_MINI
+req1['cmd'] = 'createMap'
+resp1 = { 1 => { 'status' => 'ok' } }
+req0 = { 'cmd' => 'getListAllMaps' }
+resp0 = {
+  0 => {
+    'status' => 'ok',
+    'maps' => [
+      Generator::MAP_CL['name'],
+      Generator::MAP_MINI['name'],
+    ]
+  }
+}
+t.push_test([
+  [1, req1, resp1],
+  [0, req0, resp0],
+])
+
+#Test15
+#--------------------------------
+req0 = { 'cmd' => 'getListMaps' }
+resp0 = {
+  0 => {
+    'status' => 'ok',
+    'maps' => [Generator::MAP_CL['name']]
+  }
+}
+req1 = { 'cmd' => 'getListMaps' }
+resp1 = {
+  1 => {
+    'status' => 'ok',
+    'maps' => [Generator::MAP_MINI['name']]
+  }
+}
+t.push_test([
+  [0, req0, resp0],
+  [1, req1, resp1]
+])
+
+#Test16
+#--------------------------------
+req0 = {
+  'cmd' => 'destroyMap',
+  'name' => Generator::MAP_MINI['name'] #Bad Access
+}
+resp0 = { 
+  0 => { 
+    'status' => 'badAccess',
+    'message' => 'Illegal access'
+  } 
+}
+t.push_test([[0, req0, resp0]])
+
+#Test17
+#--------------------------------
+req1 = {
+  'cmd' => 'destroyMap',
+  'name' => Generator::MAP_MINI['name']
+}
+resp1 = { 1 => { 'status' => 'ok' } }
+req0 = { 'cmd' => 'getListAllMaps' }
+resp0 = {
+  0 => {
+    'status' => 'ok',
+    'maps' => [Generator::MAP_CL['name']]
+  }
+}
+t.push_test([
+  [1, req1, resp1],
+  [0, req0, resp0]
+])
+
+#Test17
+#--------------------------------
+req = {
+  'cmd' => 'getMapParams',
+  'name' => Generator::MAP_CL['name'],
+}
+resp = {
+  0 => {
+    'status' => 'ok',
+    'width' => Generator::MAP_CL['width'],
+    'height' => Generator::MAP_CL['height'],
+    'structure' => Generator::MAP_CL['structure'],
+  }
+}
+t.push_test([[0, req, resp]])
+
 #Test
 #--------------------------------
 logout t

@@ -14,6 +14,7 @@ end
   'badRequest', #Class for response status "badRequest"
   'badCommand', #Class for response status "badCommand"
   'badAction',  #Class for response status "badAction"
+  'badSession',
   'badFieldLenght',
   'badFieldFormat',
   'badFieldUnique',

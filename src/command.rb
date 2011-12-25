@@ -58,7 +58,7 @@ class Cmd
   def get_user(sid)
     user = @@db['users'].find_one 'sid' => sid
     if user.nil?
-      raise ResponseBadAction, 'Incorrect session id'
+      raise ResponseBadSession, 'Incorrect session id'
     end
 
     user
@@ -81,6 +81,16 @@ class Cmd
       raise ResponseBadAccess, 'Illegal access'
     end
   end
+  private :check_access
+
+  def cur_to_arr(db_name, sel, field)
+    arr = []
+    cur = @@db[db_name].find sel, :fields => [field]
+    cur.each { |foo| arr << foo[field] }
+
+    arr
+  end
+  private :cur_to_arr
 end
 
 #--------------------- Dev --------------------- 
@@ -215,7 +225,7 @@ end
 class CmdCreateMap < Cmd
   include Map
 
-  def_init self, "sid", "name", "width", "height", "structure"
+  def_init self, 'sid', 'name', 'width', 'height', 'structure'
 
   def handle(req)
     Validator.validate @@db['maps'], req, V_MAP
@@ -228,7 +238,7 @@ class CmdCreateMap < Cmd
       'name' => req['name'],
       'creator' => user['_id'],
       'width' => req['width'],
-      'hegiht' => req['height'],
+      'height' => req['height'],
       'structure' => req['structure'],
       'created_at' => Time.now.utc
     })
@@ -240,7 +250,7 @@ end
 class CmdEditMap < Cmd
   include Map
 
-  def_init self, "sid", "name", "width", "height", "structure"
+  def_init self, 'sid', 'name', 'width', 'height', 'structure'
 
   def handle(req)
     v_map = clone V_MAP
@@ -258,12 +268,64 @@ class CmdEditMap < Cmd
       { '_id' => map['_id'] },
       { '$set' => { 
         'width' => req['width'], 
-        'hegiht' => req['height'], 
+        'height' => req['height'], 
         'structure' => req['structure'], 
       } }
     )
 
     [{},{},{}]
+  end
+end
+
+class CmdDestroyMap < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    map = get_by_name 'maps', req['name']
+
+    check_access user, map
+
+    @@db['maps'].remove '_id' => map['_id']
+
+    [{},{},{}]
+  end
+end
+
+class CmdGetListMaps < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+
+    maps = cur_to_arr 'maps', get_selector(user), 'name'
+
+    [{ 'maps' => maps },{},{}]
+  end
+
+  def get_selector(user)
+    { 'creator' => user['_id'] }
+  end
+  private :get_selector
+end
+
+class CmdGetListAllMaps < CmdGetListMaps
+  def get_selector(user); {}; end
+  private :get_selector
+end
+
+class CmdGetMapParams < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    get_user req['sid']
+    map = get_by_name 'maps', req['name']
+
+    [{
+      'width' => map['width'],
+      'height' => map['height'],
+      'structure' => map['structure'],
+    },{},{}]
   end
 end
 
