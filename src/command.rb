@@ -1,6 +1,7 @@
 #coding: utf-8
 
 require 'validation'
+require File.join(File.dirname(__FILE__), '..', 'db', 'seeds')
 
 #--------------------- Dynamic creation methods --------------------- 
 
@@ -100,6 +101,10 @@ class CmdDropDB < Cmd
 
   def handle(req)
     @@db_conn.drop_database @@db.name
+
+    Seed.create_indexes @@db
+    Seed.seed_units @@db
+
     [{}, {}]
   end
 end
@@ -326,6 +331,47 @@ class CmdGetMapParams < Cmd
       'height' => map['height'],
       'structure' => map['structure'],
     },{},{}]
+  end
+end
+
+#--------------------- Armies --------------------- 
+
+module Army
+  ERR_MSG = 'Incorrect army'
+
+  def check_army(coll_units, units)
+    raise ResponseBadArmy, ERR_MSG if units.empty?
+    units.each_pair do |army_unit, count|
+      u = coll_units.find_one 'name' => army_unit
+
+      raise ResponseBadArmy, ERR_MSG if u.nil?
+
+      r = u['min_count']..u['max_count']
+      raise ResponseBadArmy, ERR_MSG unless r.include?(count)
+    end
+  end
+end
+
+class CmdCreateArmy < Cmd
+  include Army
+
+  def_init self, 'sid', 'name', 'units'
+
+  def handle(req)
+    Validator.validate @@db['armies'], req, V_ARMY
+
+    check_army @@db['units'], req['units']
+    
+    user = get_user req['sid']
+
+    @@db['armies'].insert({
+      'name' => req['name'],
+      'creator' => user['_id'],
+      'units' => req['units'],
+      'created_at' => Time.now.utc
+    })
+
+    [{},{},{}]
   end
 end
 

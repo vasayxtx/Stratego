@@ -20,10 +20,10 @@ class RequestHandler
     'getListAllMaps',
     'getListMaps',
     'getMapParams',
-=begin
 
     #----- Armies -----
     'createArmy',
+=begin
     'editArmy',
     'getListAllArmies',
     'getListArmies',

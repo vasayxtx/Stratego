@@ -89,5 +89,22 @@ module VALIDATIONS
       ]
     }
   }
+
+  V_ARMY = {
+    'name' => {
+      'unique' => [
+        true,
+        'Army with this name already exists'
+      ],
+      'length' => [
+        3..20, 
+        'Length of the name of the army must be in 3..20 characters'
+      ],
+      'format' => [
+        /^\w+$/,
+        'Invalid format of name of the army. It must contain only word characters (letter, number, underscore)'
+      ]
+    }
+  }
 end
 
