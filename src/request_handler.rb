@@ -23,8 +23,9 @@ class RequestHandler
 
     #----- Armies -----
     'createArmy',
-=begin
     'editArmy',
+
+=begin
     'getListAllArmies',
     'getListArmies',
     'destroyArmy',

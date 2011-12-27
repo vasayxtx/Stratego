@@ -99,6 +99,59 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
+#Test9
+#--------------------------------
+req = clone Generator::ARMY_CL
+req['cmd'] = 'editArmy'
+req['name'] = 'habrahabr'
+resp = {
+  0 => {
+    'status' => 'badResource',
+    'message' => 'Resource is\'t exist'
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test10
+#--------------------------------
+req1 = clone Generator::ARMY_MINI
+req1['cmd'] = 'createArmy'
+resp1 = {
+  1 => { 'status' => 'ok' }
+}
+req0 = clone Generator::ARMY_MINI
+req0['cmd'] = 'editArmy'
+resp0 = {
+  0 => {
+    'status' => 'badAccess',
+    'message' => 'Illegal access'
+  }
+}
+t.push_test([
+  [1, req1, resp1],
+  [0, req0, resp0]
+])
+
+#Test11
+#--------------------------------
+req = clone Generator::ARMY_CL
+req['cmd'] = 'editArmy'
+resp = {
+  0 => { 'status' => 'ok' }
+}
+t.push_test([[0, req0, resp0]])
+
+#Test12
+#--------------------------------
+=begin
+req = clone Generator::ARMY_CL
+req['cmd'] = 'editArmy'
+resp = {
+  0 => { 'status' => 'ok' }
+}
+t.push_test([[0, req0, resp0]])
+=end
+
 #Test
 #--------------------------------
 logout t

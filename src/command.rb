@@ -266,7 +266,6 @@ class CmdEditMap < Cmd
     
     user = get_user req['sid']
     map = get_by_name 'maps', req['name']
-
     check_access user, map
 
     @@db['maps'].update(
@@ -288,7 +287,6 @@ class CmdDestroyMap < Cmd
   def handle(req)
     user = get_user req['sid']
     map = get_by_name 'maps', req['name']
-
     check_access user, map
 
     @@db['maps'].remove '_id' => map['_id']
@@ -370,6 +368,33 @@ class CmdCreateArmy < Cmd
       'units' => req['units'],
       'created_at' => Time.now.utc
     })
+
+    [{},{},{}]
+  end
+end
+
+class CmdEditArmy < Cmd
+  include Army
+
+  def_init self, 'sid', 'name', 'units'
+
+  def handle(req)
+    #Validator.validate @@db['armies'], req, V_ARMY #If validate only name
+
+    check_army @@db['units'], req['units']
+    
+    user = get_user req['sid']
+    army = get_by_name 'armies', req['name']
+    check_access user, army
+
+    @@db['armies'].update(
+      { '_id' => army['_id'] },
+      { 
+        '$set' => {
+          'units' => req['units'],
+        }
+      }
+    )
 
     [{},{},{}]
   end
