@@ -36,18 +36,18 @@ class Generator
   U_RANGE = 0..50
 
   UNITS = {
-    :Flag         => [0,  0,  1..1], 
-    :Spy          => [1,  1,  U_RANGE, [:Marshal]], 
-    :Scout        => [2,  99, U_RANGE], 
-    :Miner        => [3,  1,  U_RANGE, [:Bomb]],
-    :Sergeant     => [4,  1,  U_RANGE], 
-    :Lieutenant   => [5,  1,  U_RANGE], 
-    :Captain      => [6,  1,  U_RANGE], 
-    :Major        => [7,  1,  U_RANGE], 
-    :Colonel      => [8,  1,  U_RANGE], 
-    :General      => [9,  1,  U_RANGE], 
-    :Marshal      => [10, 1,  U_RANGE], 
-    :Bomb         => [-1, 0,  U_RANGE, nil, :all]
+    'Flag'         => [0,  0,  1..1], 
+    'Spy'          => [1,  1,  U_RANGE, ['Marshal']], 
+    'Scout'        => [2,  99, U_RANGE], 
+    'Miner'        => [3,  1,  U_RANGE, ['Bomb']],
+    'Sergeant'     => [4,  1,  U_RANGE], 
+    'Lieutenant'   => [5,  1,  U_RANGE], 
+    'Captain'      => [6,  1,  U_RANGE], 
+    'Major'        => [7,  1,  U_RANGE], 
+    'Colonel'      => [8,  1,  U_RANGE], 
+    'General'      => [9,  1,  U_RANGE], 
+    'Marshal'      => [10, 1,  U_RANGE], 
+    'Bomb'         => [-1, 0,  U_RANGE, nil, :all]
   }
 
   #***** Armies *****
@@ -55,36 +55,36 @@ class Generator
   ARMY_CL = {
     'name' => "ClassicalArmy",
     'units' => {
-      :Flag => 1, 
-      :Bomb => 6, 
-      :Spy => 1, 
-      :Scout => 8, 
-      :Miner => 5, 
-      :Sergeant => 4, 
-      :Lieutenant => 4, 
-      :Captain => 4, 
-      :Major => 3, 
-      :Colonel => 2, 
-      :General => 1, 
-      :Marshal => 1
+      'Flag' => 1, 
+      'Bomb' => 6, 
+      'Spy' => 1, 
+      'Scout' => 8, 
+      'Miner' => 5, 
+      'Sergeant' => 4, 
+      'Lieutenant' => 4, 
+      'Captain' => 4, 
+      'Major' => 3, 
+      'Colonel' => 2, 
+      'General' => 1, 
+      'Marshal' => 1
     }
   }
 
   ARMY_MINI = {
     'name' => "MiniArmy",
     'units' => {
-      :Flag => 1, 
-      :Bomb => 1, 
-      :Spy => 1, 
-      :Scout => 1,
-      :Miner => 1, 
-      :Sergeant => 1, 
-      :Lieutenant => 1, 
-      :Captain => 1, 
-      :Major => 1, 
-      :Colonel => 1, 
-      :General => 1, 
-      :Marshal => 1
+      'Flag' => 1, 
+      'Bomb' => 1, 
+      'Spy' => 1, 
+      'Scout' => 1,
+      'Miner' => 1, 
+      'Sergeant' => 1, 
+      'Lieutenant' => 1, 
+      'Captain' => 1, 
+      'Major' => 1, 
+      'Colonel' => 1, 
+      'General' => 1, 
+      'Marshal' => 1
     }
   }
 

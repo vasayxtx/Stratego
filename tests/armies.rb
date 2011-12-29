@@ -136,21 +136,87 @@ t.push_test([
 #--------------------------------
 req = clone Generator::ARMY_CL
 req['cmd'] = 'editArmy'
+req['units'] = Generator::ARMY_CL['units']
 resp = {
   0 => { 'status' => 'ok' }
 }
-t.push_test([[0, req0, resp0]])
+t.push_test([[0, req, resp]])
 
 #Test12
 #--------------------------------
-=begin
-req = clone Generator::ARMY_CL
-req['cmd'] = 'editArmy'
+req = { 'cmd' => 'getListAllArmies' }
 resp = {
-  0 => { 'status' => 'ok' }
+  0 => {
+    'status' => 'ok',
+    'armies' => [
+      Generator::ARMY_CL['name'],
+      Generator::ARMY_MINI['name']
+    ]
+  }
 }
-t.push_test([[0, req0, resp0]])
-=end
+t.push_test([[0, req, resp]])
+
+#Test13
+#--------------------------------
+req0 = { 'cmd' => 'getListArmies' }
+req1 = { 'cmd' => 'getListArmies' }
+resp0 = {
+  0 => {
+    'status' => 'ok',
+    'armies' => [
+      Generator::ARMY_CL['name']
+    ]
+  }
+}
+resp1 = {
+  1 => {
+    'status' => 'ok',
+    'armies' => [
+      Generator::ARMY_MINI['name']
+    ]
+  }
+}
+t.push_test([
+  [0, req0, resp0],
+  [1, req1, resp1],
+])
+
+#Test13
+#--------------------------------
+req1 = {
+  'cmd' => 'destroyArmy',
+  'name' => Generator::ARMY_MINI['name']
+}
+resp1 = {
+  1 => { 'status' => 'ok' }
+}
+req0 = { 'cmd' => 'getListAllArmies' }
+resp0 = {
+  0 => {
+    'status' => 'ok',
+    'armies' => [
+      Generator::ARMY_CL['name']
+    ]
+  }
+}
+t.push_test([
+  [1, req1, resp1],
+  [0, req0, resp0],
+])
+
+#Test14
+#--------------------------------
+req = {
+  'cmd' => 'getArmyUnits',
+  'name' => Generator::ARMY_CL['name']
+}
+resp = {
+  0 => {
+    'status' => 'ok',
+    'units' => Generator::ARMY_CL['units']
+  }
+}
+t.push_test([[0, req, resp]])
 
 #Test
 #--------------------------------

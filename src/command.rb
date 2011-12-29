@@ -84,9 +84,9 @@ class Cmd
   end
   private :check_access
 
-  def cur_to_arr(db_name, sel, field)
+  def cur_to_arr(coll_name, sel, field)
     arr = []
-    cur = @@db[db_name].find sel, :fields => [field]
+    cur = @@db[coll_name].find sel, :fields => [field]
     cur.each { |foo| arr << foo[field] }
 
     arr
@@ -300,7 +300,6 @@ class CmdGetListMaps < Cmd
 
   def handle(req)
     user = get_user req['sid']
-
     maps = cur_to_arr 'maps', get_selector(user), 'name'
 
     [{ 'maps' => maps },{},{}]
@@ -397,6 +396,52 @@ class CmdEditArmy < Cmd
     )
 
     [{},{},{}]
+  end
+end
+
+class CmdDestroyArmy < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    army = get_by_name 'armies', req['name']
+    check_access user, army
+
+    @@db['armies'].remove '_id' => army['_id']
+
+    [{},{},{}]
+  end
+end
+
+class CmdGetListArmies < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+    armies = cur_to_arr 'armies', get_selector(user), 'name'
+
+    [{ 'armies' => armies },{},{}]
+  end
+
+  def get_selector(user)
+    { 'creator' => user['_id'] }
+  end
+  private :get_selector
+end
+
+class CmdGetListAllArmies < CmdGetListArmies
+  def get_selector(user); {}; end
+  private :get_selector
+end
+
+class CmdGetArmyUnits < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    army = get_by_name 'armies', req['name']
+
+    [{ 'units' => army['units'] },{},{}]
   end
 end
 

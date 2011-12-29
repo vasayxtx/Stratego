@@ -24,12 +24,12 @@ class RequestHandler
     #----- Armies -----
     'createArmy',
     'editArmy',
-
-=begin
+    'destroyArmy',
     'getListAllArmies',
     'getListArmies',
-    'destroyArmy',
     'getArmyUnits',
+
+=begin
     'getArmyUnitsMoveLengths',
     #----- Lobby -----
     #
