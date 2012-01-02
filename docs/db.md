@@ -56,6 +56,7 @@
 
 + **_id**           - *Objectid*
 + **creator**       - *ObjectId*
++ **opponent**      - *ObjectId*
 + **name**          - *String*
 + **map**           - *ObjectId*
 + **army**          - *ObjectId*
