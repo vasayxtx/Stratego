@@ -55,15 +55,15 @@
 ### games
 
 + **_id**           - *Objectid*
++ **name**          - *String*
 + **creator**       - *ObjectId*
 + **opponent**      - *ObjectId*
-+ **name**          - *String*
 + **map**           - *ObjectId*
 + **army**          - *ObjectId*
 + **placement**     - *Object*
     + **pl1**         - *PlPlacement* 
     + **pl2**         - *PlPlacement* 
-+ **cur_placement** - *Object*
++ **cur_state**     - *Object*
     + **pl1**         - *PlPlacement* 
     + **pl2**         - *PlPlacement* 
 + **moves**         - *PlPlacement*
