@@ -9,7 +9,7 @@
     }    
 #### Response
     {
-        "status": "OK",
+        "status": "ok",
         "sid": <sid>
     }
 #### Response for other clients
@@ -27,7 +27,7 @@
     }    
 #### Response
     {
-        "status": "OK",
+        "status": "ok",
         "sid": <sid>
     }
 #### Response for other clients
@@ -44,7 +44,7 @@
     }    
 #### Response
     {
-        "status": "OK"
+        "status": "ok"
     }
 #### Response for other clients
     {
@@ -68,7 +68,7 @@
     }    
 #### Response
     {
-        "status": "OK"
+        "status": "ok"
     }
 
 ## Editing of the map
@@ -87,7 +87,7 @@
     }
 #### Response
     {
-        "status": "OK"
+        "status": "ok"
     }
 
 ## Destruction of the map
@@ -99,7 +99,7 @@
     }
 #### Response
     {
-        "status": "OK"
+        "status": "ok"
     }
 
 ## Getting a list of all maps
@@ -110,7 +110,7 @@
     }
 #### Response
     {
-        "status": "OK",
+        "status": "ok",
         "maps": [...]
     }
 
@@ -122,7 +122,7 @@
     }
 #### Response
     {
-        "status": "OK",
+        "status": "ok",
         "maps": [...]
     }
 
@@ -135,13 +135,117 @@
     }
 #### Response
     {
-        "status": "OK",
+        "status": "ok",
         "width": <width of the map>,
         "height": <height of the map>,
         "structure": {
             "obst": [...],
             "pl1": [...],
             "pl2": [...],
+        }
+    }
+
+## Creation of the army
+### Request
+    {
+        "cmd": "createArmy",
+        "sid": <sid>,
+        "name": <name of the army>,
+        "units": {
+            <name of the unit>: <count>
+            ...
+        }
+    }    
+#### Response
+    {
+        "status": "ok"
+    }
+
+## Editing of the army
+### Request
+    {
+        "cmd": "editArmy",
+        "sid": <sid>,
+        "name": <name of the army>,
+        "units": {
+            <name of the unit>: <count>
+            ...
+        }
+    }    
+#### Response
+    {
+        "status": "ok"
+    }
+
+## Destruction of the army
+### Request
+    {
+        "cmd": "destroyArmy",
+        "sid": <sid>,
+        "name": <name of the army>
+    }
+#### Response
+    {
+        "status": "ok"
+    }
+
+## Getting a list of all armies
+### Request
+    {
+        "cmd": "getListAllArmies",
+        "sid": <sid>
+    }
+#### Response
+    {
+        "status": "ok",
+        "armies": [...]
+    }
+
+## Getting a list of the armies created by current user's
+### Request
+    {
+        "cmd": "getListArmies",
+        "sid": <sid>
+    }
+#### Response
+    {
+        "status": "ok",
+        "maps": [...]
+    }
+
+## Getting units of the army
+### Request
+    {
+        "cmd": "getArmyUnits",
+        "sid": <sid>,
+        "name": <name of the army>
+    }
+#### Response
+    {
+        "status": "ok",
+        "units": {
+            <name of the unit>: <count>
+            ...
+        }
+    }
+
+## Getting all units
+### Request
+    {
+        "cmd": "getAllUnits"
+        "sid": <sid>
+    }
+### Response
+    {
+        "status": "ok",
+        "units": {
+            <name of the unit>: [
+                <rank>,
+                <length of the move>,
+                <min count>,
+                <max count>
+            ],
+            ...
         }
     }
 
