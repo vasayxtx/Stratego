@@ -67,7 +67,7 @@ class Cmd
   private :get_user
 
   def get_by_name(db_name, name, case_sensitive = false)
-    sel = case_sensitive ? Regexp.new(name, true) : name
+    sel = case_sensitive ? name : Regexp.new(name, true)
     res = @@db[db_name].find_one 'name' => sel
     if res.nil?
       raise ResponseBadResource, 'Resource is\'t exist'
@@ -178,6 +178,28 @@ class CmdLogout < Cmd
       { 'cmd' => 'delUserOnline', 'login' => user['login'] },
       { 'unreg' => user['_id'] }
     ]
+  end
+end
+
+#--------------------- Units --------------------- 
+
+class CmdGetAllUnits < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+
+    units = {}
+    @@db['units'].find().each do |unit|
+      units[unit['name']] = [
+        unit['rank'],
+        unit['move_length'],
+        unit['min_count'],
+        unit['max_count']
+      ]
+    end
+
+    [{ 'units' => units }, {}, {}]
   end
 end
 

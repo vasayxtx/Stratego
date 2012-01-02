@@ -13,6 +13,9 @@ class RequestHandler
     'login',
     'logout', 
 
+    #----- Units -----
+    'getAllUnits',
+
     #----- Maps -----
     'createMap',
     'editMap',
@@ -32,7 +35,9 @@ class RequestHandler
 =begin
     'getArmyUnitsMoveLengths',
     #----- Lobby -----
-    #
+=end
+    
+=begin
     'getLogin',
     'getListUsersOnline',
     'createGame',
@@ -50,10 +55,8 @@ class RequestHandler
     'getGameSituation',
     'makeMove',
 
-    #----- Units -----
-    'getAllUnits'
 =end
-  ]
+]
 
   @@cmd_map = {}
   CMDS.each do |cmd| 
