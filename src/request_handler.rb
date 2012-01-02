@@ -37,10 +37,10 @@ class RequestHandler
     #----- Lobby -----
 =end
     
+    'createGame',
 =begin
     'getLogin',
     'getListUsersOnline',
-    'createGame',
     'getGameParams',
     'joinGame',
     'leaveGame',

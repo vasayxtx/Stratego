@@ -467,3 +467,46 @@ class CmdGetArmyUnits < Cmd
   end
 end
 
+
+#--------------------- Games --------------------- 
+
+module Game
+  ERR_MSG = 'Incorrect game'
+
+  def check_game(map, army)
+    units_count = army['units'].values.reduce(:+)
+    unless units_count == map['structure']['pl1'].size
+      raise ResponseBadGame, ERR_MSG
+    end
+  end
+end
+
+class CmdCreateGame < Cmd
+  include Game
+
+  def_init self, 'sid', 'name', 'nameMap', 'nameArmy'
+  def handle(req)
+    Validator.validate @@db['games'], req, V_GAME
+
+    user = get_user req['sid']
+    map = get_by_name 'maps', req['nameMap']
+    army = get_by_name 'armies', req['nameArmy']
+
+    check_game map, army
+
+    @@db['games'].insert({
+      'name' => req['name'],
+      'creator' => user['_id'],
+      'map' => map['_id'],
+      'army' => army['_id'],
+      'created_at' => Time.now.utc
+    })
+    
+    [
+      {},
+      { 'cmd' => 'addGame', 'name' => req['name'] },
+      {}
+    ]
+  end
+end
+

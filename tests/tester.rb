@@ -128,12 +128,10 @@ def auth(t, cmd = 'signup')
   make_test(t) do |cl, i|
     resp = { i => { 'status' => 'ok' } }
     0.upto(i-1) do |j|
-      resp.merge!(
-        j => { 
-          'cmd' => 'addUserOnline',
-          'login' => "User#{i}"
-        }
-      )
+      resp[j] = {
+        'cmd' => 'addUserOnline',
+        'login' => "User#{i}"
+      }
     end
     req = {
       'cmd' => cmd,
@@ -148,12 +146,10 @@ def logout(t)
   make_test(t) do |cl, i|
     resp = { i => { 'status' => 'ok' } }
     (i+1).upto(t.clients.size-1) do |j|
-      resp.merge!(
-        j => { 
-          'cmd'=> 'delUserOnline',
-          'login' => "User#{i}"
-        }
-      )
+      resp[j] = {
+        'cmd'=> 'delUserOnline',
+        'login' => "User#{i}"
+      }
     end
     req = { 'cmd' => 'logout' }
     [i, req, resp]
@@ -163,3 +159,4 @@ end
 def clone(obj)
   Marshal.load Marshal.dump(obj)
 end
+
