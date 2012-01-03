@@ -92,6 +92,10 @@ class Cmd
     arr
   end
   private :cur_to_arr
+
+  def h_slice(h, keys)
+    h.select { |k, v| keys.include? k }
+  end
 end
 
 #--------------------- Dev --------------------- 
@@ -261,14 +265,15 @@ class CmdCreateMap < Cmd
     
     user = get_user req['sid']
 
-    @@db['maps'].insert({
-      'name' => req['name'],
-      'creator' => user['_id'],
-      'width' => req['width'],
-      'height' => req['height'],
-      'structure' => req['structure'],
-      'created_at' => Time.now.utc
-    })
+    @@db['maps'].insert(
+      {
+        'name' => req['name'],
+        'creator' => user['_id'],
+        'created_at' => Time.now.utc
+      }.merge(
+        h_slice(req, %w[width height structure])
+      )
+    )
 
     [{},{},{}]
   end
@@ -292,11 +297,9 @@ class CmdEditMap < Cmd
 
     @@db['maps'].update(
       { '_id' => map['_id'] },
-      { '$set' => { 
-        'width' => req['width'], 
-        'height' => req['height'], 
-        'structure' => req['structure'], 
-      } }
+      {
+        '$set' => h_slice(req, %w[width height structure])
+      }
     )
 
     [{},{},{}]
@@ -345,11 +348,7 @@ class CmdGetMapParams < Cmd
     get_user req['sid']
     map = get_by_name 'maps', req['name']
 
-    [{
-      'width' => map['width'],
-      'height' => map['height'],
-      'structure' => map['structure'],
-    },{},{}]
+    [h_slice(map, %w[width height structure]),{},{}]
   end
 end
 
@@ -505,6 +504,26 @@ class CmdCreateGame < Cmd
     [
       {},
       { 'cmd' => 'addGame', 'name' => req['name'] },
+      {}
+    ]
+  end
+end
+
+class CmdGetGameParams < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = get_by_name 'games', req['name']
+    map = @@db['maps'].find_one '_id' => game['map']
+    army = @@db['armies'].find_one '_id' => game['army']
+    
+    [
+      {
+        'map' => h_slice(map, %w[name width height structure]),
+        'army' => h_slice(army, %w[name units])
+      },
+      {},
       {}
     ]
   end

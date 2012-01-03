@@ -120,6 +120,21 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
+#Test10
+#--------------------------------
+req = {
+  'cmd' => 'getGameParams',
+  'name' => GAME_CL
+}
+resp = {
+  0 => { 
+    'status' => 'ok',
+    'map' => Generator::MAP_CL,
+    'army' => Generator::ARMY_CL
+  }
+}
+t.push_test([[0, req, resp]])
+
 #Test
 #--------------------------------
 logout t

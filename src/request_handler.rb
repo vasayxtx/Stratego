@@ -38,10 +38,11 @@ class RequestHandler
 =end
     
     'createGame',
+    'getGameParams',
+
 =begin
     'getLogin',
     'getListUsersOnline',
-    'getGameParams',
     'joinGame',
     'leaveGame',
     'destroyGame',
