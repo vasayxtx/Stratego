@@ -66,17 +66,17 @@ EventMachine.run do
 
     ws.onclose do
       puts "Connection closed"
-      ClContainer.unreg_client ws
+      ClContainer.unreg_client_by_ws ws
     end
 
     ws.onmessage do |msg|
       puts msg
       begin
-        resp, extra_resp, reg = RequestHandler.handle JSON.parse(msg)
+        resp, msg, reg = RequestHandler.handle JSON.parse(msg)
 
 =begin
         puts "RESP: #{resp}"
-        puts "EXTRA_RESP: #{extra_resp}"
+        puts "MSG: #{msg}"
         puts "REG: #{reg}"
 =end
 
@@ -89,17 +89,20 @@ EventMachine.run do
           end
         end
 
-        unless extra_resp.nil? || extra_resp.empty?
-          if extra_resp.instance_of?(Hash)
-            websockets = ClContainer.get_all_websockets
-            websockets.each_key do |w|
-              next if w == ws
-              w.send extra_resp.to_json
-            end
-          else
-            #extra_resp is instance of the Array class
+        unless msg.nil? || msg.empty?
+          a = [ws]
+          (msg.select { |k, v| k != :all }).each_pair do |cl_id, cl_msg|
+            w = ClContainer.get_ws_by_id(cl_id)
+            w.send cl_msg.to_json
+            a << w
+          end
+
+          if msg.has_key?(:all)
+            ww = ClContainer.get_all_ws.select { |w| !a.include?(w) }
+            ww.each { |w| w.send msg[:all].to_json }
           end
         end
+
       rescue Exception => ex
        resp = { 
           'status' => 'badRequest',

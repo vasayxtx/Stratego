@@ -135,7 +135,12 @@ class CmdSignup < Cmd
 
     [
       { 'sid' => sid },
-      { 'cmd' => 'addUserOnline', 'login' => req['login'] },
+      {
+        :all => {
+          'cmd' => 'addUserOnline',
+          'login' => req['login']
+        }
+      },
       { 'reg' => id }
     ]
   end
@@ -165,7 +170,12 @@ class CmdLogin < Cmd
 
     [
       { 'sid' => sid },
-      { 'cmd' => 'addUserOnline', 'login' => user['login'] },
+      {
+        :all => {
+          'cmd' => 'addUserOnline',
+          'login' => user['login']
+        },
+      },
       { 'reg' => user['_id'] }
     ]
   end
@@ -179,7 +189,12 @@ class CmdLogout < Cmd
 
     [
       {},
-      { 'cmd' => 'delUserOnline', 'login' => user['login'] },
+      {
+        :all => {
+          'cmd' => 'delUserOnline',
+          'login' => user['login']
+        },
+      },
       { 'unreg' => user['_id'] }
     ]
   end
@@ -503,7 +518,12 @@ class CmdCreateGame < Cmd
     
     [
       {},
-      { 'cmd' => 'addGame', 'name' => req['name'] },
+      {
+        :all => {
+          'cmd' => 'addAvailableGame',
+          'name' => req['name']
+        }
+      },
       {}
     ]
   end
@@ -523,7 +543,38 @@ class CmdGetGameParams < Cmd
         'map' => h_slice(map, %w[name width height structure]),
         'army' => h_slice(army, %w[name units])
       },
+      {}, {}
+    ]
+  end
+end
+
+class CmdJoinGame < Cmd
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = get_by_name 'games', req['name']
+    
+    unless game['opponent'].nil?
+      raise ResponseBadGame, 'The game isn\'t available'
+    end
+
+    @@db['games'].update(
+      { '_id' => game['_id'] },
+      { '$set' => { 'opponent' => user['_id'] } }
+    )
+  
+    [
       {},
+      { 
+        game['creator'] => {
+          'cmd' => 'startGamePlacement'
+        },
+        :all => {
+          'cmd' => 'delAvailableGame',
+          'name' => game['name']
+        }
+      },
       {}
     ]
   end

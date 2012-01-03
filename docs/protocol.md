@@ -305,6 +305,10 @@
     {
         "status": "ok"
     }
+### Response for creator
+    {
+        "cmd": "startGamePlacement"
+    }
 ### Response for other clients
     {
         "cmd": "delAvailableGame", 

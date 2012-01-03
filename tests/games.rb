@@ -103,7 +103,7 @@ req = clone REQ_CREATE_GAME
 resp = { 0 => { 'status' => 'ok' } }
 1.upto(CLIENTS_NUM - 1) do |i|
   resp[i] = {
-    'cmd' => 'addGame',
+    'cmd' => 'addAvailableGame',
     'name' => GAME_CL
   }
 end
@@ -134,6 +134,23 @@ resp = {
   }
 }
 t.push_test([[0, req, resp]])
+
+=begin
+#Test11
+#--------------------------------
+req = {
+  'cmd' => 'joinGame',
+  'name' => GAME_CL
+}
+resp = {
+  0 => { 
+    'status' => 'ok',
+    'map' => Generator::MAP_CL,
+    'army' => Generator::ARMY_CL
+  }
+}
+t.push_test([[0, req, resp]])
+=end
 
 #Test
 #--------------------------------
