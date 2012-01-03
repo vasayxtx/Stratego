@@ -249,3 +249,55 @@
         }
     }
 
+## Creation of the game
+### Request
+    {
+        "cmd": "createGame",
+        "name": <name of the game>,
+        "nameMap": <name of the map>,
+        "nameArmy": <name of the army>
+    }
+### Response
+    {
+        "status": "ok"
+    }
+
+## Getting params of the game
+### Request
+    {
+        "cmd": "getGameParams",
+        "name": <name of the game>
+    }
+### Response
+    {
+        "status": "ok",
+        "map": {
+            "name": <name of the map>,
+            "width": <width of the map>,
+            "hegiht": <height of the map>,
+            "structure": {
+              "obst": [...],
+              "pl1": [...],
+              "pl2": [...]
+            }
+        },
+        "army": {
+            "name": <name of the map>,
+            "units": {
+                <name of the unit>: <count>
+                ...
+            }
+        }
+    }
+
+## Join to the game
+### Request
+    {
+        "cmd": "joinGame",
+        "name": <name of the game>
+    }
+### Response
+    {
+        "status": "ok"
+    }
+
