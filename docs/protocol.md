@@ -7,12 +7,12 @@
         "login": <login>,
         "password": <password>
     }    
-#### Response
+### Response
     {
         "status": "ok",
         "sid": <sid>
     }
-#### Response for other clients
+### Response for other clients
     {
         "cmd": "addUserOnline", 
         "login": <login of user>
@@ -25,12 +25,12 @@
         "login": <login>,
         "password": <password>
     }    
-#### Response
+### Response
     {
         "status": "ok",
         "sid": <sid>
     }
-#### Response for other clients
+### Response for other clients
     {
         "cmd": "addUserOnline", 
         "login": <login of user>
@@ -42,11 +42,11 @@
         "cmd": "logout",
         "sid": <sid>
     }    
-#### Response
+### Response
     {
         "status": "ok"
     }
-#### Response for other clients
+### Response for other clients
     {
         "cmd": "delUserOnline", 
         "login": <login of user>
@@ -66,7 +66,7 @@
             "pl2": [...]
         }
     }    
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -85,7 +85,7 @@
             "pl2": [...]
         }
     }
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -97,7 +97,7 @@
         "sid": <sid>,
         "name": <name of the map>,
     }
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -108,7 +108,7 @@
         "cmd": "getListAllMaps",
         "sid": <sid>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "maps": [...]
@@ -120,7 +120,7 @@
         "cmd": "getListMaps",
         "sid": <sid>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "maps": [...]
@@ -133,7 +133,7 @@
         "sid": <sid>,
         "name": <name of the map>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "width": <width of the map>,
@@ -156,7 +156,7 @@
             ...
         }
     }    
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -172,7 +172,7 @@
             ...
         }
     }    
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -184,7 +184,7 @@
         "sid": <sid>,
         "name": <name of the army>
     }
-#### Response
+### Response
     {
         "status": "ok"
     }
@@ -195,7 +195,7 @@
         "cmd": "getListAllArmies",
         "sid": <sid>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "armies": [...]
@@ -207,7 +207,7 @@
         "cmd": "getListArmies",
         "sid": <sid>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "maps": [...]
@@ -220,7 +220,7 @@
         "sid": <sid>,
         "name": <name of the army>
     }
-#### Response
+### Response
     {
         "status": "ok",
         "units": {
@@ -261,6 +261,11 @@
     {
         "status": "ok"
     }
+### Response for other clients
+    {
+        "cmd": "addAvailableGame", 
+        "name": <name of the game>
+    }
 
 ## Getting params of the game
 ### Request
@@ -299,5 +304,10 @@
 ### Response
     {
         "status": "ok"
+    }
+### Response for other clients
+    {
+        "cmd": "delAvailableGame", 
+        "name": <name of the game>
     }
 
