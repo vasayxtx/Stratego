@@ -143,7 +143,10 @@ class CmdSignup < Cmd
     })
 
     [
-      { 'sid' => sid },
+      {
+        'sid' => sid,
+        'login' => req['login']
+      },
       {
         :all => {
           'cmd' => 'addUserOnline',
@@ -178,7 +181,10 @@ class CmdLogin < Cmd
     )
 
     [
-      { 'sid' => sid },
+      {
+        'sid' => sid,
+        'login' => user['login']
+      },
       {
         :all => {
           'cmd' => 'addUserOnline',
@@ -278,11 +284,11 @@ module Map
     raise ResponseBadMap, 'Incorrect map' unless is_correct
   end
 
-  def reflect_map(map)
+  def reflect_map!(map)
     w, h = map['width'], map['height']
-    struct = map['structure']
-
     size = w * h
+
+    struct = map['structure']
     struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
 
     reflect = ->(a) do
@@ -290,8 +296,6 @@ module Map
     end
 
     %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
-
-    map
   end
 end
 
@@ -622,6 +626,40 @@ class CmdJoinGame < Cmd
       },
       {}
     ]
+  end
+end
+
+class CmdGetGame < Cmd
+  include Map
+
+  def_init self, 'sid', 'name'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = get_by_name 'games', req['name']
+
+    unless [game['creator'], game['opponent']].include?(user['_id'])
+      raise ResponseBadAction, 'User isn\'t player of this game'
+    end
+
+    if game['placement'].nil?
+      map = get_by_id 'maps', game['map']
+      army = get_by_id 'armies', game['army']
+      h_map = h_slice(map, %w[name width height structure])
+      h_army = h_slice(army, %w[name units])
+
+      reflect_map!(h_map) if game['opponent'] == user['_id']
+
+      resp = {
+        'status' => 'placement',
+        'map' => h_map,
+        'army' => h_army
+      }
+    else
+      #Game is started
+    end
+  
+    [resp, {}, {}]
   end
 end
 

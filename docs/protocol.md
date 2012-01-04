@@ -10,7 +10,8 @@
 ### Response
     {
         "status": "ok",
-        "sid": <sid>
+        "sid": <sid>,
+        "login": <login in the db>
     }
 ### Response for other clients
     {
@@ -28,7 +29,8 @@
 ### Response
     {
         "status": "ok",
-        "sid": <sid>
+        "sid": <sid>,
+        "login": <login in the db>
     }
 ### Response for other clients
     {

@@ -181,6 +181,26 @@ t.push_test([
   [1, req, resp1]
 ])
 
+#Test13
+#--------------------------------
+req = clone REQ_CREATE_GAME_MINI
+resp0 = { 
+  0 => { 
+    'status' => 'badAction',
+    'message' => 'User already in a game'
+  }
+}
+resp1 = { 
+  1 => { 
+    'status' => 'badAction',
+    'message' => 'User already in a game'
+  }
+}
+t.push_test([
+  [0, req, resp0],
+  [1, req, resp1]
+])
+
 #Test
 #--------------------------------
 logout t

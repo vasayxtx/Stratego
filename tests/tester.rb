@@ -126,11 +126,14 @@ end
 
 def auth(t, cmd = 'signup')
   make_test(t) do |cl, i|
-    resp = { i => { 'status' => 'ok' } }
+    resp = { i => {
+      'status' => 'ok',
+      'login' => cl.login
+    } }
     0.upto(i-1) do |j|
       resp[j] = {
         'cmd' => 'addUserOnline',
-        'login' => "User#{i}"
+        'login' => cl.login
       }
     end
     req = {

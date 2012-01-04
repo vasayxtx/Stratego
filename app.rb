@@ -44,6 +44,10 @@ class App < Sinatra::Base
     coffee :"javascripts/#{params[:name]}"
   end
 
+  get "/javascripts/spine/:name.js" do
+    coffee :"javascripts/spine/#{params[:name]}"
+  end
+
   get "/stylesheets/:name.css" do
     content_type 'text/css', :charset => 'utf-8'
     sass :"stylesheets/#{params[:name]}"

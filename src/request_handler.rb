@@ -40,6 +40,7 @@ class RequestHandler
     'createGame',
     'getGameParams',
     'joinGame',
+    'getGame',
 
 =begin
     'getLogin',
