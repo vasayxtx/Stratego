@@ -68,7 +68,7 @@ class RequestHandler
 
   def self.set_db(db_conn, db)
     @@db_conn, @@db = db_conn, db
-    Cmd.set_db db_conn, db
+    Database.set_db db_conn, db
   end
 
   def self.handle(req)

@@ -13,19 +13,78 @@ def def_init(cl, *fields)
   end
 end
 
+#--------------------- Modules --------------------- 
+
+module Utils
+  def clone(obj)
+    Marshal.load Marshal.dump(obj)
+  end
+
+  def h_slice(h, keys)
+    h.select { |k, v| keys.include? k }
+  end
+end
+
+module Database
+  @@db_conn, @@db = '', ''
+
+  module_function
+
+  def self.set_db(db_conn, db)
+    @@db_conn, @@db = db_conn, db
+  end
+
+  def exist?(coll, sel)
+    @@db[coll].find(sel).count > 0
+  end
+
+  def get_user(sid)
+    user = @@db['users'].find_one 'sid' => sid
+    if user.nil?
+      raise ResponseBadSession, 'Incorrect session id'
+    end
+
+    user
+  end
+
+  def get_by_name(db_name, name, case_sensitive = false)
+    sel = case_sensitive ? name : Regexp.new(name, true)
+    res = @@db[db_name].find_one 'name' => sel
+    if res.nil?
+      raise ResponseBadResource, 'Resource is\'t exist'
+    end
+
+    res
+  end
+
+  def get_by_id(db_name, id)
+    @@db[db_name].find_one '_id' => id
+  end
+
+  def check_access(user, res)
+    unless user['_id'] == res['creator']
+      raise ResponseBadAccess, 'Illegal access'
+    end
+  end
+
+  def cur_to_arr(coll_name, sel, field)
+    arr = []
+    cur = @@db[coll_name].find sel, :fields => [field]
+    cur.each { |foo| arr << foo[field] }
+
+    arr
+  end
+end
+
 #--------------------- Cmd --------------------- 
 
 class Cmd
-  include VALIDATIONS
+  include Validations, Utils, Database
 
   MSGS = {
     :flds_num_l => 'Request has\'t enough fields for this command',
     :flds_num_g  => 'Request has extra fields for this command'
   }
-
-  def self.set_db(db_conn, db)
-    @@db_conn, @@db = db_conn, db
-  end
 
   def initialize(req, fields)
     check_fields req, fields
@@ -42,64 +101,14 @@ class Cmd
     end
   end
 
-  def exist?(coll, sel)
-    @@db[coll].count(sel) > 0
-  end
-
   def encode(val, salt)
     Digest::SHA2.hexdigest "#{val}--#{salt}"
   end
   private :encode
-
-  def clone(obj)
-    Marshal.load Marshal.dump(obj)
-  end
-  private :clone
-
-  def get_user(sid)
-    user = @@db['users'].find_one 'sid' => sid
-    if user.nil?
-      raise ResponseBadSession, 'Incorrect session id'
-    end
-
-    user
-  end
-  private :get_user
-
-  def get_by_name(db_name, name, case_sensitive = false)
-    sel = case_sensitive ? name : Regexp.new(name, true)
-    res = @@db[db_name].find_one 'name' => sel
-    if res.nil?
-      raise ResponseBadResource, 'Resource is\'t exist'
-    end
-
-    res
-  end
-  private :get_by_name
-
-  def check_access(user, res)
-    unless user['_id'] == res['creator']
-      raise ResponseBadAccess, 'Illegal access'
-    end
-  end
-  private :check_access
-
-  def cur_to_arr(coll_name, sel, field)
-    arr = []
-    cur = @@db[coll_name].find sel, :fields => [field]
-    cur.each { |foo| arr << foo[field] }
-
-    arr
-  end
-  private :cur_to_arr
-
-  def h_slice(h, keys)
-    h.select { |k, v| keys.include? k }
-  end
 end
 
 #--------------------- Dev --------------------- 
-#
+
 class CmdDropDB < Cmd
   def_init self
 
@@ -225,6 +234,8 @@ end
 #--------------------- Maps --------------------- 
 
 module Map
+  include Database
+
   def check_map(width, height, struct)
     #Check values
     check_value = ->(a) do
@@ -265,6 +276,22 @@ module Map
       check_collisions.(struct['pl2'], struct['obst'])
 
     raise ResponseBadMap, 'Incorrect map' unless is_correct
+  end
+
+  def reflect_map(map)
+    w, h = map['width'], map['height']
+    struct = map['structure']
+
+    size = w * h
+    struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
+
+    reflect = ->(a) do
+      a.each_index { |i| a[i] = size - a[i] - 1 }
+    end
+
+    %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
+
+    map
   end
 end
 
@@ -370,12 +397,14 @@ end
 #--------------------- Armies --------------------- 
 
 module Army
+  include Database
+
   ERR_MSG = 'Incorrect army'
 
-  def check_army(coll_units, units)
+  def check_army(units)
     raise ResponseBadArmy, ERR_MSG if units.empty?
     units.each_pair do |army_unit, count|
-      u = coll_units.find_one 'name' => army_unit
+      u = @@db['units'].find_one 'name' => army_unit
 
       raise ResponseBadArmy, ERR_MSG if u.nil?
 
@@ -393,7 +422,7 @@ class CmdCreateArmy < Cmd
   def handle(req)
     Validator.validate @@db['armies'], req, V_ARMY
 
-    check_army @@db['units'], req['units']
+    check_army req['units']
     
     user = get_user req['sid']
 
@@ -414,9 +443,7 @@ class CmdEditArmy < Cmd
   def_init self, 'sid', 'name', 'units'
 
   def handle(req)
-    #Validator.validate @@db['armies'], req, V_ARMY #If validate only name
-
-    check_army @@db['units'], req['units']
+    check_army req['units']
     
     user = get_user req['sid']
     army = get_by_name 'armies', req['name']
@@ -485,12 +512,24 @@ end
 #--------------------- Games --------------------- 
 
 module Game
+  include Database
+
   ERR_MSG = 'Incorrect game'
 
   def check_game(map, army)
     units_count = army['units'].values.reduce(:+)
     unless units_count == map['structure']['pl1'].size
       raise ResponseBadGame, ERR_MSG
+    end
+  end
+
+  def check_user(user_id)
+    sel = { '$or' => [
+      { 'creator' => user_id },
+      { 'opponent' => user_id }
+    ] }
+    if (exist?('games', sel))
+      raise ResponseBadAction, 'User already in a game'
     end
   end
 end
@@ -503,6 +542,8 @@ class CmdCreateGame < Cmd
     Validator.validate @@db['games'], req, V_GAME
 
     user = get_user req['sid']
+    check_user user['_id']
+
     map = get_by_name 'maps', req['nameMap']
     army = get_by_name 'armies', req['nameArmy']
 
@@ -535,8 +576,8 @@ class CmdGetGameParams < Cmd
   def handle(req)
     user = get_user req['sid']
     game = get_by_name 'games', req['name']
-    map = @@db['maps'].find_one '_id' => game['map']
-    army = @@db['armies'].find_one '_id' => game['army']
+    map = get_by_id 'maps', game['map']
+    army = get_by_id 'armies', game['army']
     
     [
       {
@@ -549,10 +590,14 @@ class CmdGetGameParams < Cmd
 end
 
 class CmdJoinGame < Cmd
+  include Game
+
   def_init self, 'sid', 'name'
 
   def handle(req)
     user = get_user req['sid']
+    check_user user['_id']
+
     game = get_by_name 'games', req['name']
     
     unless game['opponent'].nil?

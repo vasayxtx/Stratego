@@ -37,7 +37,7 @@ class Validator
   end
 end
 
-module VALIDATIONS
+module Validations
   V_USER = {
     'login' => {
       'unique' => [

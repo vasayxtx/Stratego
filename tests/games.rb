@@ -10,11 +10,19 @@ t = Tester.new(CLIENTS_NUM) do |i|
 end
 
 GAME_CL = 'ClassicalGame'
-REQ_CREATE_GAME = {
+REQ_CREATE_GAME_CL = {
   'cmd' => 'createGame',
   'name' => GAME_CL,
   'nameMap' => Generator::MAP_CL['name'],
   'nameArmy' => Generator::ARMY_CL['name'],
+}
+
+GAME_MINI = 'MiniGame'
+REQ_CREATE_GAME_MINI = {
+  'cmd' => 'createGame',
+  'name' => GAME_MINI,
+  'nameMap' => Generator::MAP_MINI['name'],
+  'nameArmy' => Generator::ARMY_MINI['name'],
 }
 
 #Test1
@@ -39,7 +47,7 @@ t.push_test([
 
 #Test3
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 req['name'] = 'ab'
 resp = { 
   0 => { 
@@ -51,7 +59,7 @@ t.push_test([[0, req, resp]])
 
 #Test4
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 req['name'] = 'afdfda$#%31'
 resp = { 
   0 => { 
@@ -63,7 +71,7 @@ t.push_test([[0, req, resp]])
 
 #Test5
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 req['nameMap'] = 'safasdf'
 resp = { 
   0 => { 
@@ -75,7 +83,7 @@ t.push_test([[0, req, resp]])
 
 #Test6
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 req['nameArmy'] = 'safasdf'
 resp = { 
   0 => { 
@@ -87,7 +95,7 @@ t.push_test([[0, req, resp]])
 
 #Test7
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 req['nameMap'] = Generator::MAP_MINI['name']
 resp = { 
   0 => { 
@@ -99,7 +107,7 @@ t.push_test([[0, req, resp]])
 
 #Test8
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 resp = { 0 => { 'status' => 'ok' } }
 1.upto(CLIENTS_NUM - 1) do |i|
   resp[i] = {
@@ -111,7 +119,7 @@ t.push_test([[0, req, resp]])
 
 #Test9
 #--------------------------------
-req = clone REQ_CREATE_GAME
+req = clone REQ_CREATE_GAME_CL
 resp = {
   0 => { 
     'status' => 'badFieldUnique',
@@ -135,7 +143,6 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-=begin
 #Test11
 #--------------------------------
 req = {
@@ -143,14 +150,36 @@ req = {
   'name' => GAME_CL
 }
 resp = {
+  1 => { 'status' => 'ok' },
+  0 => { 'cmd' => 'startGamePlacement' }
+}
+2.upto(CLIENTS_NUM - 1) do |i|
+  resp[i] = { 
+    'cmd' => 'delAvailableGame',
+    'name' => GAME_CL
+  }
+end
+t.push_test([[1, req, resp]])
+
+#Test12
+#--------------------------------
+req = clone REQ_CREATE_GAME_MINI
+resp0 = { 
   0 => { 
-    'status' => 'ok',
-    'map' => Generator::MAP_CL,
-    'army' => Generator::ARMY_CL
+    'status' => 'badAction',
+    'message' => 'User already in a game'
   }
 }
-t.push_test([[0, req, resp]])
-=end
+resp1 = { 
+  1 => { 
+    'status' => 'badAction',
+    'message' => 'User already in a game'
+  }
+}
+t.push_test([
+  [0, req, resp0],
+  [1, req, resp1]
+])
 
 #Test
 #--------------------------------
