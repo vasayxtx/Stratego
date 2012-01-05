@@ -1,0 +1,141 @@
+@import compass
+@import blueprint
+@import compass_twitter_bootstrap
+
+//For sticky footer
+@import compass/layout.scss
+
+//Bluerint grid
+$bgrid_width: 50px
+$blueprint-grid_columns: 22
+$blueprint_grid_width: $bgrid_width
+$blueprint_grid_margin: 0px
+
+//Variables
+
+$page_width: 1100px
+$header_height: 50px
+$footer_height: 25px
+
+//Stylesheet
+
++sticky-footer($footer_height, "#layout", "#layout_footer", "footer")
+
+*
+  margin: auto
+
+body
+  background-color: white
+
+#layout
+  +container
+  width: $page_width
+
+#main_container
+  $col_count: 18
+  +column($col_count)
+
+  header
+    +container
+    height: $header_height
+    width: $col_count * $bgrid_width
+    line-height: $header-height
+    border-bottom: 1px solid black
+
+    #title
+      +column(5)
+      vertical-align: middle
+      font-weight: 900
+      font-size: 2em
+
+    #top_menu
+      +column(13)
+      height: $header_height
+      line-height: $header_height
+      font-size: 1.5em
+
+      ul
+        +horizontal-list
+        margin-top: 10px
+        margin-left: 125px
+        display: none
+
+        li
+          display: block
+          width: 100px
+          height: $header_height - 20px
+          line-height: $header_height - 20px
+          text-align: center
+
+          &:first-child
+            border-right: 1px solid black
+
+  #content
+    +container
+    width: $col_count * $bgrid_width
+    height: 400px
+
+#right_panel
+  $col_count: 4
+  +column($col_count)
+  width: $col_count * $bgrid_width - 2px
+  border: 
+    left: 1px solid black
+    right: 1px solid black
+    bottom: 1px solid black
+  margin-top: 50px
+
+  ul
+    &.top_menu, &.middle_menu, &.bottom_menu
+      list-style-type: none
+      padding-left: 0px
+      margin-left: 25px
+
+      .btn
+        width: 150px
+
+      li
+        margin-bottom: 15px
+
+        &:last-child
+          margin-bottom: 25px
+
+footer
+  border-top: 1px solid black
+  width: $page_width
+
+//---------- Modals ----------
+
+.modal
+  display: none
+
+#modal_auth
+  width: 350px
+  margin-left: -200px
+
+  .modal-body ul
+    list-style-type: none
+    padding-left: 0px
+    margin-left: 15px
+    margin: 0px
+
+    li
+      &:last-child
+        margin-top: 15px
+
+      .input
+        .error
+          border-color: #EE5F5B
+
+        .msg-error
+          margin-left: 15px
+          color: #B94A48
+
+  .modal-footer ul
+    +horizontal-list
+    +float-right
+
+    li
+      margin-left: 5px
+
+//---------- Map ----------
