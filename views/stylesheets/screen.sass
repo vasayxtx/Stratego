@@ -57,7 +57,7 @@ body
       ul
         +horizontal-list
         margin-top: 10px
-        margin-left: 125px
+        margin-left: 145px
         display: none
 
         li
@@ -74,6 +74,7 @@ body
     +container
     width: $col_count * $bgrid_width
     height: 400px
+    padding-top: 20px
 
     > div
       display: none  
@@ -141,4 +142,145 @@ footer
     li
       margin-left: 5px
 
-//---------- Map ----------
+//---------- Users online ----------
+
+#users_online
+  ol
+    font-size: 1.3em
+
+    li
+      margin-top: 10px
+
+//---------- Maps editor ----------
+
+#maps_editor
+  $col_count: 18
+  $h: 400px
+  +container
+  width: $col_count * $bgrid_width
+
+  .map_cell
+    &.free
+      background-color: white
+    &.pl1
+      background-color: blue
+    &.pl2
+      background-color: red
+    &.obst
+      background-color: gray
+
+  .left_side
+    $col_count: 4
+    +column($col_count)
+    width: $col_count * $bgrid_width - 1px
+    border-right: 1px solid black
+
+    .top_side
+      +container
+      width: 100%
+      height: 60px
+
+      .btn
+        width: 50px
+        height: 40px
+
+      ul
+        +horizontal-list
+
+        li
+          margin-right: 10px
+
+    .list_maps
+      +container
+      width: $col_count * $bgrid_width - 10px
+      height: 400px
+      border-top: 1px solid black
+      padding-right: 10px
+
+      ol
+        font-size: 1.3em
+
+        li
+          margin-top: 10px
+          text-align: center
+
+          &.selected
+            background-color: #E0E0E0
+
+          &:hover
+            background-color: #E0E0E0
+            cursor: pointer
+
+  .right_side
+    $col_count: 14
+    +column($col_count)
+
+    .top_side
+      +container
+      width: inherit
+      height: 60px
+      border-bottom: 1px solid black
+
+      .tools
+        $col_count: 6
+        +column(6)
+        width: $col_count * $bgrid_width - 1px
+        border-right: 1px solid black
+        height: inherit
+
+        ul
+          +horizontal-list
+
+          li
+            margin-left: 21px
+
+        .map_cell
+          display: block
+          width: 38px
+          height: 38px
+          border: 1px solid black
+
+      .params
+        +column(8)
+        height: inherit
+        
+        #name_map
+          width: 125px
+
+        #width_map, #height_map
+          width: 50px
+
+        input, button
+          margin:
+            left: 10px
+            top: 6px
+
+    .wp_map
+      $col_count: 14
+      $cell_size: 40px
+      width: ($col_count - 2) * $bgrid_width
+      padding:
+        top: 20px
+        left: $bgrid_width
+        right: $bgrid_width
+      
+      .map
+        overflow: auto
+        .map_cell
+          display: block
+          width: $cell_size
+          height: $cell_size
+
+        table
+          width: auto
+          margin: auto
+
+          tr
+            height: $cell_size
+
+            td
+              padding: 0px
+              width: $cell_size
+              border: 1px solid black
+
+

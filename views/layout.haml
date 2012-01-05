@@ -35,9 +35,37 @@
                 %a#logout{ :href => "#" } Logout
         #content
           #users_online
-            %h1 Users Online
           #available_games
-            %h1 Available games
+          #maps_editor
+            .left_side
+              .top_side
+                %ul
+                  %li
+                    %button.btn.success#btn_new_map New
+                  %li
+                    %button.btn.danger#btn_del_map Del
+                  %li
+                    %button.btn.primary#btn_save_map Sv
+              .list_maps
+            .right_side
+              .top_side
+                .tools
+                  %ul
+                    %li
+                      .map_cell.free
+                    %li
+                      .map_cell.pl1
+                    %li
+                      .map_cell.pl2
+                    %li 
+                      .map_cell.obst
+                .params
+                  %input.span2#name_map{ :type => "text", :placeholder => "Name"}
+                  %input.span2#width_map{ :type => "text", :placeholder => "Width"}
+                  %input.span2#height_map{ :type => "text", :placeholder => "Height"}
+                  %button.btn#btn_gen_map Generate
+              .wp_map
+                .map
       #right_panel
         #main_menu
           %ul.top_menu
@@ -84,4 +112,31 @@
             %li
               %button.btn.success.apply
                 <%= header %>
+
+    %script{ :type => "text/template", :id => "templ_users_online" }
+      %h3 Users online:
+      %ol
+        <% for (var i in users) { %>
+        %li
+          %span
+            <%= users[i] %>
+        <% } %>
+
+    %script{ :type => "text/template", :id => "templ_list_maps" }
+      %ol
+        <% for (var i in maps) { %>
+        %li
+          <%= maps[i] %>
+        <% } %>
+
+    %script{ :type => "text/template", :id => "templ_map" }
+      %table
+        %tbody
+          <% for (var i = 0; i < height; ++i) { %>
+          %tr
+            <% for (var j = 0; j < width; ++j) { %>
+            %td
+              <%= '<div class="map_cell" id="cell_' + (i * width + j) + '"></div>' %>
+              <% } %>
+              <% } %>
 
