@@ -12,6 +12,7 @@ class RequestHandler
     'signup',
     'login',
     'logout', 
+    'getUsersOnline',
 
     #----- Units -----
     'getAllUnits',

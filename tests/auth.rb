@@ -118,6 +118,19 @@ auth t, 'login'
 
 #Test10
 #--------------------------------
+req = { 'cmd' => 'getUsersOnline' }
+resp = {
+  0 => {
+    'status' => 'ok',
+    'users' => (Array.new(CLIENTS_NUM) { |i| "User#{i}" })
+  }
+}
+t.push_test([
+  [0, req, resp]
+])
+
+#Test11
+#--------------------------------
 logout t
 
 t.run

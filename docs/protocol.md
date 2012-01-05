@@ -54,6 +54,18 @@
         "login": <login of user>
     }
 
+## Getting online users
+### Request
+    {
+        "cmd": "getUsersOnline"
+        "sid": <sid>
+    }
+### Response
+    {
+        "status": "ok",
+        "users": [...]
+    }
+
 ## Creation of the map
 ### Request
     {

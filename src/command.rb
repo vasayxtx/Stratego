@@ -215,7 +215,23 @@ class CmdLogout < Cmd
   end
 end
 
-#--------------------- Units --------------------- 
+class CmdGetUsersOnline < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    get_user req['sid']
+
+    users = cur_to_arr(
+      'users',
+      { 'status' => :online },
+      'login'
+    )
+
+    [{ 'users' => users }, {}, {}]
+  end
+end
+
+#--------------------- Units ---------------------
 
 class CmdGetAllUnits < Cmd
   def_init self, 'sid'

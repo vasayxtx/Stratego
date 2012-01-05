@@ -34,31 +34,35 @@
               %li
                 %a#logout{ :href => "#" } Logout
         #content
+          #users_online
+            %h1 Users Online
+          #available_games
+            %h1 Available games
       #right_panel
         #main_menu
           %ul.top_menu
             %li
-              %button.btn.large.success Users online
+              %button.btn.large.success#btn_users_online Users online
             %li
-              %button.btn.large.success Available games
+              %button.btn.large.success#btn_available_games Available games
           %ul.middle_menu
             %li
-              %button.btn.large.primary Play vs AI
+              %button.btn.large.primary#btn_play_ai Play vs AI
             %li
-              %button.btn.large.primary Create game
+              %button.btn.large.primary#btn_create_game Create game
             %li
-              %button.btn.large.primary Maps editor
+              %button.btn.large.primary#btn_maps_editor Maps editor
             %li
-              %button.btn.large.primary Armies editor
+              %button.btn.large.primary#btn_armies_editor Armies editor
             %li
-              %button.btn.large.primary Tacktics editor
+              %button.btn.large.primary#btn_tacktics_editor Tacktics editor
           %ul.bottom_menu
             %li
               %button.btn.large About project
       #layout_footer
     %footer
-
-    %script{ :type => "text/template", :id => "template_modal_auth" }
+    
+    %script{ :type => "text/template", :id => "templ_modal_auth" }
       #modal_auth.modal.hide.fade
         .modal-header
           %h3
@@ -71,7 +75,7 @@
                 %span.msg-error
             %li
               .input
-                %input.span3.password{ :type => "text", :placeholder => "Password"}
+                %input.span3.password{ :type => "password", :placeholder => "Password"}
                 %span.msg-error
         .modal-footer
           %ul
