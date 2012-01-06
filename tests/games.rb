@@ -47,17 +47,20 @@ auth t
 #--------------------------------
 
 req0 = clone Generator::MAP_CL
-req0['cmd'] = 'createMap'
 req1 = clone Generator::MAP_MINI
-req1['cmd'] = 'createMap'
+req0['cmd'] = req1['cmd'] = 'createMap'
 req2 = clone Generator::ARMY_CL
-req2['cmd'] = 'createArmy'
+req3 = clone Generator::ARMY_MINI
+req2['cmd'] = req3['cmd'] = 'createArmy'
 resp = { 0 => { 'status' => 'ok' } }
 t.push_test([
   [0, req0, resp],
   [0, req1, resp],
-  [0, req2, resp]
+  [0, req2, resp],
+  [0, req3, resp],
 ])
+
+#-------------- Creation of the game ------------------
 
 #Test3
 #--------------------------------
@@ -141,6 +144,8 @@ resp = {
   }
 }
 t.push_test([[0, req, resp]])
+
+#--------------- Getting game's params -----------------
 
 #Test10
 #--------------------------------
@@ -245,37 +250,59 @@ t.push_test([
   [1, req, resp1]
 ])
 
+#--------------- Destruction/Living -----------------
+
 #Test17
 #--------------------------------
-req = {
-  'cmd' => 'getGame',
-  'name' => GAME_CL
-}
-resp = {
+req0 = { 'cmd' => 'destroyGame' }
+resp0 = {
   2 => {
     'status' => 'badAction',
-    'message' => 'User isn\'t player of this game'
-  },
+    'message' => 'User hasn\'t created any game'
+  }
 }
-t.push_test([[2, req, resp]])
+req1 = clone REQ_CREATE_GAME_MINI
+resp1 = { 2 => { 'status' => 'ok' } }
+resp2 = { 2 => { 'status' => 'ok' } }
+0.upto(CLIENTS_NUM - 1) do |i|
+  next if i == 2
+  resp1[i] = {
+    'cmd' => 'addAvailableGame',
+    'name' => GAME_MINI
+  }
+  resp2[i] = {
+    'cmd' => 'delAvailableGame',
+    'name' => GAME_MINI
+  }
+end
+t.push_test([
+  [2, req0, resp0],
+  [2, req1, resp1],
+  [2, req0, resp2]
+])
 
 #Test18
 #--------------------------------
-req = {
-  'cmd' => 'getGame',
-  'name' => GAME_CL
+req0 = { 'cmd' => 'leaveGame' }
+resp0 = {
+  2 => {
+    'status' => 'badAction',
+    'message' => 'User isn\'t in the game'
+  }
 }
-r0 = {
-  'status' => 'ok',
-  'game_status' => 'placement',
-  'map' => Generator::MAP_CL,
-  'army' => Generator::ARMY_CL
+resp1 = {
+  0 => { 'status' => 'ok' },
+  1 => { 'cmd' => 'endGame' }
 }
-r1 = clone r0
-reflect_map!(r1['map'])
+req1 = { 'cmd' => 'getAvailableGames' }
+resp2 = {
+  0 => { 'status' => 'ok', 'games' => [] }
+}
+
 t.push_test([
-  [0, req, { 0 => r0 }],
-  [1, req, { 1 => r1 }],
+  [2, req0, resp0],
+  [0, req0, resp1],
+  [0, req1, resp2]
 ])
 
 #Test

@@ -372,13 +372,11 @@
     }
 ### Response
     {
-        "status": "ok",
-        "game_result": <result of the game>
+        "status": "ok"
     }
-### Response for other player
+### Response for second player
     {
-        "cmd": "endGame", 
-        "game_result": <result of the game>
+        "cmd": "endGame"
     }
 
 ## Getting state of the game

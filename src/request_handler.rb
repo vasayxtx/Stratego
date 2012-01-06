@@ -43,13 +43,11 @@ class RequestHandler
     'getAvailableGames',
     'destroyGame',
     'joinGame',
+    'leaveGame',
     'getGame',
 
 =begin
     'getLogin',
-    'getListUsersOnline',
-    'leaveGame',
-    'destroyGame',
     'getCreatedGame',
     'getStartedGame',
 

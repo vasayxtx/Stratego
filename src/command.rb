@@ -684,6 +684,36 @@ class CmdJoinGame < Cmd
   end
 end
 
+class CmdLeaveGame < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = @@db['games'].find_one(
+      { '$or' => [
+        { 'creator' => user['_id'] },
+        { 'opponent' => user['_id'] }
+      ] }
+    )
+
+    if game.nil?
+      raise ResponseBadAction, 'User isn\'t in the game'
+    end
+    if game['opponent'].nil?
+      raise ResponseBadAction, 'Game isn\'t started'
+    end
+
+    second_user = user['_id'] == game['creator'] ? 
+      game['opponent'] : game['creator']
+
+    @@db['games'].remove '_id' => game['_id']
+
+    [{}, {
+      second_user => { 'cmd' => 'endGame' }
+    }, {}]
+  end
+end
+
 class CmdGetGame < Cmd
   include Map
 
