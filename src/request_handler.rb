@@ -41,6 +41,7 @@ class RequestHandler
     'createGame',
     'getGameParams',
     'getAvailableGames',
+    'destroyGame',
     'joinGame',
     'getGame',
 

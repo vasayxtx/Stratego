@@ -625,6 +625,29 @@ class CmdGetAvailableGames < Cmd
   end
 end
 
+class CmdDestroyGame < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = @@db['games'].find_one 'creator' => user['_id']
+
+    if game.nil?
+      raise ResponseBadAction, 'User hasn\'t created any game'
+    end
+    if game['opponent']
+      raise ResponseBadAction, 'Game already started'
+    end
+
+    name_game = game['name']
+    @@db['games'].remove '_id' => game['_id']
+
+    [{}, {
+      :all => { 'cmd' => 'delAvailableGame', 'name' => name_game }
+    }, {}]
+  end
+end
+
 class CmdJoinGame < Cmd
   include Game
 

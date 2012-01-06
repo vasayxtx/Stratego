@@ -348,8 +348,6 @@
         "name": <name of the game>
     }
 
-<!-- New cmds -->
-
 ## Destruction of the game
 ### Request
     {
@@ -363,6 +361,24 @@
     {
         "cmd": "delAvailableGame", 
         "name": <name of the game>
+    }
+
+<!-- New cmds -->
+
+## Living the game
+### Request
+    {
+        "cmd": "liveGame"
+    }
+### Response
+    {
+        "status": "ok",
+        "game_result": <result of the game>
+    }
+### Response for other player
+    {
+        "cmd": "endGame", 
+        "game_result": <result of the game>
     }
 
 ## Getting state of the game
@@ -413,20 +429,25 @@
         }
     }
 
-## Living the game
+## Setting placement
 ### Request
     {
-        "cmd": "liveGame"
+        "cmd": "setPlacement",
+        "placement": {
+            <position>: <name of the unit>
+        }
     }
 ### Response
     {
         "status": "ok",
-        "game_result": <result of the game>
     }
-### Response for other player
+### Response1 for other player
     {
-        "cmd": "endGame", 
-        "game_result": <result of the game>
+        "cmd": "opponentReady"
+    }
+### Response2 for other player
+    {
+        "cmd": "startGame"
     }
 
 ## Making a move
