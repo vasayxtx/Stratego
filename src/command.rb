@@ -74,6 +74,23 @@ module Database
 
     arr
   end
+
+  def get_game_by_user(user_id)
+    game = @@db['games'].find_one(
+      { '$or' => [
+        { 'creator' => user_id },
+        { 'opponent' => user_id }
+      ] }
+    )
+    if game.nil?
+      raise ResponseBadAction, 'User isn\'t player of this game'
+    end
+    if game['opponent'].nil?
+      raise ResponseBadAction, 'The game isn\'t started'
+    end
+
+    game
+  end
 end
 
 #--------------------- Cmd --------------------- 
@@ -689,19 +706,7 @@ class CmdLeaveGame < Cmd
 
   def handle(req)
     user = get_user req['sid']
-    game = @@db['games'].find_one(
-      { '$or' => [
-        { 'creator' => user['_id'] },
-        { 'opponent' => user['_id'] }
-      ] }
-    )
-
-    if game.nil?
-      raise ResponseBadAction, 'User isn\'t in the game'
-    end
-    if game['opponent'].nil?
-      raise ResponseBadAction, 'Game isn\'t started'
-    end
+    game = get_game_by_user user['_id']
 
     second_user = user['_id'] == game['creator'] ? 
       game['opponent'] : game['creator']
@@ -717,36 +722,38 @@ end
 class CmdGetGame < Cmd
   include Map
 
-  def_init self, 'sid', 'name'
+  def_init self, 'sid'
+
+  def prepare_placement(user, game)
+    map = get_by_id 'maps', game['map']
+    army = get_by_id 'armies', game['army']
+    h_map = h_slice(map, %w[name width height structure])
+    h_army = h_slice(army, %w[name units])
+
+    reflect_map!(h_map) if game['opponent'] == user['_id']
+    players = [game['creator'], game['opponent']].map do |pl|
+      @@db['users'].find_one('_id' => pl)['login']
+    end
+
+    {
+      'game_status' => 'placement',
+      'game_name' => game['name'],
+      'players' => players,
+      'map' => h_map,
+      'army' => h_army
+    }
+  end
+
+  def prepare_process(game)
+    {}
+  end
 
   def handle(req)
     user = get_user req['sid']
-    game = get_by_name 'games', req['name']
+    game = get_game_by_user user['_id']
 
-    if game['opponent'].nil?
-      raise ResponseBadAction, 'The game hasn\'t started'
-    end
-
-    unless [game['creator'], game['opponent']].include?(user['_id'])
-      raise ResponseBadAction, 'User isn\'t player of this game'
-    end
-
-    if game['placement'].nil?
-      map = get_by_id 'maps', game['map']
-      army = get_by_id 'armies', game['army']
-      h_map = h_slice(map, %w[name width height structure])
-      h_army = h_slice(army, %w[name units])
-
-      reflect_map!(h_map) if game['opponent'] == user['_id']
-
-      resp = {
-        'game_status' => 'placement',
-        'map' => h_map,
-        'army' => h_army
-      }
-    else
-      resp = {}
-    end
+    p = game['placement'].nil? ? :prepare_placement : :prepare_process
+    resp = send p, user, game
   
     [resp, {}, {}]
   end

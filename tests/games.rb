@@ -25,27 +25,12 @@ REQ_CREATE_GAME_MINI = {
   'nameArmy' => Generator::ARMY_MINI['name'],
 }
 
-def reflect_map!(map)
-  w, h = map['width'], map['height']
-  size = w * h
-
-  struct = map['structure']
-  struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
-
-  reflect = ->(a) do
-    a.each_index { |i| a[i] = size - a[i] - 1 }
-  end
-
-  %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
-end
-
 #Test1
 #--------------------------------
 auth t
 
 #Test2 (Creation of the map/army)
 #--------------------------------
-
 req0 = clone Generator::MAP_CL
 req1 = clone Generator::MAP_MINI
 req0['cmd'] = req1['cmd'] = 'createMap'
@@ -164,14 +149,11 @@ t.push_test([[0, req, resp]])
 
 #Test11
 #--------------------------------
-req = {
-  'cmd' => 'getGame',
-  'name' => GAME_CL
-}
+req = { 'cmd' => 'getGame' }
 resp = {
   0 => { 
     'status' => 'badAction',
-    'message' => 'The game hasn\'t started'
+    'message' => 'The game isn\'t started'
   }
 }
 t.push_test([[0, req, resp]])
@@ -287,7 +269,7 @@ req0 = { 'cmd' => 'leaveGame' }
 resp0 = {
   2 => {
     'status' => 'badAction',
-    'message' => 'User isn\'t in the game'
+    'message' => 'User isn\'t player of this game'
   }
 }
 resp1 = {

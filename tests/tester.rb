@@ -163,3 +163,17 @@ def clone(obj)
   Marshal.load Marshal.dump(obj)
 end
 
+def reflect_map!(map)
+  w, h = map['width'], map['height']
+  size = w * h
+
+  struct = map['structure']
+  struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
+
+  reflect = ->(a) do
+    a.each_index { |i| a[i] = size - a[i] - 1 }
+  end
+
+  %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
+end
+

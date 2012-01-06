@@ -363,8 +363,6 @@
         "name": <name of the game>
     }
 
-<!-- New cmds -->
-
 ## Living the game
 ### Request
     {
@@ -378,6 +376,8 @@
     {
         "cmd": "endGame"
     }
+
+<!-- New cmds -->
 
 ## Getting state of the game
     {
@@ -394,9 +394,9 @@
             "width": <width of the map>,
             "height": <height of the map>,
             "structure": {
-              "obst": [...],
-              "pl1": [...],
-              "pl2": [...]
+                "obst": [...],
+                "pl1": [...],
+                "pl2": [...]
             }
         },
         "army": {
@@ -419,11 +419,11 @@
         "map_width": <width of the map>,
         "map_height": <height of the map>
         "state": {
-          "obst": [...],
-          "pl1": {
-              <position>: <name of the unit>
-          },
-          "pl2": [...]
+            "obst": [...],
+            "pl1": {
+                <position>: <name of the unit>
+            },
+            "pl2": [...]
         }
     }
 
