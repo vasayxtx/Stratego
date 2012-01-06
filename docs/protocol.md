@@ -1,5 +1,7 @@
 #Basic commands
 
+<!-- Auth -->
+
 ## Signup
 ### Request
     {
@@ -65,6 +67,8 @@
         "status": "ok",
         "users": [...]
     }
+
+<!-- Maps -->
 
 ## Creation of the map
 ### Request
@@ -158,6 +162,8 @@
             "pl2": [...],
         }
     }
+
+<!-- Armies -->
 
 ## Creation of the army
 ### Request
@@ -263,6 +269,8 @@
         }
     }
 
+<!-- Games -->
+
 ## Creation of the game
 ### Request
     {
@@ -338,5 +346,115 @@
     {
         "cmd": "delAvailableGame", 
         "name": <name of the game>
+    }
+
+<!-- New cmds -->
+
+## Destruction of the game
+### Request
+    {
+        "cmd": "destroyGame"
+    }
+### Response
+    {
+        "status": "ok"
+    }
+### Response for other clients
+    {
+        "cmd": "delAvailableGame", 
+        "name": <name of the game>
+    }
+
+## Getting state of the game
+    {
+        "cmd": "getGame"
+    }
+### Response1
+    {
+        "status": "ok",
+        "game_status": "placement"
+        "game_name": <name of the game>,
+        "players": [...],
+        "map": {
+            "name": <name of the map>,
+            "width": <width of the map>,
+            "height": <height of the map>,
+            "structure": {
+              "obst": [...],
+              "pl1": [...],
+              "pl2": [...]
+            }
+        },
+        "army": {
+            "name": <name of the map>,
+            "units": {
+                <name of the unit>: <count>
+                ...
+            }
+        }
+    }
+### Response2
+    {
+        "status": "ok",
+        "game_status": "process",
+        "game_name": <name of the game>,
+        "players": [...],
+        "isTurn": <is your turn>,
+        "map_name": <name of the map>,
+        "army_name": <name of the army>,
+        "map_width": <width of the map>,
+        "map_height": <height of the map>
+        "state": {
+          "obst": [...],
+          "pl1": {
+              <position>: <name of the unit>
+          },
+          "pl2": [...]
+        }
+    }
+
+## Living the game
+### Request
+    {
+        "cmd": "liveGame"
+    }
+### Response
+    {
+        "status": "ok",
+        "game_result": <result of the game>
+    }
+### Response for other player
+    {
+        "cmd": "endGame", 
+        "game_result": <result of the game>
+    }
+
+## Making a move
+### Request
+    {
+        "cmd": "makeMove",
+        "posFrom": <position from>,
+        "posTo": <position to>
+    }
+### Response
+    {
+        "status": "ok",
+        "cell": <content of the cell>,
+        "duel": {                         //Optional
+            "res": <result of the duel>,
+            "attacker": <attacker unit>,
+            "protector": <protector unit>,
+        }
+    }
+### Response for other player
+    {
+        "cmd": "duel",
+        "posFrom": <position from>,
+        "posTo": <position to>,
+        "duel": {                         //Optional
+            "res": <result of the duel>,
+            "attacker": <attacker unit>,
+            "protector": <protector unit>,
+        }
     }
 
