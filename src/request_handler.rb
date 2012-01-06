@@ -40,6 +40,7 @@ class RequestHandler
     
     'createGame',
     'getGameParams',
+    'getAvailableGames',
     'joinGame',
     'getGame',
 
@@ -48,7 +49,6 @@ class RequestHandler
     'getListUsersOnline',
     'leaveGame',
     'destroyGame',
-    'getListAvailableGames',
     'getCreatedGame',
     'getStartedGame',
 

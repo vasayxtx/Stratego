@@ -25,6 +25,20 @@ REQ_CREATE_GAME_MINI = {
   'nameArmy' => Generator::ARMY_MINI['name'],
 }
 
+def reflect_map!(map)
+  w, h = map['width'], map['height']
+  size = w * h
+
+  struct = map['structure']
+  struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
+
+  reflect = ->(a) do
+    a.each_index { |i| a[i] = size - a[i] - 1 }
+  end
+
+  %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
+end
+
 #Test1
 #--------------------------------
 auth t
@@ -146,6 +160,31 @@ t.push_test([[0, req, resp]])
 #Test11
 #--------------------------------
 req = {
+  'cmd' => 'getGame',
+  'name' => GAME_CL
+}
+resp = {
+  0 => { 
+    'status' => 'badAction',
+    'message' => 'The game hasn\'t started'
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test12
+#--------------------------------
+req = { 'cmd' => 'getAvailableGames' }
+resp = {
+  0 => { 
+    'status' => 'ok',
+    'games' => [GAME_CL]
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test13
+#--------------------------------
+req = {
   'cmd' => 'joinGame',
   'name' => GAME_CL
 }
@@ -161,7 +200,32 @@ resp = {
 end
 t.push_test([[1, req, resp]])
 
-#Test12
+#Test14
+#--------------------------------
+req = { 'cmd' => 'getAvailableGames' }
+resp = {
+  0 => { 
+    'status' => 'ok',
+    'games' => []
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test15
+#--------------------------------
+req = {
+  'cmd' => 'joinGame',
+  'name' => GAME_CL
+}
+resp = {
+  2 => {
+    'status' => 'badAction',
+    'message' => 'The game isn\'t available'
+  },
+}
+t.push_test([[2, req, resp]])
+
+#Test16
 #--------------------------------
 req = clone REQ_CREATE_GAME_MINI
 resp0 = { 
@@ -181,24 +245,37 @@ t.push_test([
   [1, req, resp1]
 ])
 
-#Test13
+#Test17
 #--------------------------------
-req = clone REQ_CREATE_GAME_MINI
-resp0 = { 
-  0 => { 
-    'status' => 'badAction',
-    'message' => 'User already in a game'
-  }
+req = {
+  'cmd' => 'getGame',
+  'name' => GAME_CL
 }
-resp1 = { 
-  1 => { 
+resp = {
+  2 => {
     'status' => 'badAction',
-    'message' => 'User already in a game'
-  }
+    'message' => 'User isn\'t player of this game'
+  },
 }
+t.push_test([[2, req, resp]])
+
+#Test18
+#--------------------------------
+req = {
+  'cmd' => 'getGame',
+  'name' => GAME_CL
+}
+r0 = {
+  'status' => 'ok',
+  'game_status' => 'placement',
+  'map' => Generator::MAP_CL,
+  'army' => Generator::ARMY_CL
+}
+r1 = clone r0
+reflect_map!(r1['map'])
 t.push_test([
-  [0, req, resp0],
-  [1, req, resp1]
+  [0, req, { 0 => r0 }],
+  [1, req, { 1 => r1 }],
 ])
 
 #Test

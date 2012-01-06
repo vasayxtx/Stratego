@@ -202,6 +202,11 @@ class CmdLogout < Cmd
   def handle(req)
     user = get_user req['sid']
 
+    @@db['users'].update(
+      { '_id' => user['_id'] },
+      { '$set' => { 'status' => :offline } }
+    )
+
     [
       {},
       {
@@ -594,7 +599,7 @@ class CmdGetGameParams < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    user = get_user req['sid']
+    get_user req['sid']
     game = get_by_name 'games', req['name']
     map = get_by_id 'maps', game['map']
     army = get_by_id 'armies', game['army']
@@ -606,6 +611,17 @@ class CmdGetGameParams < Cmd
       },
       {}, {}
     ]
+  end
+end
+
+class CmdGetAvailableGames < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    get_user req['sid']
+    games = cur_to_arr 'games', { 'opponent' => { '$exists' => false } }, 'name'
+    
+    [{ 'games' => games }, {}, {}]
   end
 end
 
@@ -621,7 +637,7 @@ class CmdJoinGame < Cmd
     game = get_by_name 'games', req['name']
     
     unless game['opponent'].nil?
-      raise ResponseBadGame, 'The game isn\'t available'
+      raise ResponseBadAction, 'The game isn\'t available'
     end
 
     @@db['games'].update(
@@ -654,6 +670,10 @@ class CmdGetGame < Cmd
     user = get_user req['sid']
     game = get_by_name 'games', req['name']
 
+    if game['opponent'].nil?
+      raise ResponseBadAction, 'The game hasn\'t started'
+    end
+
     unless [game['creator'], game['opponent']].include?(user['_id'])
       raise ResponseBadAction, 'User isn\'t player of this game'
     end
@@ -667,12 +687,12 @@ class CmdGetGame < Cmd
       reflect_map!(h_map) if game['opponent'] == user['_id']
 
       resp = {
-        'status' => 'placement',
+        'game_status' => 'placement',
         'map' => h_map,
         'army' => h_army
       }
     else
-      #Game is started
+      resp = {}
     end
   
     [resp, {}, {}]
