@@ -309,6 +309,17 @@
         }
     }
 
+## Getting available games
+### Request
+    {
+        "cmd": "getAvailableGames"
+    }
+### Response
+    {
+        "status": "ok",
+        "games": [...]
+    }
+
 ## Join to the game
 ### Request
     {
