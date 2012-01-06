@@ -47,25 +47,29 @@
                   %li
                     %button.btn.primary#btn_save_map Sv
               .list_maps
+              .tools
+                %ul
+                  %li
+                    .map_cell
+                  %li
+                    .map_cell.pl1
+                  %li
+                    .map_cell.pl2
+                  %li 
+                    .map_cell.obst
             .right_side
               .top_side
-                .tools
-                  %ul
-                    %li
-                      .map_cell.free
-                    %li
-                      .map_cell.pl1
-                    %li
-                      .map_cell.pl2
-                    %li 
-                      .map_cell.obst
                 .params
                   %input.span2#name_map{ :type => "text", :placeholder => "Name"}
                   %input.span2#width_map{ :type => "text", :placeholder => "Width"}
                   %input.span2#height_map{ :type => "text", :placeholder => "Height"}
                   %button.btn#btn_gen_map Generate
+                  %button.btn#btn_clean_map Clean
               .wp_map
                 .map
+          #game_creation
+            .left_side
+            .right_side
       #right_panel
         #main_menu
           %ul.top_menu

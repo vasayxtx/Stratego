@@ -242,6 +242,7 @@ class MapsEditorCtrl extends Spine.Controller
     'click #btn_del_map':       'remove_map'
     'click #btn_save_map':      'save_map'
     'click #btn_gen_map':       'gen_map'
+    'click #btn_clean_map':     'clean_map'
 
   constructor: (el, @ws) ->
     super(el: el)
@@ -302,6 +303,8 @@ class MapsEditorCtrl extends Spine.Controller
         for i in structure[cl]
           $("#cell_#{i}").addClass(cl)
 
+    @last_width = width
+
   remove_map: ->
     obj = @list_maps.find('li.selected')
     n = Utils.strip(obj.html())
@@ -320,10 +323,38 @@ class MapsEditorCtrl extends Spine.Controller
   
   gen_map: ->
     #Validate inputs
-    @.render_map(
-      parseInt(@width_map.val()),
-      parseInt(@height_map.val())
-    )
+    width = parseInt(@width_map.val())
+    height = parseInt(@height_map.val())
+    
+    d = width - @last_width
+
+    structure = {}
+    for k in ['pl1', 'pl2', 'obst']
+      structure[k] = []
+      s = 0
+      @map.find(".map_cell.#{k}").each (i, el) =>
+        i = parseInt($(el).attr('id').slice(5))
+        j = Math.floor(i / @last_width)
+        c = i - j * @last_width
+        if c < width
+          structure[k].push(i + j * d)
+
+    @.render_map(width, height, structure)
+
+  clean_map: ->
+    @map.find('.map_cell').removeClass('pl1 pl2 obst')
+
+#-------- GameCreationCtrl --------
+
+class GameCreationCtrl extends Spine.Controller
+  elements:
+    '#game_creation': 'location'
+
+  constructor: (el, @ws) ->
+    super(el: el)
+
+  show: ->
+    @location.show()
 
 #-------- App --------
 
@@ -335,6 +366,7 @@ class AppCtrl extends Spine.Controller
     'click #btn_users_online':    'nav_location'
     'click #btn_available_games': 'nav_location'
     'click #btn_maps_editor':     'nav_location'
+    'click #btn_create_game':     'nav_location'
 
   constructor: ->
     super
@@ -354,9 +386,10 @@ class AppCtrl extends Spine.Controller
 
   init_ctrls: ->
     @ctrls =
-      users_online: new UsersOnlineCtrl(@content, @ws)
-      available_games: new AvailableGamesCtrl(@content, @ws)
-      maps_editor: new MapsEditorCtrl(@content, @ws)
+      users_online:     new UsersOnlineCtrl(@content, @ws)
+      available_games:  new AvailableGamesCtrl(@content, @ws)
+      maps_editor:      new MapsEditorCtrl(@content, @ws)
+      create_game:      new GameCreationCtrl(@content, @ws)
 
   restore_session: ->
     data = $.parseJSON(sessionStorage.getItem('Session'))
