@@ -438,10 +438,11 @@
 ### Response
     {
         "status": "ok",
+        "startGame": true   //Optional
     }
 ### Response1 for other player
     {
-        "cmd": "opponentReady"
+        "cmd": "readyOpponent"
     }
 ### Response2 for other player
     {

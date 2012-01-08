@@ -49,7 +49,7 @@
 + **creator**       - *ObjectId*
 + **name**          - *String*
 + **units**         - *Object*
-    + **<unit_name>**   - *Number*
+    + **unit: count** - *Integer: String*
 + **created_at**    - *ISODate*
 
 ### games
@@ -61,9 +61,6 @@
 + **map**           - *ObjectId*
 + **army**          - *ObjectId*
 + **placement**     - *Object*
-    + **pl1**         - *PlPlacement* 
-    + **pl2**         - *PlPlacement* 
-+ **cur_state**     - *Object*
     + **pl1**         - *PlPlacement* 
     + **pl2**         - *PlPlacement* 
 + **moves**         - *PlPlacement*
@@ -86,8 +83,7 @@
 #### Declarated special types
 
 + *PlPlacement*     - *Object*
-    + **pos**         - *Number*    
-    + **unit**        - *ObjectId*
+    + **pos: unit** - *Integer: String*    
 + *PlMove*          - *Array of 'Object's*
     + **pos_from**    - *Number*
     + **pos_to**      - *Number*
