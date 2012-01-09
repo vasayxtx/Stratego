@@ -377,8 +377,6 @@
         "cmd": "endGame"
     }
 
-<!-- New cmds -->
-
 ## Getting state of the game
     {
         "cmd": "getGame"
@@ -416,10 +414,7 @@
             "name": <name of the map>,
             "width": <width of the map>,
             "height": <height of the map>,
-            "structure": {
-                "obst": [...],
-                "pl2": [...]
-            }
+            "obst": [...]
         },
         "army": {
             "name": <name of the map>,
@@ -429,11 +424,14 @@
             }
         },
         "state": {
-            <position>: <name of the unit>,
-            ...
+            "pl1": {
+                <position>: <name of the unit>,
+                ...
+            },
+            "pl2": [...]
         }
     }
-<!-------------------------------->
+
 ## Setting placement
 ### Request
     {
@@ -455,7 +453,7 @@
     {
         "cmd": "startGame"
     }
-<!-------------------------------->
+
 ## Making a move
 ### Request
     {
@@ -466,20 +464,19 @@
 ### Response
     {
         "status": "ok",
-        "cell": <content of the cell>,
         "duel": {                         //Optional
-            "res": <result of the duel>,
+            "result": <result of the duel (win, loss, draw)>,
             "attacker": <attacker unit>,
             "protector": <protector unit>,
         }
     }
 ### Response for other player
     {
-        "cmd": "duel",
+        "cmd": "makeMove",
         "posFrom": <position from>,
         "posTo": <position to>,
         "duel": {                         //Optional
-            "res": <result of the duel>,
+            "result": <result of the duel (win, loss, draw)>,
             "attacker": <attacker unit>,
             "protector": <protector unit>,
         }

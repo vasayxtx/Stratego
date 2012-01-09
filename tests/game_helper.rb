@@ -74,3 +74,6 @@ def reflect_placement(placement, map_size)
   h
 end
 
+def reflect_a(a, s)
+  a.map { |el| s - el.to_i - 1 }
+end

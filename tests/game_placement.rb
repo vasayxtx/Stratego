@@ -2,6 +2,8 @@
 
 require File.join(File.dirname(__FILE__), 'game_helper')
 
+MAP_SIZE = Generator::MAP_MINI['width'] * Generator::MAP_MINI['height']
+
 t = Tester.new(CLIENTS_NUM) do |i|
   ["User#{i}", 'password']
 end
@@ -63,18 +65,21 @@ t.push_test([[0, req, resp]])
 #--------------------------------
 req = { 'cmd' => 'getGame' }
 
-state0 = Generator.make_tactic Generator::TACTIC_MINI
+state0 = {
+  'pl1' => Generator.make_tactic(Generator::TACTIC_MINI),
+  'pl2' => Generator::MAP_MINI['structure']['pl2']
+}
 resp0 = {
   0 => {
     'status' => 'ok',
     'game_name' => GAME_MINI,
     'players' => %w[User0 User1],
-    'map' => clone(Generator::MAP_MINI),
+    'map' => h_slice(Generator::MAP_MINI, %w[name width height]),
     'army' => Generator::ARMY_MINI,
     'state' => state0
   }
 }
-resp0[0]['map']['structure'].delete 'pl1'
+resp0[0]['map']['obst'] = Generator::MAP_MINI['structure']['obst']
 
 resp1 = {
   1 => {
@@ -114,17 +119,17 @@ req = { 'cmd' => 'getGame' }
 states = Array.new(2)
 maps = Array.new(2)
 
-states[0] = Generator.make_tactic Generator::TACTIC_MINI
-maps[0] = clone Generator::MAP_MINI
+p1 = Generator.make_tactic(Generator::TACTIC_MINI)
+p2 = Generator.make_tactic(Generator::TACTIC_TEST)
+states[0] = { 'pl1' => p1, 'pl2' => reflect_a(p2.keys, MAP_SIZE) }
+states[1] = { 'pl1' => p2, 'pl2' => reflect_a(p1.keys, MAP_SIZE) }
 
-states[1] = reflect_placement(
-  Generator.make_tactic(Generator::TACTIC_TEST), 
-  Generator::MAP_MINI['width'] * Generator::MAP_MINI['height']
-)
-maps[1] = reflect_map Generator::MAP_MINI
+maps[0] = h_slice Generator::MAP_MINI, %w[name width height]
+maps[1] = clone maps[0]
+maps[0]['obst'] = Generator::MAP_MINI['structure']['obst']
+maps[1]['obst'] = reflect_a(maps[0]['obst'], MAP_SIZE)
 
 resp = Array.new(2) do |i|
-  maps[i]['structure'].delete 'pl1'
   {
     i => {
       'status' => 'ok',

@@ -25,6 +25,7 @@ end
   'badArmy',
   'badGame',
   'badPlacement',
+  'badMove',
 ].each do |st|
   cl_const = Object::const_set(
     "Response#{st.chr.upcase + st[1..st.size-1]}",

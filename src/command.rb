@@ -14,7 +14,7 @@ def def_init(cl, *fields)
   end
 end
 
-#--------------------- Modules --------------------- 
+#--------------------- DB module --------------------- 
 
 module Database
   @@db_conn, @@db = '', ''
@@ -38,9 +38,9 @@ module Database
     user
   end
 
-  def get_by_name(db_name, name, case_sensitive = false)
+  def get_by_name(coll, name, case_sensitive = false)
     sel = case_sensitive ? name : Regexp.new(name, true)
-    res = @@db[db_name].find_one 'name' => sel
+    res = @@db[coll].find_one 'name' => sel
     if res.nil?
       raise ResponseBadResource, 'Resource is\'t exist'
     end
@@ -48,8 +48,8 @@ module Database
     res
   end
 
-  def get_by_id(db_name, id)
-    @@db[db_name].find_one '_id' => id
+  def get_by_id(coll, id)
+    @@db[coll].find_one '_id' => id
   end
 
   def check_access(user, res)
@@ -312,17 +312,6 @@ module Map
 
     raise ResponseBadMap, 'Incorrect map' unless is_correct
   end
-
-  def reflect_map!(map)
-    size = map['width'] * map['height']
-
-    s = map['structure']
-    s['pl1'], s['pl2'] = s['pl2'], s['pl1']
-
-    s.each_value do |a|
-      a.each_index { |i| a[i] = size - a[i] - 1 }
-    end
-  end
 end
 
 class CmdCreateMap < Cmd
@@ -545,6 +534,7 @@ module Game
   include Database
 
   ERR_MSG = 'Incorrect game'
+  ERR_MSG_MOVE = 'Incorrect move'
 
   def check_game(map, army)
     units_count = army['units'].values.reduce(:+)
@@ -563,20 +553,14 @@ module Game
     end
   end
 
-  def reflect_placement!(placement, map_size)
-    h = clone placement
-    placement.clear
-    h.each { |k, v| placement[(map_size-k.to_i-1).to_s] = v }
+  def reflect_placement(placement, s)
+    h = {}
+    placement.each_pair { |k, v| h[(s - k.to_i - 1).to_s] = v }
+
+    h
   end
 
-  def check_placement!(placement, is_pl1, map, army_units)
-    s = map['width'] * map['height']
-    pl = if is_pl1
-           'pl1'
-         else
-           reflect_placement! placement, s
-           'pl2'
-         end
+  def check_placement(placement, pl, map, army_units)
     positions = placement.keys.map { |p| p.to_i }
     units = Hash.new(0)
     placement.values.each { |u| units[u] += 1 }
@@ -587,6 +571,17 @@ module Game
     unless res
       raise ResponseBadPlacement, 'Incorrect placement'
     end
+  end
+
+  def turn?(game, is_pl1)
+    is_pl1 ?
+      game['moves']['pl1'].size == game['moves']['pl2'].size :
+      game['moves']['pl1'].size > game['moves']['pl2'].size
+  end
+
+  def reflect_pos(p, map)
+    s = map['width'] * map['height']
+    s - p - 1
   end
 end
 
@@ -734,40 +729,58 @@ class CmdLeaveGame < Cmd
 end
 
 class CmdGetGame < Cmd
-  include Map, Game
+  include Game
 
   def_init self, 'sid'
 
   def prepare_map(game, is_pl1)
     map = get_by_id 'maps', game['map']
-    h_map = h_slice(map, %w[name width height structure])
-    reflect_map!(h_map) unless is_pl1
+    m = h_slice(map, %w[name width height structure])
 
-    h_map
+    unless is_pl1
+      size = map['width'] * map['height']
+      s = map['structure']
+      s['pl1'], s['pl2'] = s['pl2'], s['pl1']
+      s.each_value { |a| a.map! { |el| size - el - 1 } }
+    end
+
+    m
   end
 
   def prepare_process(game, is_pl1)
-    m = prepare_map game, is_pl1
-    m['structure'].delete 'pl1'
-    resp = { 'map' => m }
+    map = get_by_id 'maps', game['map']
+    s = map['width'] * map['height']
+    p = game['placement']
 
-    if game['moves']
-      t = if is_pl1
-            game['moves']['pl1'].size == game['moves']['pl2'].size
-          else
-            game['moves']['pl1'].size > game['moves']['pl2'].size
-          end
-      resp['isTurn'] = t
-    end
+    reflect_a = ->(a) { a.map! { |el| s - el.to_i - 1 } }
 
-    if is_pl1
-      resp['state'] = game['placement']['pl1']
-    else
-      resp['state'] = reflect_placement!(
-        game['placement']['pl2'],
-        m['width'] * m['height']
-      )
-    end
+    m = h_slice(map, %w[name width height])
+    m['obst'] = map['structure']['obst']
+
+    st = if is_pl1
+           pl2_placement = p['pl2'] ? 
+             p['pl2'].keys.map { |el| el.to_i } :
+             map['structure']['pl2']
+           [p['pl1'], pl2_placement]
+         else
+           reflect_a.(m['obst'])
+           pl1_placement = p['pl1'] ?
+             p['pl1'].keys.map { |el| el.to_i } :
+             map['structure']['pl1']
+           [
+             reflect_placement(p['pl2'], s),
+             reflect_a.(pl1_placement)
+           ]
+         end
+
+    resp = {
+      'state' => {
+        'pl1' => st[0],
+        'pl2' => st[1]
+      },
+      'map' => m
+    }
+    resp['isTurn'] = turn?(game, is_pl1) if game['moves']
 
     resp
   end
@@ -777,7 +790,7 @@ class CmdGetGame < Cmd
     game = get_game_by_user user['_id']
 
     is_pl1 = user['_id'] == game['creator']
-    pl  = is_pl1 ? 'pl1' : 'pl2'
+    pl = is_pl1 ? 'pl1' : 'pl2'
 
     resp = if game['placement'].nil? || game['placement'][pl].nil?
              m = prepare_map game, is_pl1
@@ -805,9 +818,17 @@ class CmdSetPlacement < Cmd
     user = get_user req['sid']
     game = get_game_by_user user['_id']
 
-    is_pl1 = user['_id'] == game['creator']
-    pl, opp = is_pl1 ? %w[pl1 opponent] : %w[pl2 creator]
-    opp_id = game[opp]
+    map = get_by_id 'maps', game['map']
+
+    pl, opp = if user['_id'] == game['creator']
+                %w[pl1 opponent]
+              else
+                req['placement'] = reflect_placement(
+                  req['placement'],
+                  map['width'] * map['height']
+                )
+                %w[pl2 creator]
+              end
 
     r, r_opp = if p = game['placement']
                  raise ResponseBadAction, 'Already placed' if p[pl]
@@ -816,21 +837,187 @@ class CmdSetPlacement < Cmd
                  [false, 'readyOpponent']
                end
                                             
-    check_placement!(
-      req['placement'],
-      is_pl1,
-      get_by_id('maps', game['map']),
+    check_placement(
+      req['placement'], pl, map,
       get_by_id('armies', game['army'])['units']
     )
     
-    cmd_update = { "placement.#{pl}" => req['placement'] }
-    cmd_update['moves'] = { 'pl1' => [], 'pl2' => [] } if r
+    c_update = { "placement.#{pl}" => req['placement'] }
+    c_update['moves'] = { 'pl1' => [], 'pl2' => [] } if r
     @@db['games'].update(
       { '_id' => game['_id'] },
-      { '$set' => cmd_update }
+      { '$set' => c_update }
     )
 
-    [{ 'isGameStarted' => r }, { opp_id => { 'cmd' => r_opp } }, {}]
+    [
+      { 'isGameStarted' => r },
+      { game[opp] => { 'cmd' => r_opp } },
+      {}
+    ]
+  end
+end
+
+class CmdMakeMove < Cmd
+  include Game
+
+  def_init self, 'sid', 'posFrom', 'posTo'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = get_game_by_user user['_id']
+
+    if game['moves'].nil?
+      raise ResponseBadAction, 'Game isn\'t started'
+    end
+
+    is_pl1 = user['_id'] == game['creator']
+
+    unless turn?(game, is_pl1)
+      raise ResponseBadAction, 'It isn\'t your turn now'
+    end
+    
+    pl1, pl2, opp = is_pl1 ? %w[pl1 pl2 opponent] : %w[pl2 pl1 creator]
+    opp_id = game[opp]
+
+    map = get_by_id 'maps', game['map']
+
+    duel, duel_opp = make_move(
+      game, map, req['posFrom'], req['posTo'], is_pl1
+    )
+
+    resp = duel.empty? ? {} : { 'duel' => duel }
+    resp_opp = duel_opp.empty? ? {} : { 'duel' => duel_opp }
+
+    resp_opp.merge!({
+      'cmd' => 'makeMove',
+      'posFrom' => reflect_pos(req['posFrom'], map),
+      'posTo'   => reflect_pos(req['posTo'], map)
+    })
+
+    [resp, { opp_id => resp_opp }, {}]
+  end
+
+  def check_positions(p_from, p_to, pl_positions, map)
+    r = 0...(map['width'] * map['height'])
+
+    cond = 
+      r.include?(p_from) &&
+      r.include?(p_to) &&
+      pl_positions.include?(p_from) &&
+      !pl_positions.include?(p_to) &&
+      !map['structure']['obst'].include?(p_to)
+
+    raise ResponseBadMove, ERR_MSG_MOVE unless cond
+  end
+
+  def check_move(p_from, p_to, map, placement, unit)
+    pos_to_cord = ->(p) { [p % map['width'], p / map['width']] }
+    x_from, y_from = pos_to_cord.(p_from)
+    x_to, y_to = pos_to_cord.(p_to)
+
+    check_line = ->(c_from, c_to, dir) do
+      m_len = (c_to - c_from).abs
+      if m_len > unit['move_length']
+        raise ResponseBadMove, ERR_MSG_MOVE
+      end
+
+      sign = c_to - c_from <=> 0
+      k = dir == :v ? map['width'] : 1
+      1.upto(m_len - 1) do |i|
+        p = p_from + i * k * sign
+
+        is_failed =
+          map['structure']['obst'].include?(p) ||
+          placement['pl1'].include?(p) ||
+          placement['pl2'].include?(p)
+
+        raise ResponseBadMove, ERR_MSG_MOVE if is_failed
+      end
+    end
+
+    if x_from == x_to
+      check_line.(y_from, y_to, :v)
+    elsif y_from == y_to
+      check_line.(x_from, x_to, :h)
+    else
+      raise ResponseBadMove, ERR_MSG_MOVE
+    end
+  end
+
+  def make_move(game, map, p_from, p_to, is_pl1)
+    pl, opp = is_pl1 ? %w[pl1 pl2] : %w[pl2 pl1]
+
+    unless is_pl1
+      p_from = reflect_pos p_from, map
+      p_to = reflect_pos p_to, map
+    end
+
+    pl_placement = game['placement'][pl]
+    pl_positions = pl_placement.keys.map { |el| el.to_i }
+    opp_placement = game['placement'][opp]
+    opp_positions = opp_placement.keys.map { |el| el.to_i }
+
+    check_positions p_from, p_to, pl_positions, map
+
+    #puts "\n\nCHECKING_POSITIONS: OK\n\n"
+
+    unit_name = pl_placement[p_from.to_s]
+    pl_unit = get_by_name 'units', unit_name
+
+    check_move p_from, p_to, map, game['placement'], pl_unit
+
+    #puts "\n\nCHECKING_MOVING: OK\n\n"
+
+    if opp_positions.include?(p_to)
+      unit_name = opp_placement[p_to.to_s]
+      opp_unit = get_by_name 'units', unit_name
+
+      duel = {
+        'attacker' => pl_unit['name'],
+        'protector' => opp_unit['name'],
+      }
+      duel_opp = clone duel
+      
+      pl_win_duels = pl_unit['win_duels']
+      opp_win_duels = opp_unit['win_duels']
+
+      if pl_win_duels['attack'].include?(opp_unit['_id'])
+        r, r_opp = :win, :loss
+      elsif opp_win_duels['protect'] == :all || opp_win_duels['protect'].include?(pl_unit['_id'])
+        r, r_opp = :loss, :win
+      else
+        h = { 1 => :win, -1 => :loss, 0 => :draw }
+        r = h[pl_unit['rank'] <=> opp_unit['rank']]
+        r_opp = h[opp_unit['rank'] <=> pl_unit['rank']]
+      end
+      duel['result'], duel_opp['result'] = r, r_opp
+
+      opp_placement.delete(p_to.to_s) if [:win, :draw].include?(r)
+    else
+      duel, duel_opp = {}, {}
+      pl_placement[p_to.to_s] = pl_unit
+    end
+
+    moves = game['moves'][pl]
+    moves << {
+      'pos_from' => p_from,
+      'pos_to' => p_to,
+      'created_at' => Time.now.utc
+    }
+
+    pl_placement.delete p_from.to_s
+
+    @@db['games'].update(
+      { '_id' => game['_id'] },
+      { '$set' =>
+        {
+          'moves' => game['moves'],
+          'placement' => game['placement']
+        }
+      }
+    )
+
+    [duel, duel_opp]
   end
 end
 
