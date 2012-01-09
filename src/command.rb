@@ -752,7 +752,12 @@ class CmdGetGame < Cmd
     resp = { 'map' => m }
 
     if game['moves']
-      #resp['isTurn'] = true
+      t = if is_pl1
+            game['moves']['pl1'].size == game['moves']['pl2'].size
+          else
+            game['moves']['pl1'].size > game['moves']['pl2'].size
+          end
+      resp['isTurn'] = t
     end
 
     if is_pl1

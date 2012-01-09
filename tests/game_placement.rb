@@ -132,7 +132,8 @@ resp = Array.new(2) do |i|
       'players' => %w[User0 User1],
       'map' => maps[i],
       'army' => Generator::ARMY_MINI,
-      'state' => states[i]
+      'state' => states[i],
+      'isTurn' => i == 0
     }
   }
 end
@@ -141,6 +142,15 @@ t.push_test([
   [0, req, resp[0]],
   [1, req, resp[1]],
 ])
+
+#Test9
+#--------------------------------
+req = { 'cmd' => 'leaveGame' }
+resp = {
+  0 => { 'status' => 'ok' },
+  1 => { 'cmd' => 'endGame' }
+}
+t.push_test([[0, req, resp]])
 
 #Test
 #--------------------------------
