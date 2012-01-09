@@ -77,3 +77,8 @@ end
 def reflect_a(a, s)
   a.map { |el| s - el.to_i - 1 }
 end
+
+def make_opp_placement(placement, map_size)
+  placement.keys.map { |el| map_size - el.to_i - 1 }
+end
+

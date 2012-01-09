@@ -733,45 +733,33 @@ class CmdGetGame < Cmd
 
   def_init self, 'sid'
 
-  def prepare_map(game, is_pl1)
+  def prepare_process(game, is_pl1, pl, opp)
     map = get_by_id 'maps', game['map']
-    m = h_slice(map, %w[name width height structure])
 
-    unless is_pl1
-      size = map['width'] * map['height']
-      s = map['structure']
-      s['pl1'], s['pl2'] = s['pl2'], s['pl1']
-      s.each_value { |a| a.map! { |el| size - el - 1 } }
-    end
-
-    m
-  end
-
-  def prepare_process(game, is_pl1)
-    map = get_by_id 'maps', game['map']
     s = map['width'] * map['height']
     p = game['placement']
+
+    is_placed = !game['placement'].nil? && !game['placement'][pl].nil?
 
     reflect_a = ->(a) { a.map! { |el| s - el.to_i - 1 } }
 
     m = h_slice(map, %w[name width height])
     m['obst'] = map['structure']['obst']
 
-    st = if is_pl1
-           pl2_placement = p['pl2'] ? 
-             p['pl2'].keys.map { |el| el.to_i } :
-             map['structure']['pl2']
-           [p['pl1'], pl2_placement]
-         else
-           reflect_a.(m['obst'])
-           pl1_placement = p['pl1'] ?
-             p['pl1'].keys.map { |el| el.to_i } :
-             map['structure']['pl1']
-           [
-             reflect_placement(p['pl2'], s),
-             reflect_a.(pl1_placement)
-           ]
-         end
+    st = [
+      is_placed ? p[pl] : map['structure'][pl],
+      is_placed && p[opp] ? p[opp].keys.map { |el| el.to_i } : map['structure'][opp]
+    ]
+
+    unless is_pl1
+      reflect_a.(m['obst'])
+      if is_placed
+        st[0] = reflect_placement(st[0], s)
+      else
+        reflect_a.(st[0])
+      end
+      reflect_a.(st[1])
+    end
 
     resp = {
       'state' => {
@@ -790,20 +778,21 @@ class CmdGetGame < Cmd
     game = get_game_by_user user['_id']
 
     is_pl1 = user['_id'] == game['creator']
-    pl = is_pl1 ? 'pl1' : 'pl2'
+    pl, opp = is_pl1 ? %w[pl1 pl2] : %w[pl2 pl1]
 
-    resp = if game['placement'].nil? || game['placement'][pl].nil?
-             m = prepare_map game, is_pl1
-             { 'map' => m }
-           else
-             prepare_process game, is_pl1
-           end
+    resp = prepare_process game, is_pl1, pl, opp
+
     resp['game_name'] = game['name']
-    resp['players'] = [game['creator'], game['opponent']].map do |pl|
-      @@db['users'].find_one('_id' => pl)['login']
-    end
+
     army = get_by_id 'armies', game['army']
     resp['army'] = h_slice(army, %w[name units])
+
+    get_login = ->(user_id) do
+      @@db['users'].find_one('_id' => user_id)['login']
+    end
+    resp['players'] = is_pl1 ?
+      [user['login'], get_login.(game['opponent'])] :
+      [get_login.(game['creator']), user['login']]
 
     [resp, {}, {}]
   end
@@ -817,6 +806,10 @@ class CmdSetPlacement < Cmd
   def handle(req)
     user = get_user req['sid']
     game = get_game_by_user user['_id']
+
+    unless game['moves'].nil?
+      raise ResponseBadAction, 'Game has already started'
+    end
 
     map = get_by_id 'maps', game['map']
 

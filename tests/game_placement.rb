@@ -8,6 +8,9 @@ t = Tester.new(CLIENTS_NUM) do |i|
   ["User#{i}", 'password']
 end
 
+M = h_slice(Generator::MAP_MINI, %w[name width height])
+M['obst'] = Generator::MAP_MINI['structure']['obst']
+
 #Test1
 #--------------------------------
 auth t
@@ -34,11 +37,19 @@ r0 = {
   'status' => 'ok',
   'game_name' => GAME_MINI,
   'players' => %w[User0 User1],
-  'map' => Generator::MAP_MINI,
-  'army' => Generator::ARMY_MINI
+  'map' => M,
+  'army' => Generator::ARMY_MINI,
+  'state' => {
+    'pl1' => Generator::MAP_MINI['structure']['pl1'],
+    'pl2' => Generator::MAP_MINI['structure']['pl2'],
+  }
 }
 r1 = clone r0
-r1['map'] = reflect_map r1['map']
+r1['state'] = {
+  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_SIZE),
+  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_SIZE),
+}
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
 
 t.push_test([
   [0, req, { 0 => r0 }],
@@ -64,36 +75,27 @@ t.push_test([[0, req, resp]])
 #Test6
 #--------------------------------
 req = { 'cmd' => 'getGame' }
-
-state0 = {
-  'pl1' => Generator.make_tactic(Generator::TACTIC_MINI),
-  'pl2' => Generator::MAP_MINI['structure']['pl2']
-}
-resp0 = {
-  0 => {
-    'status' => 'ok',
-    'game_name' => GAME_MINI,
-    'players' => %w[User0 User1],
-    'map' => h_slice(Generator::MAP_MINI, %w[name width height]),
-    'army' => Generator::ARMY_MINI,
-    'state' => state0
+r0 = {
+  'status' => 'ok',
+  'game_name' => GAME_MINI,
+  'players' => %w[User0 User1],
+  'map' => M,
+  'army' => Generator::ARMY_MINI,
+  'state' => {
+    'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
+    'pl2' => Generator::MAP_MINI['structure']['pl2'],
   }
 }
-resp0[0]['map']['obst'] = Generator::MAP_MINI['structure']['obst']
-
-resp1 = {
-  1 => {
-    'status' => 'ok',
-    'game_name' => GAME_MINI,
-    'players' => %w[User0 User1],
-    'map' => reflect_map(Generator::MAP_MINI),
-    'army' => Generator::ARMY_MINI
-  }
+r1 = clone r0
+r1['state'] = {
+  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_SIZE),
+  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_SIZE),
 }
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
 
 t.push_test([
-  [0, req, resp0],
-  [1, req, resp1],
+  [0, req, { 0 => r0 }],
+  [1, req, { 1 => r1 }],
 ])
 
 #Test7
@@ -115,37 +117,29 @@ t.push_test([[1, req, resp]])
 #Test8
 #--------------------------------
 req = { 'cmd' => 'getGame' }
-
-states = Array.new(2)
-maps = Array.new(2)
-
-p1 = Generator.make_tactic(Generator::TACTIC_MINI)
-p2 = Generator.make_tactic(Generator::TACTIC_TEST)
-states[0] = { 'pl1' => p1, 'pl2' => reflect_a(p2.keys, MAP_SIZE) }
-states[1] = { 'pl1' => p2, 'pl2' => reflect_a(p1.keys, MAP_SIZE) }
-
-maps[0] = h_slice Generator::MAP_MINI, %w[name width height]
-maps[1] = clone maps[0]
-maps[0]['obst'] = Generator::MAP_MINI['structure']['obst']
-maps[1]['obst'] = reflect_a(maps[0]['obst'], MAP_SIZE)
-
-resp = Array.new(2) do |i|
-  {
-    i => {
-      'status' => 'ok',
-      'game_name' => GAME_MINI,
-      'players' => %w[User0 User1],
-      'map' => maps[i],
-      'army' => Generator::ARMY_MINI,
-      'state' => states[i],
-      'isTurn' => i == 0
-    }
+r0 = {
+  'status' => 'ok',
+  'game_name' => GAME_MINI,
+  'players' => %w[User0 User1],
+  'map' => M,
+  'army' => Generator::ARMY_MINI,
+  'isTurn' => true,
+  'state' => {
+    'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
+    'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_TEST), MAP_SIZE),
   }
-end
+}
+r1 = clone r0
+r1['state'] = {
+  'pl1' => Generator::make_tactic(Generator::TACTIC_TEST),
+  'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_MINI), MAP_SIZE),
+}
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
+r1['isTurn'] = false
 
 t.push_test([
-  [0, req, resp[0]],
-  [1, req, resp[1]],
+  [0, req, { 0 => r0 }],
+  [1, req, { 1 => r1 }],
 ])
 
 #Test9

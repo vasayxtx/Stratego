@@ -381,30 +381,7 @@
     {
         "cmd": "getGame"
     }
-### Response1 (placement)
-    {
-        "status": "ok",
-        "game_name": <name of the game>,
-        "players": [...],
-        "map": {
-            "name": <name of the map>,
-            "width": <width of the map>,
-            "height": <height of the map>,
-            "structure": {
-                "obst": [...],
-                "pl1": [...],
-                "pl2": [...]
-            }
-        },
-        "army": {
-            "name": <name of the map>,
-            "units": {
-                <name of the unit>: <count>
-                ...
-            }
-        }
-    }
-### Response2 (after placement)
+### Response
     {
         "status": "ok",
         "game_name": <name of the game>,
@@ -424,7 +401,7 @@
             }
         },
         "state": {
-            "pl1": {
+            "pl1": {                            //"pl1": [...] - if not placed
                 <position>: <name of the unit>,
                 ...
             },
