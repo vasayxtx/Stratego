@@ -88,6 +88,72 @@ class Generator
     }
   }
 
+  #---------- Tactics ----------
+  
+  TACTIC_CL = 
+  {
+    'name' => "Scout's Gambit",
+    'placement' => {
+      'Flag'        =>  [0], 
+      'Bomb'        =>  [1, 10, 14, 19, 21, 26], 
+      'Spy'         =>  [17], 
+      'Scout'       =>  [4, 7, 9, 24, 27, 30, 34, 39], 
+      'Miner'       =>  [3, 5, 12, 18, 36], 
+      'Sergeant'    =>  [2, 13, 22, 33], 
+      'Lieutenant'  =>  [6, 8, 16, 31], 
+      'Captain'     =>  [11, 29, 35, 37], 
+      'Major'       =>  [15, 20, 38], 
+      'Colonel'     =>  [23, 32], 
+      'General'     =>  [28],
+      'Marshal'     =>  [25]
+    }
+  }
+
+  TACTIC_MINI = 
+  {
+    'name' => "MiniTactic",
+    'placement' => {
+      'Flag'        =>  [0], 
+      'Bomb'        =>  [1], 
+      'Spy'         =>  [2], 
+      'Scout'       =>  [3], 
+      'Miner'       =>  [4], 
+      'Sergeant'    =>  [5], 
+      'Lieutenant'  =>  [6], 
+      'Captain'     =>  [7], 
+      'Major'       =>  [8], 
+      'Colonel'     =>  [9], 
+      'General'     =>  [10], 
+      'Marshal'     =>  [11]
+    }
+  }
+
+  TACTIC_TEST = 
+  {
+    'name' => "TestTactic",
+    'placement' => {
+      'Flag'        =>  [1], 
+      'Bomb'        =>  [2], 
+      'Spy'         =>  [3], 
+      'Scout'       =>  [4], 
+      'Miner'       =>  [9], 
+      'Sergeant'    =>  [0], 
+      'Lieutenant'  =>  [5], 
+      'Captain'     =>  [6], 
+      'Major'       =>  [7], 
+      'Colonel'     =>  [11], 
+      'General'     =>  [10], 
+      'Marshal'     =>  [8]
+    }
+  }
+
+=begin
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |     |     |     |     |     |     |     |     |     |     |     |     |
+  |S(4) |F(0) |B(45)|S(2) |S(3) |L(5) |C(6) |M(7) |M(10)|M(3) |G(9) |C(8) |
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+=end
+
   #***** Methods *****
 
   def self.make_users(num = USERS_NUM)
@@ -111,12 +177,21 @@ class Generator
     UNITS
   end
 
-  def self.make_maps(map_name = MAP_CL[:name])
+  def self.make_maps(map_name = MAP_CL['name'])
     [MAP_CL, MAP_MINI]
   end
 
-  def self.make_armies(map_army = ARMY_CL[:name])
+  def self.make_armies(map_army = ARMY_CL['name'])
     [ARMY_CL, ARMY_MINI]
+  end
+
+  def self.make_tactic(t = TACTIC_CL)
+    res = {}
+    t['placement'].each_pair do |unit, positions|
+      positions.each { |pos| res[pos.to_s] = unit }
+    end
+
+    res
   end
 end
 

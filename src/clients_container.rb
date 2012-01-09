@@ -16,10 +16,10 @@ class ClContainer
   end
 
   def self.unreg_client_by_id(user_id)
-    @@db['users'].update(
-      { '_id' => user_id },
-      { '$set' => { 'status' => :offline } }
-    )
+    #@@db['users'].update(
+    #  { '_id' => user_id },
+    #  { '$set' => { 'status' => :offline } }
+    #)
     @@container_ws.delete @@container_id[user_id]
     @@container_id.delete user_id
   end

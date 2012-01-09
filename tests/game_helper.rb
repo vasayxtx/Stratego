@@ -53,17 +53,24 @@ def initial_game_test
   ]
 end
 
-def reflect_map!(map)
-  w, h = map['width'], map['height']
-  size = w * h
+def reflect_map(map)
+  m = clone map
+  size = m['width'] * m['height']
 
-  struct = map['structure']
-  struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
+  s = m['structure']
+  s['pl1'], s['pl2'] = s['pl2'], s['pl1']
 
-  reflect = ->(a) do
+  s.each_value do |a|
     a.each_index { |i| a[i] = size - a[i] - 1 }
   end
+  
+  m
+end
 
-  %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
+def reflect_placement(placement, map_size)
+  h = {}
+  placement.each { |k, v| h[(map_size-k.to_i-1).to_s] = v }
+
+  h
 end
 

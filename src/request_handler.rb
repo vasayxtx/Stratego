@@ -45,6 +45,7 @@ class RequestHandler
     'joinGame',
     'leaveGame',
     'getGame',
+    'setPlacement',
 
 =begin
     'getLogin',

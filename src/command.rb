@@ -1,6 +1,7 @@
 #coding: utf-8
 
 require 'validation'
+require 'utils'
 require File.join(File.dirname(__FILE__), '..', 'db', 'seeds')
 
 #--------------------- Dynamic creation methods --------------------- 
@@ -14,16 +15,6 @@ def def_init(cl, *fields)
 end
 
 #--------------------- Modules --------------------- 
-
-module Utils
-  def clone(obj)
-    Marshal.load Marshal.dump(obj)
-  end
-
-  def h_slice(h, keys)
-    h.select { |k, v| keys.include? k }
-  end
-end
 
 module Database
   @@db_conn, @@db = '', ''
@@ -323,17 +314,14 @@ module Map
   end
 
   def reflect_map!(map)
-    w, h = map['width'], map['height']
-    size = w * h
+    size = map['width'] * map['height']
 
-    struct = map['structure']
-    struct['pl1'], struct['pl2'] = struct['pl2'], struct['pl1']
+    s = map['structure']
+    s['pl1'], s['pl2'] = s['pl2'], s['pl1']
 
-    reflect = ->(a) do
+    s.each_value do |a|
       a.each_index { |i| a[i] = size - a[i] - 1 }
     end
-
-    %w[pl1 pl2 obst].each { |a| reflect.(struct[a]) }
   end
 end
 
@@ -574,6 +562,32 @@ module Game
       raise ResponseBadAction, 'User already in a game'
     end
   end
+
+  def reflect_placement!(placement, map_size)
+    h = clone placement
+    placement.clear
+    h.each { |k, v| placement[(map_size-k.to_i-1).to_s] = v }
+  end
+
+  def check_placement!(placement, is_pl1, map, army_units)
+    s = map['width'] * map['height']
+    pl = if is_pl1
+           'pl1'
+         else
+           reflect_placement! placement, s
+           'pl2'
+         end
+    positions = placement.keys.map { |p| p.to_i }
+    units = Hash.new(0)
+    placement.values.each { |u| units[u] += 1 }
+
+    res = positions.sort == map['structure'][pl].sort &&
+      units == army_units
+
+    unless res
+      raise ResponseBadPlacement, 'Incorrect placement'
+    end
+  end
 end
 
 class CmdCreateGame < Cmd
@@ -720,42 +734,98 @@ class CmdLeaveGame < Cmd
 end
 
 class CmdGetGame < Cmd
-  include Map
+  include Map, Game
 
   def_init self, 'sid'
 
-  def prepare_placement(user, game)
+  def prepare_map(game, is_pl1)
     map = get_by_id 'maps', game['map']
-    army = get_by_id 'armies', game['army']
     h_map = h_slice(map, %w[name width height structure])
-    h_army = h_slice(army, %w[name units])
+    reflect_map!(h_map) unless is_pl1
 
-    reflect_map!(h_map) if game['opponent'] == user['_id']
-    players = [game['creator'], game['opponent']].map do |pl|
-      @@db['users'].find_one('_id' => pl)['login']
-    end
-
-    {
-      'game_status' => 'placement',
-      'game_name' => game['name'],
-      'players' => players,
-      'map' => h_map,
-      'army' => h_army
-    }
+    h_map
   end
 
-  def prepare_process(game)
-    {}
+  def prepare_process(game, is_pl1)
+    m = prepare_map game, is_pl1
+    m['structure'].delete 'pl1'
+    resp = { 'map' => m }
+
+    if game['moves']
+      #resp['isTurn'] = true
+    end
+
+    if is_pl1
+      resp['state'] = game['placement']['pl1']
+    else
+      resp['state'] = reflect_placement!(
+        game['placement']['pl2'],
+        m['width'] * m['height']
+      )
+    end
+
+    resp
   end
 
   def handle(req)
     user = get_user req['sid']
     game = get_game_by_user user['_id']
 
-    p = game['placement'].nil? ? :prepare_placement : :prepare_process
-    resp = send p, user, game
-  
+    is_pl1 = user['_id'] == game['creator']
+    pl  = is_pl1 ? 'pl1' : 'pl2'
+
+    resp = if game['placement'].nil? || game['placement'][pl].nil?
+             m = prepare_map game, is_pl1
+             { 'map' => m }
+           else
+             prepare_process game, is_pl1
+           end
+    resp['game_name'] = game['name']
+    resp['players'] = [game['creator'], game['opponent']].map do |pl|
+      @@db['users'].find_one('_id' => pl)['login']
+    end
+    army = get_by_id 'armies', game['army']
+    resp['army'] = h_slice(army, %w[name units])
+
     [resp, {}, {}]
+  end
+end
+
+class CmdSetPlacement < Cmd
+  include Game
+
+  def_init self, 'sid', 'placement'
+
+  def handle(req)
+    user = get_user req['sid']
+    game = get_game_by_user user['_id']
+
+    is_pl1 = user['_id'] == game['creator']
+    pl, opp = is_pl1 ? %w[pl1 opponent] : %w[pl2 creator]
+    opp_id = game[opp]
+
+    r, r_opp = if p = game['placement']
+                 raise ResponseBadAction, 'Already placed' if p[pl]
+                 [true, 'startGame' ]
+               else
+                 [false, 'readyOpponent']
+               end
+                                            
+    check_placement!(
+      req['placement'],
+      is_pl1,
+      get_by_id('maps', game['map']),
+      get_by_id('armies', game['army'])['units']
+    )
+    
+    cmd_update = { "placement.#{pl}" => req['placement'] }
+    cmd_update['moves'] = { 'pl1' => [], 'pl2' => [] } if r
+    @@db['games'].update(
+      { '_id' => game['_id'] },
+      { '$set' => cmd_update }
+    )
+
+    [{ 'isGameStarted' => r }, { opp_id => { 'cmd' => r_opp } }, {}]
   end
 end
 

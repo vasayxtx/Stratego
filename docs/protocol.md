@@ -383,10 +383,9 @@
     {
         "cmd": "getGame"
     }
-### Response1
+### Response1 (placement)
     {
         "status": "ok",
-        "game_status": "placement"
         "game_name": <name of the game>,
         "players": [...],
         "map": {
@@ -407,38 +406,46 @@
             }
         }
     }
-### Response2
+### Response2 (after placement)
     {
         "status": "ok",
-        "game_status": "process",
         "game_name": <name of the game>,
         "players": [...],
-        "isTurn": <is your turn>,
-        "map_name": <name of the map>,
-        "army_name": <name of the army>,
-        "map_width": <width of the map>,
-        "map_height": <height of the map>
+        "isTurn": <is your turn[true or false]>,  //Optional (if game started)
+        "map": {
+            "name": <name of the map>,
+            "width": <width of the map>,
+            "height": <height of the map>,
+            "structure": {
+                "obst": [...],
+                "pl2": [...]
+            }
+        },
+        "army": {
+            "name": <name of the map>,
+            "units": {
+                <name of the unit>: <count>
+                ...
+            }
+        },
         "state": {
-            "obst": [...],
-            "pl1": {
-                <position>: <name of the unit>
-            },
-            "pl2": [...]
+            <position>: <name of the unit>,
+            ...
         }
     }
-
+<!-------------------------------->
 ## Setting placement
 ### Request
     {
         "cmd": "setPlacement",
         "placement": {
-            <position>: <name of the unit>
+            <name of the unit>: [...]
         }
     }
 ### Response
     {
         "status": "ok",
-        "startGame": true   //Optional
+        "isGameStarted": <is game started [true or false]>
     }
 ### Response1 for other player
     {
@@ -448,7 +455,7 @@
     {
         "cmd": "startGame"
     }
-
+<!-------------------------------->
 ## Making a move
 ### Request
     {

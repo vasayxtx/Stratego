@@ -5,7 +5,7 @@
 + **_id**         - *Objectid*
 + **login**       - *String*
 + **password**    - *String*
-+ **status**      - *String(online, offline)*
++ W*status**      - *String(online, offline)*
 + **sid**         - *String*
 + **created_at**  - *ISODate*
 
@@ -83,7 +83,7 @@
 #### Declarated special types
 
 + *PlPlacement*     - *Object*
-    + **pos: unit** - *Integer: String*    
+    + **pos: unit** - *String: String*    
 + *PlMove*          - *Array of 'Object's*
     + **pos_from**    - *Number*
     + **pos_to**      - *Number*

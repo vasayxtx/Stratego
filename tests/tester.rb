@@ -6,6 +6,9 @@
   json
   fiber
 ].each { |gem| require gem }
+require File.join(File.dirname(__FILE__), '..', 'src', 'utils')
+
+include Utils
 
 class Client
   attr_reader :login, :passw
@@ -157,9 +160,5 @@ def logout(t)
     req = { 'cmd' => 'logout' }
     [i, req, resp]
   end
-end
-
-def clone(obj)
-  Marshal.load Marshal.dump(obj)
 end
 
