@@ -117,7 +117,7 @@
               %button.btn.success.apply
                 <%= header %>
 
-    <!--------------- Templates --------------->
+    <!--------------- Templates -------------->
 
     %script{ :type => "text/template", :id => "templ_users_online" }
       %h3 Users online:
@@ -131,8 +131,8 @@
     %script{ :type => "text/template", :id => "templ_list_maps" }
       %ol
         <% for (var i in maps) { %>
-        %li
-          <%= maps[i] %>
+        <% var m = maps[i].name; %>
+        <%= "<li" + (m == map_selected ? ' class="selected"' : "") + ">" + m + "</li>" %>
         <% } %>
 
     %script{ :type => "text/template", :id => "templ_map" }

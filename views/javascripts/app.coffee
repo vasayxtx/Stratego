@@ -32,9 +32,10 @@ class Websocket
       h(data)
       return
 
+    handler = @queue[0]
+    @queue = @queue[1..@queue.length]
+
     if data.status == 'ok'
-      handler = @queue[0]
-      @queue = @queue[1..@queue.length]
       handler(data)
     else
       alert(data.message)
@@ -73,6 +74,9 @@ class UserOnline extends Spine.Model
 
 class AvailableGame extends Spine.Model
   @configure 'AvailableGame', 'name'
+
+class Map extends Spine.Model
+  @configure 'Map', 'name'
 
 #------------- Controllers -------------
 
@@ -240,25 +244,28 @@ class MapsEditorCtrl extends Spine.Controller
     '#maps_editor .tools':      '_tools'
 
   events:
-    'click #btn_new_map':               'create_map'
-    'click #btn_del_map':               'remove_map'
-    'click #btn_save_map':              'save_map'
-    'click #btn_gen_map':               'generate_map'
-    'click #btn_clean_map':             'clean_map'
-    'click #maps_editor .tools li':      'select_tool'
-    'click #maps_editor .map .map_cell': 'set_map_cell'
+    'click #btn_new_map':                 'create_map'
+    'click #btn_del_map':                 'remove_map'
+    'click #btn_save_map':                'save_map'
+    'click #btn_gen_map':                 'generate_map'
+    'click #btn_clean_map':               'clean_map'
+    'click #maps_editor .tools li':       'select_tool'
+    'click #maps_editor .map .map_cell':  'set_map_cell'
 
   constructor: (el, @ws) ->
     super(el: el)
     @cell_classes = ['pl1', 'pl2', 'obst']
+    @is_new = true
 
 
   show: ->
+    Map.deleteAll()
     @_location.show()
     @ws.send(
       { 'cmd': 'getListMaps' },
       (req) =>
-        @.render(req['maps'])
+        Map.create(name: m) for m in req['maps']
+        @.render_list()
     )
     @.flush()
 
@@ -273,11 +280,11 @@ class MapsEditorCtrl extends Spine.Controller
       btn.attr('disabled', 'disabled')
 
 
-  render: (maps) ->
+  render_list: (map_selected) ->
     Utils.compile_templ(
       '#templ_list_maps',
       @_list_maps,
-      { maps: maps }
+      { maps: Map.all(), map_selected: map_selected }
     )
     @_list_maps.find('li').on 'click', (event) =>
       obj = $(event.target)
@@ -308,7 +315,7 @@ class MapsEditorCtrl extends Spine.Controller
       { width: width, height: height  }
     )
     if structure?
-      for cl in ['pl1', 'pl2', 'obst']
+      for cl in @cell_classes
         for i in structure[cl]
           $("#cell_#{i}").addClass(cl)
 
@@ -326,13 +333,15 @@ class MapsEditorCtrl extends Spine.Controller
     @ws.send(
       { cmd: 'destroyMap', name: n },
       =>
-        obj.remove()
+        Map.destroy(Map.findByAttribute('name', n).id)
+        @.render_list()
         @.flush()
     )
 
   
   create_map: ->
     @.flush()
+    @is_new = true
 
 
   save_map: ->
@@ -353,12 +362,19 @@ class MapsEditorCtrl extends Spine.Controller
         pl1: make_a('pl1')
         pl2: make_a('pl2')
         obst: make_a('obst')
+    
 
-    @ws.send(
-      req,
-      =>
-        console.log('saved')
-    )
+    if @is_new
+      req['cmd'] = 'createMap'
+      handler = =>
+        Map.create(name: @_name_map.val())
+        @.render_list(@_name_map.val())
+    else
+      req['cmd'] = 'editMap'
+      handler = =>
+        console.log('MAP SAVED!!')
+
+    @ws.send(req, handler)
 
   
   generate_map: ->
@@ -369,7 +385,7 @@ class MapsEditorCtrl extends Spine.Controller
     d = width - @_last_width
 
     structure = {}
-    for k in ['pl1', 'pl2', 'obst']
+    for k in @cell_classes
       structure[k] = []
       s = 0
       @_map.find(".map_cell.#{k}").each (i, el) =>
