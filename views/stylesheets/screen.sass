@@ -202,13 +202,11 @@ footer
         li
           margin-top: 10px
           text-align: center
+          cursor: pointer
 
-          &.selected
+          &.selected, &:hover
             background-color: #E0E0E0
 
-          &:hover
-            background-color: #E0E0E0
-            cursor: pointer
     .tools
       width: inherit
 
@@ -228,6 +226,9 @@ footer
           cursor: pointer
           display: block
           width: inherit
+
+          &:hover, &.selected
+            background-color: #E0E0E0
 
   .right_side
     $col_count: 14

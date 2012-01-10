@@ -6,7 +6,7 @@ $(document).ready(->
 #------------- Websocket ------------- 
 
 class Websocket
-  constructor: (host, port, handle, @handle_bad_sid) ->
+  constructor: (host, port, conn_handler, @handle_bad_sid) ->
     window.WEB_SOCKET_SWF_LOCATION = 'WebSocketMain.swf'
 
     @ws = new WebSocket("ws://#{host}:#{port}/")
@@ -16,7 +16,7 @@ class Websocket
 
     @ws.onopen = ->
       console.log("connected...")
-      handle()
+      conn_handler()
 
     @ws.onmessage = (msg) =>
       @.handle(msg)
@@ -39,14 +39,17 @@ class Websocket
     else
       alert(data.message)
       @handle_bad_sid() if data.status == 'badSession'
-        
   
   subscribe: (cmd, func) ->
     console.log("Subscribe: #{cmd}")
     @subscriptions[cmd] = func
 
-  unsubscribe: ->
-    console.log('Unsubscribe')
+  unsubscribe: (cmd) ->
+    console.log("Unsubscribe #{cmd}")
+    delete @subscriptions[cmd]
+
+  unsubscribe_all: ->
+    console.log('Unsubscribe all')
     @subscriptions = {}
 
   auth: (req, handler) ->
@@ -65,15 +68,11 @@ class Session extends Spine.Model
   @configure 'Session', 'login', 'sid'
   @extend Spine.Model.Session
 
-#  @restore: ->
-
 class UserOnline extends Spine.Model
   @configure 'UserOnline', 'login'
-  @extend Spine.Model.Session
 
 class AvailableGame extends Spine.Model
   @configure 'AvailableGame', 'name'
-  @extend Spine.Model.Session
 
 #------------- Controllers -------------
 
@@ -98,6 +97,7 @@ class AuthCtrl extends Spine.Controller
       @_profile.show()
       @init_ctrls()
     else
+      Session.deleteAll()
       @_auth.show()
 
   login: ->
@@ -116,7 +116,7 @@ class AuthCtrl extends Spine.Controller
         Session.first().destroy()
         UserOnline.destroyAll()
 
-        @ws.unsubscribe()
+        @ws.unsubscribe_all()
     )
 
   show_modal: (cmd) ->
@@ -174,7 +174,7 @@ class AuthCtrl extends Spine.Controller
 
 class UsersOnlineCtrl extends Spine.Controller
   elements:
-    '#users_online': 'location'
+    '#users_online': '_location'
 
   constructor: (el, @ws) ->
     super(el: el)
@@ -185,8 +185,7 @@ class UsersOnlineCtrl extends Spine.Controller
       { 'cmd': 'getUsersOnline' },
       (req) =>
         users = req['users']
-        for u in users
-          UserOnline.create(login: u)
+        UserOnline.create(login: u) for u in users
     )
 
     @ws.subscribe(
@@ -203,52 +202,59 @@ class UsersOnlineCtrl extends Spine.Controller
     )
 
   show: ->
-    @location.show()
+    @_location.show()
     @.render()
 
   render: ->
-    users = (u.login for u in UserOnline.all())
-    templ = $('#templ_users_online').html()
-    compiled = _.template(templ)
-    @location.empty()
-    @location.append(compiled(users: users))
+    Utils.compile_templ(
+      '#templ_users_online',
+      @_location,
+      users: (u.login for u in UserOnline.all())
+    )
   
 #-------- AvailableGames --------
 
 class AvailableGamesCtrl extends Spine.Controller
   elements:
-    '#available_games': 'location'
+    '#available_games': '_location'
 
   constructor: (el, @ws) ->
     super(el: el)
 
   show: ->
-    @location.show()
+    @_location.show()
 
 #-------- Maps editor --------
 
 class MapsEditorCtrl extends Spine.Controller
   elements:
-    '#maps_editor':             'location'
-    '#maps_editor .list_maps':  'list_maps'
-    '#maps_editor .map':        'map'
-    '#name_map':                'name_map'
-    '#width_map':               'width_map'
-    '#height_map':              'height_map'
-    '#btn_del_map':             'btn_del'
+    '#maps_editor':             '_location'
+    '#maps_editor .list_maps':  '_list_maps'
+    '#maps_editor .map':        '_map'
+    '#name_map':                '_name_map'
+    '#width_map':               '_width_map'
+    '#height_map':              '_height_map'
+    '#btn_del_map':             '_btn_del'
+    '#btn_save_map':            '_btn_save'
+    '#btn_clean_map':           '_btn_clean'
+    '#maps_editor .tools':      '_tools'
 
   events:
-    'click #btn_new_map':       'create_map'
-    'click #btn_del_map':       'remove_map'
-    'click #btn_save_map':      'save_map'
-    'click #btn_gen_map':       'gen_map'
-    'click #btn_clean_map':     'clean_map'
+    'click #btn_new_map':               'create_map'
+    'click #btn_del_map':               'remove_map'
+    'click #btn_save_map':              'save_map'
+    'click #btn_gen_map':               'generate_map'
+    'click #btn_clean_map':             'clean_map'
+    'click #maps_editor .tools li':      'select_tool'
+    'click #maps_editor .map .map_cell': 'set_map_cell'
 
   constructor: (el, @ws) ->
     super(el: el)
+    @cell_classes = ['pl1', 'pl2', 'obst']
+
 
   show: ->
-    @location.show()
+    @_location.show()
     @ws.send(
       { 'cmd': 'getListMaps' },
       (req) =>
@@ -256,28 +262,29 @@ class MapsEditorCtrl extends Spine.Controller
     )
     @.flush()
 
+
   flush: ->
-    @map.empty()
+    @_map.empty()
     for el in ['name', 'width', 'height']
-      @["#{el}_map"].val('')
-    @list_maps.find('li').removeClass('selected')
-    @btn_del.attr('disabled', 'disabled')
+      @["_#{el}_map"].val('')
+    for obj in [@_list_maps, @_tools]
+      obj.find('li').removeClass('selected')
+    for btn in [@_btn_del, @_btn_save, @_btn_clean]
+      btn.attr('disabled', 'disabled')
+
 
   render: (maps) ->
     Utils.compile_templ(
       '#templ_list_maps',
-      @list_maps,
+      @_list_maps,
       { maps: maps }
     )
-    @list_maps.find('li').each (i, el) =>
-      $(el).on 'click', =>
-        obj_el = $(el)
-        obj_el.parent().find('li').removeClass('selected')
-        obj_el.addClass('selected')
+    @_list_maps.find('li').on 'click', (event) =>
+      obj = $(event.target)
+      @is_new = false
+      Utils.select_li(obj)
+      @.load_map(Utils.strip(obj.html()))
 
-        @btn_del.removeAttr('disabled')
-
-        @.load_map(Utils.strip(obj_el.html()))
 
   load_map: (name_map) ->
     @ws.send(
@@ -287,15 +294,17 @@ class MapsEditorCtrl extends Spine.Controller
         @.render_map(map.width, map.height, map.structure)
     )
 
+
   init_map_params: (name, width, height) ->
-    @name_map.val(name)
-    @width_map.val(width)
-    @height_map.val(height)
+    @_name_map.val(name)
+    @_width_map.val(width)
+    @_height_map.val(height)
+
 
   render_map: (width, height, structure) ->
     Utils.compile_templ(
       '#templ_map',
-      @map,
+      @_map,
       { width: width, height: height  }
     )
     if structure?
@@ -303,10 +312,16 @@ class MapsEditorCtrl extends Spine.Controller
         for i in structure[cl]
           $("#cell_#{i}").addClass(cl)
 
-    @last_width = width
+    Utils.select_li(@_tools.find('li:first'))
+
+    for btn in [@_btn_del, @_btn_save, @_btn_clean]
+      btn.removeAttr('disabled')
+
+    @_last_width = width
+
 
   remove_map: ->
-    obj = @list_maps.find('li.selected')
+    obj = @_list_maps.find('li.selected')
     n = Utils.strip(obj.html())
     @ws.send(
       { cmd: 'destroyMap', name: n },
@@ -314,53 +329,91 @@ class MapsEditorCtrl extends Spine.Controller
         obj.remove()
         @.flush()
     )
+
   
   create_map: ->
     @.flush()
 
+
   save_map: ->
-    #Validate map
-  
-  gen_map: ->
     #Validate inputs
-    width = parseInt(@width_map.val())
-    height = parseInt(@height_map.val())
+    #Validate map
+    make_a = (cl) =>
+      (
+        for el in @_map.find(".map_cell.#{cl}")
+          parseInt($(el).attr('id').slice(5))
+      )
+
+    req =
+      cmd: if @is_new then 'createMap' else 'editMap'
+      name: @_name_map.val()
+      width: parseInt(@_width_map.val())
+      height: parseInt(@_height_map.val())
+      structure:
+        pl1: make_a('pl1')
+        pl2: make_a('pl2')
+        obst: make_a('obst')
+
+    @ws.send(
+      req,
+      =>
+        console.log('saved')
+    )
+
+  
+  generate_map: ->
+    #Validate inputs
+    width = parseInt(@_width_map.val())
+    height = parseInt(@_height_map.val())
     
-    d = width - @last_width
+    d = width - @_last_width
 
     structure = {}
     for k in ['pl1', 'pl2', 'obst']
       structure[k] = []
       s = 0
-      @map.find(".map_cell.#{k}").each (i, el) =>
+      @_map.find(".map_cell.#{k}").each (i, el) =>
         i = parseInt($(el).attr('id').slice(5))
-        j = Math.floor(i / @last_width)
-        c = i - j * @last_width
+        j = Math.floor(i / @_last_width)
+        c = i - j * @_last_width
         if c < width
           structure[k].push(i + j * d)
 
     @.render_map(width, height, structure)
 
+
   clean_map: ->
-    @map.find('.map_cell').removeClass('pl1 pl2 obst')
+    @_map.find('.map_cell').removeClass('pl1 pl2 obst')
+
+
+  select_tool: (event) ->
+    Utils.select_li($(event.target))
+
+
+  set_map_cell: (event) ->
+    obj_cell = $(event.target)
+    t = @_tools.find('li.selected .map_cell')
+    tool_cl = t.attr('class').split(' ')[1] || ''
+    obj_cell.attr('class', "map_cell #{tool_cl}")
+
 
 #-------- GameCreationCtrl --------
 
 class GameCreationCtrl extends Spine.Controller
   elements:
-    '#game_creation': 'location'
+    '#game_creation': '_location'
 
   constructor: (el, @ws) ->
     super(el: el)
 
   show: ->
-    @location.show()
+    @_location.show()
 
 #-------- App --------
 
 class AppCtrl extends Spine.Controller
   elements:
-    '#content': 'content'
+    '#content': '_content'
 
   events:
     'click #btn_users_online':    'nav_location'
@@ -386,10 +439,10 @@ class AppCtrl extends Spine.Controller
 
   init_ctrls: ->
     @ctrls =
-      users_online:     new UsersOnlineCtrl(@content, @ws)
-      available_games:  new AvailableGamesCtrl(@content, @ws)
-      maps_editor:      new MapsEditorCtrl(@content, @ws)
-      create_game:      new GameCreationCtrl(@content, @ws)
+      users_online:     new UsersOnlineCtrl(@_content, @ws)
+      available_games:  new AvailableGamesCtrl(@_content, @ws)
+      maps_editor:      new MapsEditorCtrl(@_content, @ws)
+      create_game:      new GameCreationCtrl(@_content, @ws)
 
   restore_session: ->
     data = $.parseJSON(sessionStorage.getItem('Session'))
@@ -401,7 +454,7 @@ class AppCtrl extends Spine.Controller
           sid: rec.sid
 
   hide_all: ->
-    @content.children().hide()
+    @_content.children().hide()
 
   nav_location: (event) ->
     ctrl = event.handleObj.selector.slice(5)
@@ -417,9 +470,12 @@ class Utils
   @strip: (str) ->
     str.replace(/^\s+|\s+$/g, '')
 
-  @compile_templ: (sel_templ, container, props) ->
+  @compile_templ: (sel_templ, container, options) ->
     templ = $(sel_templ).html()
     compiled = _.template(templ)
-    container.empty()
-    container.append(compiled(props))
+    container.empty().append(compiled(options))
+
+  @select_li: (obj_li) ->
+    obj_li.parent().find('li').removeClass('selected')
+    obj_li.addClass('selected')
 
