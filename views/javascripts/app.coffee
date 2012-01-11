@@ -185,25 +185,15 @@ class UsersOnlineCtrl extends Spine.Controller
 
     UserOnline.destroyAll()
 
-    @ws.send(
-      { 'cmd': 'getUsersOnline' },
-      (req) =>
-        users = req['users']
-        UserOnline.create(login: u) for u in users
-    )
+    @ws.send { 'cmd': 'getUsersOnline' }, (req) =>
+      UserOnline.create(login: u) for u in req['users']
 
-    @ws.subscribe(
-      'addUserOnline',
-      (data) ->
-        UserOnline.create(login: data.login)
-    )
+    @ws.subscribe 'addUserOnline', (data) ->
+      UserOnline.create(login: data.login)
 
-    @ws.subscribe(
-      'delUserOnline',
-      (data) ->
-        user = UserOnline.findByAttribute('login', data.login)
-        UserOnline.destroy(user.id)
-    )
+    @ws.subscribe 'delUserOnline', (data) ->
+      user = UserOnline.findByAttribute('login', data.login)
+      UserOnline.destroy(user.id)
 
   show: ->
     @_location.show()
@@ -213,7 +203,7 @@ class UsersOnlineCtrl extends Spine.Controller
     Utils.compile_templ(
       '#templ_users_online',
       @_location,
-      users: (u.login for u in UserOnline.all())
+      users: UserOnline.all()
     )
   
 #-------- AvailableGames --------
@@ -225,8 +215,30 @@ class AvailableGamesCtrl extends Spine.Controller
   constructor: (el, @ws) ->
     super(el: el)
 
+    AvailableGame.destroyAll()
+
+    @ws.send { 'cmd': 'getAvailableGames' }, (req) =>
+      AvailableGame.create(name: g) for g in req['games']
+
+    @ws.subscribe 'addAvailableGame', (data) ->
+      AvailableGame.create(name: data.name)
+
+    @ws.subscribe 'delAvailableGame', (data) ->
+      user = AvailableGame.findByAttribute('name', data.name)
+      AvailableGame.destroy(user.id)
+
   show: ->
     @_location.show()
+    @.render()
+
+  render: ->
+    Utils.compile_templ(
+      '#templ_available_games',
+      @_location,
+      games: AvailableGame.all()
+    )
+    console.log(AvailableGame.all())
+
 
 #-------- Maps editor --------
 
@@ -362,7 +374,6 @@ class MapsEditorCtrl extends Spine.Controller
         pl1: make_a('pl1')
         pl2: make_a('pl2')
         obst: make_a('obst')
-    
 
     if @is_new
       req['cmd'] = 'createMap'
@@ -411,6 +422,9 @@ class MapsEditorCtrl extends Spine.Controller
     t = @_tools.find('li.selected .map_cell')
     tool_cl = t.attr('class').split(' ')[1] || ''
     obj_cell.attr('class', "map_cell #{tool_cl}")
+
+
+#-------- Army editor --------
 
 
 #-------- GameCreationCtrl --------

@@ -125,8 +125,18 @@
         <% for (var i in users) { %>
         %li
           %span
-            <%= users[i] %>
+            <%= users[i].login %>
         <% } %>
+
+    %script{ :type => "text/template", :id => "templ_available_games" }
+      %h3 Available games:
+      %ol
+        <% for (var i in games) { %>
+        %li
+          %span
+            <%= games[i].name %>
+        <% } %>
+
 
     %script{ :type => "text/template", :id => "templ_list_maps" }
       %ol
