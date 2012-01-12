@@ -36,6 +36,7 @@
         #content
           #users_online
           #available_games
+
           #maps_editor
             .left_side
               .top_side
@@ -65,11 +66,31 @@
                   %input.span2#height_map{ :type => "text", :placeholder => "Height"}
                   %button.btn#btn_gen_map Generate
                   %button.btn#btn_clean_map Clean
-              .wp_map
+              .map_place
                 .map
+
           #game_creation
-            .left_side
-            .right_side
+            .army_panel
+              .left_side
+                .top_side
+                  %h3 Armies
+                .list_armies
+              .right_side
+                .top_side
+                  .params
+                .army_place
+                  .army
+            .map_panel
+              .left_side
+                .top_side
+                  %h3 Maps
+                .list_maps
+              .right_side
+                .top_side
+                  .params
+                .map_place
+                  .map
+
       #right_panel
         #main_menu
           %ul.top_menu
@@ -81,7 +102,7 @@
             %li
               %button.btn.large.primary#btn_play_ai Play vs AI
             %li
-              %button.btn.large.primary#btn_create_game Create game
+              %button.btn.large.primary#btn_game_creation Create game
             %li
               %button.btn.large.primary#btn_maps_editor Maps editor
             %li
@@ -119,30 +140,22 @@
 
     <!--------------- Templates -------------->
 
-    %script{ :type => "text/template", :id => "templ_users_online" }
-      %h3 Users online:
+    %script{ :type => "text/template", :id => "templ_resources" }
+      %h3
+        <%= header %>
       %ol
-        <% for (var i in users) { %>
+        <% for (var i in resources) { %>
         %li
           %span
-            <%= users[i].login %>
-        <% } %>
-
-    %script{ :type => "text/template", :id => "templ_available_games" }
-      %h3 Available games:
-      %ol
-        <% for (var i in games) { %>
-        %li
-          %span
-            <%= games[i].name %>
+            <%= resources[i] %>
         <% } %>
 
 
-    %script{ :type => "text/template", :id => "templ_list_maps" }
+    %script{ :type => "text/template", :id => "templ_list" }
       %ol
-        <% for (var i in maps) { %>
-        <% var m = maps[i].name; %>
-        <%= "<li" + (m == map_selected ? ' class="selected"' : "") + ">" + m + "</li>" %>
+        <% for (var i in list) { %>
+        <% var el = list[i].name; %>
+        <%= "<li" + (el == el_selected ? ' class="selected"' : "") + ">" + el + "</li>" %>
         <% } %>
 
     %script{ :type => "text/template", :id => "templ_map" }

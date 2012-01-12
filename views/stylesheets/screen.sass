@@ -19,6 +19,8 @@ $footer_height: 25px
 
 $map_cell_size: 40px
 
+$selected_color: #E0E0E0
+
 //Stylesheet
 
 +sticky-footer($footer_height, "#layout", "#layout_footer", "footer")
@@ -150,21 +152,74 @@ footer
     li
       margin-top: 10px
 
+
+//---------- Map ----------
+@mixin map
+  $col_count: 14
+  width: ($col_count - 2) * $bgrid_width
+  height: ($col_count - 2) * $bgrid_width
+  padding: 20px $bgrid_width
+  
+  .map
+    overflow: auto
+    .map_cell
+      display: block
+      width: $map_cell_size
+      height: $map_cell_size
+
+    table
+      width: auto
+      margin: auto
+
+      tr
+        height: $map_cell_size
+
+        td
+          padding: 0px
+          width: $map_cell_size
+          border: 1px solid black
+
+.map_cell
+  background-color: white
+  &.pl1
+    background-color: blue
+  &.pl2
+    background-color: red
+  &.obst
+    background-color: gray
+
+//---------- Army ----------
+
+//---------- List of <resource> ----------
+
+@mixin list_resources($col_count)
+  width: $col_count * $bgrid_width - 11px
+  border:
+    top: 1px solid black
+    bottom: 1px solid black
+    right: 1px solid black
+  padding:
+    right: 10px
+    bottom: 10px
+
+  ol
+    font-size: 1.3em
+
+    li
+      margin-top: 10px
+      text-align: center
+      cursor: pointer
+
+      &.selected, &:hover
+        background-color: $selected_color
+
+
 //---------- Maps editor ----------
 
 #maps_editor
   $col_count: 18
   +container
   width: $col_count * $bgrid_width
-
-  .map_cell
-    background-color: white
-    &.pl1
-      background-color: blue
-    &.pl2
-      background-color: red
-    &.obst
-      background-color: gray
 
   .left_side
     $col_count: 4
@@ -187,25 +242,7 @@ footer
           margin-right: 10px
 
     .list_maps
-      width: $col_count * $bgrid_width - 11px
-      border:
-        top: 1px solid black
-        bottom: 1px solid black
-        right: 1px solid black
-      padding:
-        right: 10px
-        bottom: 10px
-
-      ol
-        font-size: 1.3em
-
-        li
-          margin-top: 10px
-          text-align: center
-          cursor: pointer
-
-          &.selected, &:hover
-            background-color: #E0E0E0
+      +list_resources($col_count)
 
     .tools
       width: inherit
@@ -228,7 +265,7 @@ footer
           width: inherit
 
           &:hover, &.selected
-            background-color: #E0E0E0
+            background-color: $selected_color
 
   .right_side
     $col_count: 14
@@ -253,34 +290,46 @@ footer
             left: 10px
             top: 6px
 
-    .wp_map
-      $col_count: 14
-      width: ($col_count - 2) * $bgrid_width
-      padding:
-        top: 20px
-        left: $bgrid_width
-        right: $bgrid_width
-      
-      .map
-        overflow: auto
-        .map_cell
-          display: block
-          width: $map_cell_size
-          height: $map_cell_size
-
-        table
-          width: auto
-          margin: auto
-
-          tr
-            height: $map_cell_size
-
-            td
-              padding: 0px
-              width: $map_cell_size
-              border: 1px solid black
+    .map_place
+      +map
 
 //---------- Creation of the game ----------
 
+#game_creation
+  $col_count: 18
+  +container
+  width: $col_count * $bgrid_width
+
+  .army_panel, .map_panel
+    .left_side
+      $col_count: 4
+      +column($col_count)
+
+      .top_side
+        +container
+        width: $col_count * $bgrid_width - 1px
+        border-right: 1px solid black
+        height: 60px
+
+      .list_maps, .list_armies
+        +list_resources($col_count)
+
+    .right_side
+      $col_count: 14
+      +column($col_count)
+
+      .top_side
+        width: $col_count * $bgrid_width - 20px
+        height: 60px
+        border-bottom: 1px solid black
+
+      .map_place
+        +map
+
+  .army_panel
+    .right_side
+      height: 300px
+
 
 //background-image: image-url("/images/flag.png")
+
