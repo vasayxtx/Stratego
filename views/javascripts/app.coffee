@@ -65,7 +65,7 @@ class Websocket
 #------------- Models ------------- 
 
 class Session extends Spine.Model
-  @configure 'Session', 'login', 'sid'
+  @configure 'Session', 'login', 'sid', 'location'
   @extend Spine.Model.Session
 
 class UserOnline extends Spine.Model
@@ -494,6 +494,21 @@ class GameCreationCtrl extends Spine.Controller
     for s in ['available_games', 'game_creation', 'play_ai']
       $("#btn_#{s}").hide()
 
+#-------- AboutProjectCtrl --------
+
+class AboutProjectCtrl extends Spine.Controller
+  elements:
+    '#about_project': '_location'
+
+  constructor: (el, @ws) ->
+    super(el: el)
+
+  show_content: ->
+    @_location.show()
+
+  hide_content: ->
+    @_location.hide()
+
 #-------- App --------
 
 class AppCtrl extends Spine.Controller
@@ -505,6 +520,7 @@ class AppCtrl extends Spine.Controller
     'click #btn_available_games': 'nav_location'
     'click #btn_maps_editor':     'nav_location'
     'click #btn_game_creation':   'nav_location'
+    'click #btn_about_project':   'nav_location'
 
   constructor: ->
     super
@@ -528,6 +544,15 @@ class AppCtrl extends Spine.Controller
       available_games:  new AvailableGamesCtrl(@_content, @ws)
       maps_editor:      new MapsEditorCtrl(@_content, @ws)
       game_creation:    new GameCreationCtrl(@_content, @ws)
+      about_project:    new AboutProjectCtrl(@_content, @ws)
+
+    s = Session.first()
+    if s.location
+      @ctrls[s.location].show_content()
+    else
+      @ctrls['about_project'].show_content()
+      s.location = 'about_project'
+      s.save()
 
   restore_session: ->
     data = $.parseJSON(sessionStorage.getItem('Session'))
@@ -537,10 +562,16 @@ class AppCtrl extends Spine.Controller
         Session.create
           login: rec.login
           sid: rec.sid
+          location: rec.location
 
   nav_location: (event) ->
-    v.hide_content() for k, v of @ctrls
     ctrl = event.handleObj.selector.slice(5)
+
+    s = Session.first()
+    s.location = ctrl
+    s.save()
+
+    v.hide_content() for k, v of @ctrls
     @ctrls[ctrl].show_content()
 
 #------------- Resources -------------
