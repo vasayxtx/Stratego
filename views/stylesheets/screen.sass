@@ -21,6 +21,10 @@ $map_cell_size: 40px
 
 $selected_color: #E0E0E0
 
+
+@mixin input_name
+  width: 125px
+
 //Stylesheet
 
 +sticky-footer($footer_height, "#layout", "#layout_footer", "footer")
@@ -190,6 +194,59 @@ footer
 
 //---------- Army ----------
 
+@mixin army
+  $col_count: 14
+  +container
+  width: ($col_count - 2) * $bgrid_width
+  padding: 20px $bgrid_width
+
+  .army
+    margin: auto
+
+    ul
+      $col_count: 4
+      +column($col_count)
+      list-style-type: none
+      padding: 0px
+      margin: 0px
+
+      li
+        +container
+        width: $col_count * $bgrid_width
+        vertical-align: middle
+        margin-bottom: 10px
+        &:last-child
+          margin-bottom: 0px
+        //&:hover
+          background-color: $selected_color
+          cursor: pointer
+
+
+        span
+          height: $map_cell_size
+          text-align: center
+          line-height: $map_cell_size
+          text-size: 1.1em
+
+          &:first-child
+            +column(1)
+            display: block
+            width: $map_cell_size
+            border: 1px solid black
+            @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
+              &.img_#{$f}
+                background-image: image-url("/images/#{$f}.png")
+
+          &.unit_name
+            $col_count: 2
+            $mrg_left: 10px
+            +column($col_count)
+            width: $col_count * $bgrid_width - $mrg_left
+            margin-left: $mrg_left
+
+          &.unit_count
+            +column(1)
+
 //---------- List of <resource> ----------
 
 @mixin list_resources($col_count)
@@ -200,7 +257,6 @@ footer
     right: 1px solid black
   padding:
     right: 10px
-    bottom: 10px
 
   ol
     font-size: 1.3em
@@ -280,7 +336,7 @@ footer
         padding-left: 110px
 
         #name_map
-          width: 125px
+          +input_name
 
         #width_map, #height_map
           width: 50px
@@ -297,6 +353,7 @@ footer
 
 #game_creation
   $col_count: 18
+  $top_height: 40px
   +container
   width: $col_count * $bgrid_width
 
@@ -309,7 +366,8 @@ footer
         +container
         width: $col_count * $bgrid_width - 1px
         border-right: 1px solid black
-        height: 60px
+        height: $top_height
+        text-align: center
 
       .list_maps, .list_armies
         +list_resources($col_count)
@@ -320,16 +378,22 @@ footer
 
       .top_side
         width: $col_count * $bgrid_width - 20px
-        height: 60px
+        height: $top_height
         border-bottom: 1px solid black
 
       .map_place
         +map
 
   .army_panel
+    .top_side
+      .params_game
+        float: right
+        .name_game
+          +input_name
+
     .right_side
       height: 300px
 
-
-//background-image: image-url("/images/flag.png")
+      .army_place
+        +army
 

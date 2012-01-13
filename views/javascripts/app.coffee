@@ -18,8 +18,7 @@ class Websocket
       console.log("connected...")
       conn_handler()
 
-    @ws.onmessage = (msg) =>
-      @.handle(msg)
+    @ws.onmessage = $.proxy(@.handle, @)
 
     @queue = []
     @subscriptions = []
@@ -258,21 +257,21 @@ class AvailableGamesCtrl extends Spine.Controller
 
 class MapsEditorCtrl extends Spine.Controller
   elements:
-    '#maps_editor':             '_location'
-    '#maps_editor .list_maps':  '_list_maps'
-    '#maps_editor .map':        '_map'
-    '#name_map':                '_name_map'
-    '#width_map':               '_width_map'
-    '#height_map':              '_height_map'
-    '#btn_del_map':             '_btn_del'
-    '#btn_save_map':            '_btn_save'
-    '#btn_clean_map':           '_btn_clean'
-    '#maps_editor .tools':      '_tools'
+    '#maps_editor':                 '_location'
+    '#maps_editor .list_maps':      '_list_maps'
+    '#maps_editor .map':            '_map'
+    '#name_map':                    '_name_map'
+    '#width_map':                   '_width_map'
+    '#height_map':                  '_height_map'
+    '#maps_editor .btn_del':        '_btn_del'
+    '#maps_editor .btn_save':       '_btn_save'
+    '#btn_clean_map':               '_btn_clean'
+    '#maps_editor .tools':          '_tools'
 
   events:
-    'click #btn_new_map':                 'create_map'
-    'click #btn_del_map':                 'remove_map'
-    'click #btn_save_map':                'save_map'
+    'click .btn_new':                     'create_map'
+    'click .btn_del':                     'remove_map'
+    'click .btn_save':                    'save_map'
 
     'click #btn_gen_map':                 'generate_map'
     'click #btn_clean_map':               'clean_map'
@@ -427,7 +426,7 @@ class MapsEditorCtrl extends Spine.Controller
     obj_cell.attr('class', "map_cell #{tool_cl}")
 
 
-#-------- Army editor --------
+#-------- Armies editor --------
 
 
 #-------- GameCreationCtrl --------
@@ -435,10 +434,17 @@ class MapsEditorCtrl extends Spine.Controller
 class GameCreationCtrl extends Spine.Controller
   elements:
     '#game_creation':               '_location'
+
     '#game_creation .list_armies':  '_list_armies'
     '#game_creation .list_maps':    '_list_maps'
+
     '#game_creation .map':          '_map'
     '#game_creation .army':         '_army'
+
+    '#game_creation .btn_create':   '_btn_create'
+
+  events:
+    'click #game_creation .btn_create': 'create_game'
 
   constructor: (el, @ws) ->
     super(el: el)
@@ -453,17 +459,20 @@ class GameCreationCtrl extends Spine.Controller
   hide_content: ->
     for obj in [@_map, @_list_armies, @_list_maps]
       obj.empty()
+    obj.empty() for obj in [@_army, @_map]
     @_location.hide()
 
   load_list: (res, model, cont, handler) ->
     model.deleteAll()
-    @ws.send { 'cmd': "getList#{Utils.capitalize(res)}" }, (req) =>
+    @ws.send { 'cmd': "getListAll#{Utils.capitalize(res)}" }, (req) =>
       model.create(name: el) for el in req[res]
+
       Utils.compile_templ(
         '#templ_list',
         cont,
         { list: model.all(), el_selected: null }
       )
+
       cont.find('li').on 'click', (event) =>
         obj = $(event.target)
         Utils.select_li(obj)
@@ -475,8 +484,16 @@ class GameCreationCtrl extends Spine.Controller
       RMap.render(
         @_map, map.width, map.height, map.structure)
 
-  load_army: (army_name) ->
+  load_army: (name_army) ->
+    RArmy.load @ws, name_army, (army) =>
+      console.log(army)
+      RArmy.render(@_army, army.units)
 
+  create_game: ->
+    #Validate
+    @ws.send(
+    for s in ['available_games', 'game_creation', 'play_ai']
+      $("#btn_#{s}").hide()
 
 #-------- App --------
 
@@ -495,7 +512,7 @@ class AppCtrl extends Spine.Controller
     @ws = new Websocket(
       'localhost',
       9001,
-      ( =>      #After opened websocket
+      (=>      #After opened websocket
         @.restore_session()
         @auth_ctrl = new AuthCtrl '#top_menu', @ws, =>
           @.init_ctrls()
@@ -549,6 +566,22 @@ class RMap
         for i in structure[cl]
           $("#cell_#{i}").addClass(cl)
 
+class RArmy
+  @load: (@ws, name_army, handler) ->
+    @ws.send(
+      { cmd: 'getArmyUnits', name: name_army },
+      handler
+    )
+
+  @render: (cont, units) ->
+    u = ({ unit: k, count: v } for k, v of units)
+    console.log(u)
+    Utils.compile_templ(
+      '#templ_army',
+      cont,
+      { units: u, count: u.length, col_count: 3 }
+    )
+
 #------------- Utils -------------
 
 class Utils
@@ -567,6 +600,10 @@ class Utils
     obj_li.parent().find('li').removeClass('selected')
     obj_li.addClass('selected')
 
+  @obj_len: (obj) ->
+    res = 0
+    res += 1 for k, v of obj
+    res
 
 #------------- jQuery functions -------------
 

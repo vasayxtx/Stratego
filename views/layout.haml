@@ -42,11 +42,11 @@
               .top_side
                 %ul
                   %li
-                    %button.btn.success#btn_new_map New
+                    %button.btn.success.btn_new New
                   %li
-                    %button.btn.danger#btn_del_map Del
+                    %button.btn.danger.btn_del Del
                   %li
-                    %button.btn.primary#btn_save_map Sv
+                    %button.btn.primary.btn_save Sv
               .list_maps
               .tools
                 %ul
@@ -77,7 +77,10 @@
                 .list_armies
               .right_side
                 .top_side
-                  .params
+                  .params_army
+                  .params_game
+                    %input.span2.name_game{ :type => "text", :placeholder => "Name"}
+                    %button.btn.btn_create Create game
                 .army_place
                   .army
             .map_panel
@@ -87,7 +90,7 @@
                 .list_maps
               .right_side
                 .top_side
-                  .params
+                  .params_map
                 .map_place
                   .map
 
@@ -138,8 +141,6 @@
               %button.btn.success.apply
                 <%= header %>
 
-    <!--------------- Templates -------------->
-
     %script{ :type => "text/template", :id => "templ_resources" }
       %h3
         <%= header %>
@@ -168,4 +169,19 @@
               <%= '<div class="map_cell" id="cell_' + (i * width + j) + '"></div>' %>
               <% } %>
               <% } %>
+
+    %script{ :type => "text/template", :id => "templ_army" }
+      <% for (var i = 0; i < col_count; ++i) { %>
+      <% var res = "<ul>"; %>
+      <% var v = (Math.ceil(count / col_count)); %>
+      <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
+      <% for (var j = 0; j < c; ++j) { %>
+      <% res += "<li>"; %>
+      <% res += '<span class="img_' + units[i*c+j].unit + '"></span>'; %> 
+      <% res += '<span class="unit_name">' + units[i*c+j].unit + "</span>"; %> 
+      <% res += '<span class="unit_count">' + units[i*c+j].count + "</span>"; %>
+      <% res += "</li>"; %>
+      <% } %>
+      <%= res + "</ul>" %>
+      <% } %>
 
