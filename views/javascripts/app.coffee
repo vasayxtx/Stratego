@@ -491,7 +491,6 @@ class GameCreationCtrl extends Spine.Controller
 
   create_game: ->
     #Validate
-    @ws.send(
     for s in ['available_games', 'game_creation', 'play_ai']
       $("#btn_#{s}").hide()
 
