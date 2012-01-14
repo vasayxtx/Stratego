@@ -300,11 +300,16 @@ class AvailableGamesCtrl extends Spine.Controller
         name: name_game
       },
       =>
+        g = AvailableGame.findByAttribute(name: name_game)
+        AvailableGame.destroy(g.id)
+
         Game.remove()
         Game.create
           name: name_game
           status: 'placement'
+
         Session.write_location('game')
+        AppCtrl.update_menu(true)
         @.hide_content()
         @ctrl_game.show_content()
     )
@@ -577,9 +582,9 @@ class GameCtrl extends Spine.Controller
   constructor: (el, @ws, @ctrl_about_project) ->
     super(el: el)
     @game_ctrls =
-      created:    new GameCreatedCtrl(el, @ws, @, @ctrl_about_project)
-      placement:  new GamePlacementCtrl(el, @ws, @, @ctrl_about_project)
-      process:    new GameProcessCtrl(el, @ws, @, @ctrl_about_project)
+      created:    new GameCreatedCtrl(el, @ws, @)
+      placement:  new GamePlacementCtrl(el, @ws, @)
+      process:    new GameProcessCtrl(el, @ws, @)
 
   show_content: ->
     @_location.show()
@@ -589,6 +594,15 @@ class GameCtrl extends Spine.Controller
   hide_content: ->
     v.hide_content() for k, v of @game_ctrls
     @_location.hide()
+
+  exit_game: ->
+    Session.write_location('about_project')
+    Game.remove()
+    AppCtrl.update_menu(false)
+
+    @.hide_content()
+    @ctrl_about_project.show_content()
+
 
 #-------- GameCreated --------
 
@@ -604,7 +618,7 @@ class GameCreatedCtrl extends Spine.Controller
   events:
     'click #game_created .btn_remove':      'remove_game'
 
-  constructor: (el, @ws, @ctrl_game, @ctrl_about_project) ->
+  constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
 
   show_content: ->
@@ -634,40 +648,139 @@ class GameCreatedCtrl extends Spine.Controller
 
   remove_game: ->
     @ws.send { cmd: 'destroyGame' }, =>
-      @ws.unsubscribe 'startGamePlacement'
-
-      Session.write_location('about_project')
-      Game.remove()
-      AppCtrl.update_menu(false)
-
-      @ctrl_game.hide_content()
-      @ctrl_about_project.show_content()
-
+      @ctrl_game.exit_game()
 
 #-------- GamePlacement --------
 
 class GamePlacementCtrl extends Spine.Controller
   elements:
     '#game_placement':              '_location'
+
     '#game_placement .map':         '_map'
     '#game_placement .army':        '_army'
+    '#game_placement h3':           '_game_name'
 
-  constructor: (el, @ws, @ctrl_about_project) ->
+    '#game_placement .btn_ready':   '_btn_ready'
+
+  events:
+    'click #game_placement .map_cell':          'set_map_cell'
+    'dblclick #game_placement .map_cell':       'clean_map_cell'
+    'click #game_placement .btn_leave_game':    'leave_game'
+    'click #game_placement .btn_ready':         'ready'
+
+  constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
 
   show_content: ->
+    @ws.subscribe 'readyOpponent', =>
+      alert('Opponent READY')
+    @ws.subscribe('endGame', $.proxy(@.exit_game, @))
+    @ws.subscribe('startGame', $.proxy(@.go_to_process, @))
     @_location.show()
+    @.load_game()
+
+  hide_content: ->
+    @_location.hide()
+    obj.empty() for obj in [@_army, @_map]
+
+  exit_game: ->
+    @ctrl_game.exit_game()
+    @.hide_content()
+
+  go_to_process: ->
+    Game.write_status('process')
+    Session.write_location('game')
+    @.hide_content()
+    @ctrl_game.show_content()
+
+  load_game: ->
     @ws.send { cmd: 'getGame' }, (game) =>
       map = game.map
       structure =
         obst: map.obst
         pl1: game.state.pl1
         pl2: game.state.pl2
-      RMap.render(@_map, map.width, map.height, structure)
-      RArmy.render(@_army, game.army.units, 1)
+      @.render_map(map.width, map.height, structure)
+      @.render_army(game.army.units)
+      @_game_name.html(game.game_name)
+
+      unless _.isArray(game.state.pl1)
+        @_btn_ready.attr('disabled', 'disabled')
+        @_army.find('.unit_count').html(0)
+        @is_disabled = true
+
+  render_map: (width, height, structure) ->
+    RMap.render(@_map, width, height, structure)
     
-  hide_content: ->
-    @_location.hide()
+  render_army: (units) ->
+    RArmy.render(@_army, units, 1)
+    @_army.find('li:first-child').addClass('selected')
+    @_army.find('li').on 'click', ->
+      Utils.select_li($(@))
+
+  restore_prev_unit: (obj_cell) ->
+    a_cl = ['pl1', 'map_cell']
+    obj_cell.removeClass(cl) for cl in a_cl
+    unless (cl = obj_cell.attr('class')) == ''
+      prev = @_army.find(".#{cl}").parent().find('.unit_count')
+      prev.html(parseInt(prev.html()) + 1)
+      obj_cell.attr('class', '')
+    obj_cell.addClass(cl) for cl in a_cl
+
+  set_map_cell: (event) ->
+    return if @is_disabled
+
+    obj_cell = $(event.target)
+    return unless obj_cell.hasClass('pl1')
+
+    obj_li = @_army.find('li.selected')
+    obj_unit_count = obj_li.find('.unit_count')
+    unit_count = parseInt(obj_unit_count.html())
+    return unless unit_count
+
+    unit_cl = obj_li.find('span:first-child').attr('class')
+
+    @.restore_prev_unit(obj_cell)
+
+    obj_cell.addClass(unit_cl)
+    obj_unit_count.html(parseInt(obj_unit_count.html()) - 1)
+    obj_cell.attr('title', obj_li.find('.unit_name').html())
+
+  clean_map_cell: (event) ->
+    return if @is_disabled
+
+    obj_cell = $(event.target)
+    return unless obj_cell.hasClass('pl1')
+    @.restore_prev_unit(obj_cell)
+    obj_cell.attr('title', '')
+
+  leave_game: ->
+    @ws.send { cmd: 'leaveGame' }, =>
+      @ctrl_game.exit_game()
+
+  ready: ->
+    placement = {}
+    @_map.find('.map_cell.pl1').each (i, el) =>
+      obj = $(el)
+      a_cl = ['pl1', 'map_cell']
+
+      obj.removeClass(cl) for cl in a_cl
+      id = parseInt(obj.attr('id').slice(5))  #cell_<Id>
+      unit = obj.attr('class').slice(9)       #img_unit_<Name>
+      placement[id] = unit
+      obj.addClass(cl) for cl in a_cl
+
+    for k, v of placement
+      return alert('Not all units placed') if v == ''
+
+    @ws.send(
+      {
+        cmd: 'setPlacement'
+        placement: placement
+      },
+      (data) =>
+        @.go_to_process() if data.isGameStarted
+    )
 
 #-------- GameProcess --------
 
@@ -680,6 +793,7 @@ class GameProcessCtrl extends Spine.Controller
 
   show_content: ->
     @_location.show()
+    console.log('PROCESS')
 
   hide_content: ->
     @_location.hide()
@@ -811,8 +925,12 @@ class RMap
     )
     if structure?
       for cl in @.cell_classes
-        for i in structure[cl]
-          $("#cell_#{i}").addClass(cl)
+        if _.isArray(structure[cl])
+          for i in structure[cl]
+            $("#cell_#{i}").addClass(cl)
+        else
+          for p, u of structure[cl]
+            $("#cell_#{p}").addClass(cl).addClass("img_unit_#{u}")
 
 class RArmy
   @load: (@ws, name_army, handler) ->

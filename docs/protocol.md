@@ -374,10 +374,10 @@
         "name": <name of the game>
     }
 
-## Living the game
+## Leaving the game
 ### Request
     {
-        "cmd": "liveGame"
+        "cmd": "leaveGame"
     }
 ### Response
     {
@@ -425,7 +425,7 @@
     {
         "cmd": "setPlacement",
         "placement": {
-            <name of the unit>: [...]
+            <position>: <name of the unit>
         }
     }
 ### Response

@@ -195,12 +195,21 @@ footer
 
 .map_cell
   background-color: white
+
   &.pl1
-    background-color: blue
-  &.pl2
     background-color: red
+    @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
+      &.img_unit_#{$f}
+        background-image: image-url("/images/#{$f}.png")
+        background-repeat: no-repeat
+        background-color: white
+
+  &.pl2
+    background-color: blue
+
   &.obst
     background-color: gray
+
 
 //---------- Army ----------
 
@@ -229,11 +238,13 @@ footer
         &:first-child
           +column(1)
           display: block
-          width: $map_cell_size
+          width: $map_cell_size - 2px
+          height: $map_cell_size - 2px
           border: 1px solid black
           @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
-            &.img_#{$f}
+            &.img_unit_#{$f}
               background-image: image-url("/images/#{$f}.png")
+              background-repeat: no-repeat
 
         &.unit_name
           $col_count: 2
@@ -496,17 +507,25 @@ footer
       display: block
       width: $col_count * $bgrid_width - 1px
       height: $top_side_height
+      border-bottom: 1px solid black
+      border-right: 1px solid black
 
     .army
       +army
-      li
-        &:first-child
-          margin-top: 10px
-        &:hover
-          background-color: $selected_color
-          cursor: pointer
-        &.selected
-          background-color: $selected_color
+      ul
+        $w: 4 * $bgrid_width - 1px
+        border-right: 1px solid black
+        width: $w
+
+        li
+          width: $w
+          &:first-child
+            margin-top: 10px
+          &:hover
+            background-color: $selected_color
+            cursor: pointer
+          &.selected
+            background-color: $selected_color
 
   .right_side
     $col_count: 14
@@ -516,6 +535,21 @@ footer
       width: $col_count * $bgrid_width - 20px
       height: $top_side_height
       border-bottom: 1px solid black
+
+      > div
+        height: $top_side_height - 6px
+        margin-top: 6px
+
+      .left_side
+        +column(10)
+
+      .right_side
+        $col_count: 4
+        +column($col_count)
+        width: $col_count * $bgrid_width - 20px
+
+        .btn_leave_game
+          float: right
 
     .map_place
       +map

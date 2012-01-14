@@ -138,6 +138,10 @@
                 .army
               .right_side
                 .top_side
+                  .left_side
+                  .right_side
+                    %button.btn.btn_ready Ready
+                    %button.btn.danger.btn_leave_game Leave game
                 .map_place
                   .map
 
@@ -213,7 +217,7 @@
     %script{ :type => "text/template", :id => "templ_map" }
       %table
         %tbody
-          <% for (var i = 0; i < height; ++i) { %>
+          <% for (var i = height - 1; i >= 0; --i) { %>
           %tr
             <% for (var j = 0; j < width; ++j) { %>
             %td
@@ -228,7 +232,7 @@
       <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
       <% for (var j = 0; j < c; ++j) { %>
       <% res += "<li>"; %>
-      <% res += '<span class="img_' + units[i*c+j].unit + '"></span>'; %> 
+      <% res += '<span class="img_unit_' + units[i*c+j].unit + '"></span>'; %> 
       <% res += '<span class="unit_name">' + units[i*c+j].unit + "</span>"; %> 
       <% res += '<span class="unit_count">' + units[i*c+j].count + "</span>"; %>
       <% res += "</li>"; %>
