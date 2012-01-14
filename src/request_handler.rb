@@ -11,7 +11,8 @@ class RequestHandler
     #----- Auth -----
     'signup',
     'login',
-    'logout', 
+    'logout',
+    'checkSid',
     'getUsersOnline',
 
     #----- Units -----

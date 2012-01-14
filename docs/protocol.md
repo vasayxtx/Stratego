@@ -56,6 +56,17 @@
         "login": <login of user>
     }
 
+## Checking sid
+### Request
+    {
+        "cmd": "checkSid"
+        "sid": <sid>
+    }
+### Response
+    {
+        "status": "ok"
+    }
+
 ## Getting online users
 ### Request
     {

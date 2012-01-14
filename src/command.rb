@@ -228,6 +228,15 @@ class CmdLogout < Cmd
   end
 end
 
+class CmdCheckSid < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user req['sid']
+    [{}, {}, { 'reg' => user['_id'] }]
+  end
+end
+
 class CmdGetUsersOnline < Cmd
   def_init self, 'sid'
 

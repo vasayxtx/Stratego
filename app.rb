@@ -78,11 +78,9 @@ EventMachine.run do
       begin
         resp, msg, reg = RequestHandler.handle JSON.parse(msg)
 
-=begin
         puts "RESP: #{resp}"
         puts "MSG: #{msg}"
         puts "REG: #{reg}"
-=end
 
         unless reg.nil?
           if reg.has_key?('reg')
