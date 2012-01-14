@@ -101,6 +101,9 @@ body
     display: none
 
   ul
+    &.top_menu, &.middle_menu
+      display: none
+
     &.top_menu, &.middle_menu, &.bottom_menu
       list-style-type: none
       padding-left: 0px
@@ -202,6 +205,47 @@ footer
 //---------- Army ----------
 
 @mixin army
+  ul
+    $col_count: 4
+    +column($col_count)
+    list-style-type: none
+    padding: 0px
+    margin: 0px
+
+    li
+      +container
+      width: $col_count * $bgrid_width
+      vertical-align: middle
+      margin-bottom: 10px
+      &:last-child
+        margin-bottom: 0px
+
+      span
+        height: $map_cell_size
+        text-align: center
+        line-height: $map_cell_size
+        text-size: 1.1em
+
+        &:first-child
+          +column(1)
+          display: block
+          width: $map_cell_size
+          border: 1px solid black
+          @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
+            &.img_#{$f}
+              background-image: image-url("/images/#{$f}.png")
+
+        &.unit_name
+          $col_count: 2
+          $mrg_left: 10px
+          +column($col_count)
+          width: $col_count * $bgrid_width - $mrg_left
+          margin-left: $mrg_left
+
+        &.unit_count
+          +column(1)
+
+@mixin army_place
   $col_count: 14
   +container
   width: ($col_count - 2) * $bgrid_width
@@ -209,50 +253,7 @@ footer
 
   .army
     margin: auto
-
-    ul
-      $col_count: 4
-      +column($col_count)
-      list-style-type: none
-      padding: 0px
-      margin: 0px
-
-      li
-        +container
-        width: $col_count * $bgrid_width
-        vertical-align: middle
-        margin-bottom: 10px
-        &:last-child
-          margin-bottom: 0px
-        //&:hover
-          background-color: $selected_color
-          cursor: pointer
-
-
-        span
-          height: $map_cell_size
-          text-align: center
-          line-height: $map_cell_size
-          text-size: 1.1em
-
-          &:first-child
-            +column(1)
-            display: block
-            width: $map_cell_size
-            border: 1px solid black
-            @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
-              &.img_#{$f}
-                background-image: image-url("/images/#{$f}.png")
-
-          &.unit_name
-            $col_count: 2
-            $mrg_left: 10px
-            +column($col_count)
-            width: $col_count * $bgrid_width - $mrg_left
-            margin-left: $mrg_left
-
-          &.unit_count
-            +column(1)
+    +army
 
 //---------- List of <resource> ----------
 
@@ -404,7 +405,7 @@ footer
       height: 300px
 
       .army_place
-        +army
+        +army_place
 
 //---------- Created game ----------
 
@@ -436,9 +437,86 @@ footer
       +map
 
     .army_place
-      +army
+      +army_place
 
     .army_panel
       height: 300px
 
+//---------- AvailableGames ----------
+
+#available_games
+  $col_count: 18
+  $top_side_height: 50px
+  +container
+  width: $col_count * $bgrid_width
+
+  .left_side
+    $col_count: 4
+    +column($col_count)
+
+    .top_side
+      display: block
+      width: $col_count * $bgrid_width - 1px
+      height: $top_side_height
+
+    .list_games
+      +list_resources($col_count)
+
+  .right_side
+    $col_count: 14
+    +column($col_count)
+
+    .top_side
+      width: $col_count * $bgrid_width - 20px
+      height: $top_side_height
+      border-bottom: 1px solid black
+
+    .map_place
+      +map
+
+    .army_place
+      +army_place
+
+    .army_panel
+      height: 300px
+
+//---------- GamePlacement ----------
+
+#game_placement
+  $col_count: 18
+  $top_side_height: 50px
+  +container
+  width: $col_count * $bgrid_width
+
+  .left_side
+    $col_count: 4
+    +column($col_count)
+
+    .top_side
+      display: block
+      width: $col_count * $bgrid_width - 1px
+      height: $top_side_height
+
+    .army
+      +army
+      li
+        &:first-child
+          margin-top: 10px
+        &:hover
+          background-color: $selected_color
+          cursor: pointer
+        &.selected
+          background-color: $selected_color
+
+  .right_side
+    $col_count: 14
+    +column($col_count)
+
+    .top_side
+      width: $col_count * $bgrid_width - 20px
+      height: $top_side_height
+      border-bottom: 1px solid black
+
+    .map_place
+      +map
 

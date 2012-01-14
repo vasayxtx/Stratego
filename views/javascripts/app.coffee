@@ -1,4 +1,4 @@
-$(document).ready(->
+$(document).ready(->#
   Spine.Route.setup(history: true)
   app_ctrl = new AppCtrl(el: $(document))
 )
@@ -69,7 +69,8 @@ class Session extends Spine.Model
   @extend Spine.Model.Session
 
   @remove: ->
-    sessionStorage.removeItem('Game')
+    sessionStorage.removeItem('Session')
+    Session.deleteAll()
 
   @write_location: (loc) ->
     s = @.first()
@@ -82,6 +83,13 @@ class Game extends Spine.Model
 
   @remove: ->
     sessionStorage.removeItem('Game')
+    Game.deleteAll()
+
+  @write_status: (status) ->
+    g = @.first()
+    g.status = status
+    g.save()
+
 
 class UserOnline extends Spine.Model
   @configure 'UserOnline', 'login'
@@ -102,25 +110,23 @@ class Army extends Spine.Model
 
 class AuthCtrl extends Spine.Controller
   elements:
-    '#profile': '_profile'
-    '#auth':    '_auth'
+    '#user_login':  '_user_login'
 
   events:
     'click #login':   'login'
     'click #signup':  'signup'
     'click #logout':  'logout'
 
-  constructor: (sel, @ws, @init_ctrls) ->
+  constructor: (sel, @ws, @handler_login, @handler_logout) ->
     super(el: $(sel))
+
     s = Session.first()
-    user_login = s && s.login
-    if user_login
-      $('#user_login').html(user_login)
-      @_profile.show()
-      @init_ctrls()
+    if s && s.login && s.sid
+      @ws.send { cmd: 'checkSid' }, =>
+        @_user_login.html(s.login)
+        @handler_login()
     else
-      Session.remove()
-      @_auth.show()
+      @handler_logout()
 
   login: ->
     @.show_modal('login')
@@ -131,14 +137,7 @@ class AuthCtrl extends Spine.Controller
   logout: ->
     @ws.send(
       { cmd: 'logout' },
-      =>
-        @_profile.hide()
-        @_auth.show()
-
-        Session.first().destroy()
-        UserOnline.destroyAll()
-
-        @ws.unsubscribe_all()
+      $.proxy(@handler_logout, @)
     )
 
   show_modal: (cmd) ->
@@ -177,20 +176,18 @@ class AuthCtrl extends Spine.Controller
       },
       (req) =>
         $('#modal_auth').modal('hide')
+
+        Session.remove()
         Session.create
-          login: req.login,
+          login: req.login
           sid: req.sid
+          location: 'about_project'
 
-        $('#user_login').html(req.login)
-        @_auth.hide()
-        @_profile.show()
-
-        @init_ctrls()
+        @_user_login.html(req.login)
+        @handler_login()
     )
 
-  flush: ->
-    @_profile.hide()
-    @_auth.show()
+
 
 #-------- UsersOnline --------
 
@@ -234,9 +231,18 @@ class UsersOnlineCtrl extends Spine.Controller
 
 class AvailableGamesCtrl extends Spine.Controller
   elements:
-    '#available_games': '_location'
+    '#available_games':                 '_location'
+    '#available_games .list_games':     '_list_games'
 
-  constructor: (el, @ws) ->
+    '#available_games .map':            '_map'
+    '#available_games .army':           '_army'
+    '#available_games .army_panel h3':  '_name_army'
+    '#available_games .map_panel h3':   '_name_map'
+
+  events:
+    'click #available_games #btn_join_game':  'join_game'
+
+  constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
 
     AvailableGame.destroyAll()
@@ -253,19 +259,54 @@ class AvailableGamesCtrl extends Spine.Controller
 
   show_content: ->
     @_location.show()
-    @.render()
+    @.render_list()
 
   hide_content: ->
     @_location.hide()
+    a = [@_map, @_army, @_name_army, @_name_map]
+    obj.empty() for obj in a
 
-  render: ->
+  render_list: ->
     Utils.compile_templ(
-      '#templ_resources',
-      @_location,
+      '#templ_list',
+      @_list_games,
+      { list: AvailableGame.all(), el_selected: null }
+    )
+    @_list_games.find('li').on 'click', (event) =>
+      obj = $(event.target)
+      Utils.select_li(obj)
+      @.load_game(Utils.strip(obj.html()))
+
+  load_game: (name_game) ->
+    @ws.send(
       {
-        header: 'Available games'
-        resources: (g.name for g in AvailableGame.all())
-      }
+        cmd: 'getGameParams',
+        name: name_game
+      },
+      (game) =>
+        army = game.army
+        RArmy.render(@_army, army.units)
+        @_name_army.html(army.name)
+        map = game.map
+        RMap.render(@_map, map.width, map.height, map.structure)
+        @_name_map.html(map.name)
+    )
+
+  join_game: ->
+    name_game = Utils.get_selected(@_list_games)
+    @ws.send(
+      {
+        cmd: 'joinGame'
+        name: name_game
+      },
+      =>
+        Game.remove()
+        Game.create
+          name: name_game
+          status: 'placement'
+        Session.write_location('game')
+        @.hide_content()
+        @ctrl_game.show_content()
     )
 
 #-------- Maps editor --------
@@ -516,6 +557,7 @@ class GameCreationCtrl extends Spine.Controller
       =>
         @.hide_content()
         Session.write_location('game')
+        Game.remove()
         Game.create(
           name: @_name_game.val(),
           map: @map
@@ -541,8 +583,8 @@ class GameCtrl extends Spine.Controller
 
   show_content: ->
     @_location.show()
-    game_status = Game.first().status
-    @game_ctrls[game_status.toLowerCase()].show_content()
+    game_status = Game.first().status.toLowerCase()
+    @game_ctrls[game_status].show_content()
 
   hide_content: ->
     v.hide_content() for k, v of @game_ctrls
@@ -566,6 +608,12 @@ class GameCreatedCtrl extends Spine.Controller
     super(el: el)
 
   show_content: ->
+    @ws.subscribe 'startGamePlacement', =>
+      Game.write_status('placement')
+      Session.write_location('game')
+      @.hide_content()
+      @ctrl_game.show_content()
+
     local_game = Game.first()
     map = local_game.map
     army = local_game.army
@@ -581,13 +629,18 @@ class GameCreatedCtrl extends Spine.Controller
 
   hide_content: ->
     @_location.hide()
+    a = [@_map, @_army, @_name_game, @_name_army, @_name_map]
+    obj.empty() for obj in a
 
   remove_game: ->
     @ws.send { cmd: 'destroyGame' }, =>
-      @ctrl_game.hide_content()
+      @ws.unsubscribe 'startGamePlacement'
+
       Session.write_location('about_project')
       Game.remove()
       AppCtrl.update_menu(false)
+
+      @ctrl_game.hide_content()
       @ctrl_about_project.show_content()
 
 
@@ -595,14 +648,24 @@ class GameCreatedCtrl extends Spine.Controller
 
 class GamePlacementCtrl extends Spine.Controller
   elements:
-    '#game_placement': '_location'
+    '#game_placement':              '_location'
+    '#game_placement .map':         '_map'
+    '#game_placement .army':        '_army'
 
   constructor: (el, @ws, @ctrl_about_project) ->
     super(el: el)
 
   show_content: ->
     @_location.show()
-
+    @ws.send { cmd: 'getGame' }, (game) =>
+      map = game.map
+      structure =
+        obst: map.obst
+        pl1: game.state.pl1
+        pl2: game.state.pl2
+      RMap.render(@_map, map.width, map.height, structure)
+      RArmy.render(@_army, game.army.units, 1)
+    
   hide_content: ->
     @_location.hide()
 
@@ -627,7 +690,7 @@ class AboutProjectCtrl extends Spine.Controller
   elements:
     '#about_project': '_location'
 
-  constructor: (el, @ws) ->
+  constructor: (el) ->
     super(el: el)
 
   show_content: ->
@@ -640,13 +703,15 @@ class AboutProjectCtrl extends Spine.Controller
 
 class AppCtrl extends Spine.Controller
   elements:
-    '#content': '_content'
+    '#content':                 '_content'
 
-  @update_menu: (is_in_game) ->
-    f = if is_in_game then ['hide', 'show'] else ['show', 'hide']
-    for s in ['available_games', 'game_creation']
-      $("#btn_#{s}")[f[0]]()
-    $('#btn_game')[f[1]]()
+    '#btn_about_project':       '_btn_about_project'
+
+    '#main_menu .top_menu':     '_top_menu'
+    '#main_menu .middle_menu':  '_middle_menu'
+
+    '#profile':     '_profile'
+    '#auth':        '_auth'
 
   events:
     'click #btn_users_online':    'nav_location'
@@ -656,31 +721,59 @@ class AppCtrl extends Spine.Controller
     'click #btn_game':            'nav_location'
     'click #btn_about_project':   'nav_location'
 
+  @update_menu: (is_in_game) ->
+    f = if is_in_game then ['hide', 'show'] else ['show', 'hide']
+    for s in ['available_games', 'game_creation']
+      $("#btn_#{s}")[f[0]]()
+    $('#btn_game')[f[1]]()
+
   constructor: ->
     super
+    Utils.restore_model(Session, 'Session')
+
+    @ctrls = {}
+    @ctrls.about_project = new AboutProjectCtrl(@_content)
+
     @ws = new Websocket(
       'localhost',
       9001,
       (=>      #After opened websocket
-        Utils.restore_model(Session, 'Session')
-        @auth_ctrl = new AuthCtrl '#top_menu', @ws, =>
-          @.init_ctrls()
+        @auth_ctrl = new AuthCtrl(
+          '#top_menu',
+          @ws,
+          $.proxy(@.handle_login, @),
+          $.proxy(@.handle_logout, @)
+        )
       ),
-      (=>       #After status 'badSession'
-        Session.destroyAll()
-        @auth_ctrl.flush()
-      )
+      $.proxy(@.handle_logout, @)
     )
 
-  init_ctrls: ->
-    @ctrls =
-      users_online:     new UsersOnlineCtrl(@_content, @ws)
-      available_games:  new AvailableGamesCtrl(@_content, @ws)
-      maps_editor:      new MapsEditorCtrl(@_content, @ws)
-      about_project:    new AboutProjectCtrl(@_content, @ws)
+  handle_login: ->
+    @_auth.hide()
+    @_profile.show()
+    obj.show() for obj in [@_top_menu, @_middle_menu]
+    @.init_ctrls()
 
+  handle_logout: ->
+    @_profile.hide()
+    @_auth.show()
+
+    @ws.unsubscribe_all()
+
+    Session.remove()
+    Session.create(location: 'about_project')
+    Game.remove()
+
+    obj.hide() for obj in [@_top_menu, @_middle_menu]
+    @_btn_about_project.click()
+
+  init_ctrls: ->
     @ctrls.game = new GameCtrl(@_content, @ws, @ctrls.about_project)
     @ctrls.game_creation = new GameCreationCtrl(@_content, @ws, @ctrls.game)
+
+    @ctrls.users_online     = new UsersOnlineCtrl(@_content, @ws)
+    @ctrls.available_games  = new AvailableGamesCtrl(@_content, @ws, @ctrls.game)
+    @ctrls.maps_editor      = new MapsEditorCtrl(@_content, @ws)
 
     Utils.restore_model(Game, 'Game')
 
@@ -728,12 +821,16 @@ class RArmy
       handler
     )
 
-  @render: (cont, units) ->
+  @render: (cont, units, col_count = 3) ->
     u = ({ unit: k, count: v } for k, v of units)
     Utils.compile_templ(
       '#templ_army',
       cont,
-      { units: u, count: u.length, col_count: 3 }
+      {
+        units: u
+        count: u.length
+        col_count: col_count
+      }
     )
 
 #------------- Utils -------------
