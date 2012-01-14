@@ -78,10 +78,14 @@ body
   #content
     +container
     width: $col_count * $bgrid_width
-    padding-top: 20px
+    padding-top: 10px
 
     > div
-      display: none  
+      display: none
+
+    #game
+      > div
+        display: none
 
 #right_panel
   $col_count: 4
@@ -93,20 +97,23 @@ body
     bottom: 1px solid black
   margin-top: 50px
 
+  #btn_game, #btn_game_creation, #btn_available_games
+    display: none
+
   ul
     &.top_menu, &.middle_menu, &.bottom_menu
       list-style-type: none
       padding-left: 0px
-      margin-left: 25px
+      margin-left: 20px
 
       .btn
-        width: 150px
+        width: 160px
 
       li
-        margin-bottom: 15px
+        margin-bottom: 10px
 
         &:last-child
-          margin-bottom: 25px
+          margin-bottom: 20px
 
 footer
   border-top: 1px solid black
@@ -274,6 +281,7 @@ footer
 
 #maps_editor
   $col_count: 18
+  $top_side_height: 50px
   +container
   width: $col_count * $bgrid_width
 
@@ -285,7 +293,7 @@ footer
       +container
       width: $col_count * $bgrid_width - 1px
       border-right: 1px solid black
-      height: 60px
+      height: $top_side_height
 
       .btn
         width: 50px
@@ -315,7 +323,7 @@ footer
         width: inherit
 
         li
-          margin-top: 20px
+          margin-top: 10px
           cursor: pointer
           display: block
           width: inherit
@@ -329,7 +337,7 @@ footer
 
     .top_side
       width: $col_count * $bgrid_width - 20px
-      height: 60px
+      height: $top_side_height
       border-bottom: 1px solid black
 
       .params
@@ -353,7 +361,7 @@ footer
 
 #game_creation
   $col_count: 18
-  $top_height: 40px
+  $top_side_height: 50px
   +container
   width: $col_count * $bgrid_width
 
@@ -366,7 +374,7 @@ footer
         +container
         width: $col_count * $bgrid_width - 1px
         border-right: 1px solid black
-        height: $top_height
+        height: $top_side_height
         text-align: center
 
       .list_maps, .list_armies
@@ -378,7 +386,7 @@ footer
 
       .top_side
         width: $col_count * $bgrid_width - 20px
-        height: $top_height
+        height: $top_side_height
         border-bottom: 1px solid black
 
       .map_place
@@ -388,6 +396,7 @@ footer
     .top_side
       .params_game
         float: right
+        margin-top: 6px
         .name_game
           +input_name
 
@@ -396,4 +405,40 @@ footer
 
       .army_place
         +army
+
+//---------- Created game ----------
+
+#game_created
+  $col_count: 18
+  $top_side_height: 50px
+  +container
+  width: $col_count * $bgrid_width
+
+  .left_side
+    $col_count: 4
+    +column($col_count)
+
+    .top_side
+      display: block
+      width: $col_count * $bgrid_width - 1px
+      height: $top_side_height
+
+  .right_side
+    $col_count: 14
+    +column($col_count)
+
+    .top_side
+      width: $col_count * $bgrid_width - 20px
+      height: $top_side_height
+      border-bottom: 1px solid black
+
+    .map_place
+      +map
+
+    .army_place
+      +army
+
+    .army_panel
+      height: 300px
+
 

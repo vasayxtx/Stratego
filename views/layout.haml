@@ -94,6 +94,29 @@
                 .map_place
                   .map
 
+          #game
+            #game_created
+              .left_side
+                .top_side
+                  %h3
+                %button.btn.btn_remove Remove game
+              .right_side
+                .army_panel
+                  .top_side
+                    %h3
+                    .params_army
+                  .army_place
+                    .army
+                .map_panel
+                  .top_side
+                    %h3
+                    .params_map
+                  .map_place
+                    .map
+
+            #game_placement
+            #game_process
+
           #about_project
             %h3 It is super-mega gggame))))))
 
@@ -106,9 +129,9 @@
               %button.btn.large.success#btn_available_games Available games
           %ul.middle_menu
             %li
-              %button.btn.large.primary#btn_play_ai Play vs AI
-            %li
               %button.btn.large.primary#btn_game_creation Create game
+            %li
+              %button.btn.large.primary#btn_game Game
             %li
               %button.btn.large.primary#btn_maps_editor Maps editor
             %li

@@ -68,6 +68,21 @@ class Session extends Spine.Model
   @configure 'Session', 'login', 'sid', 'location'
   @extend Spine.Model.Session
 
+  @remove: ->
+    sessionStorage.removeItem('Game')
+
+  @write_location: (loc) ->
+    s = @.first()
+    s.location = loc
+    s.save()
+
+class Game extends Spine.Model
+  @configure 'Game', 'name', 'map', 'army', 'status'
+  @extend Spine.Model.Session
+
+  @remove: ->
+    sessionStorage.removeItem('Game')
+
 class UserOnline extends Spine.Model
   @configure 'UserOnline', 'login'
 
@@ -104,7 +119,7 @@ class AuthCtrl extends Spine.Controller
       @_profile.show()
       @init_ctrls()
     else
-      Session.deleteAll()
+      Session.remove()
       @_auth.show()
 
   login: ->
@@ -345,8 +360,7 @@ class MapsEditorCtrl extends Spine.Controller
 
 
   remove_map: ->
-    obj = @_list_maps.find('li.selected')
-    n = Utils.strip(obj.html())
+    n = Utils.get_selected(@_list_maps)
     @ws.send { cmd: 'destroyMap', name: n }, =>
       Map.destroy(Map.findByAttribute('name', n).id)
       @.render_list()
@@ -434,10 +448,10 @@ class MapsEditorCtrl extends Spine.Controller
 class GameCreationCtrl extends Spine.Controller
   elements:
     '#game_creation':               '_location'
+    '#game_creation .name_game':    '_name_game'
 
     '#game_creation .list_armies':  '_list_armies'
     '#game_creation .list_maps':    '_list_maps'
-
     '#game_creation .map':          '_map'
     '#game_creation .army':         '_army'
 
@@ -446,7 +460,7 @@ class GameCreationCtrl extends Spine.Controller
   events:
     'click #game_creation .btn_create': 'create_game'
 
-  constructor: (el, @ws) ->
+  constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
 
   show_content: ->
@@ -480,19 +494,132 @@ class GameCreationCtrl extends Spine.Controller
 
   load_map: (name_map) ->
     RMap.load @ws, name_map, (map) =>
-      console.log(map)
-      RMap.render(
-        @_map, map.width, map.height, map.structure)
+      RMap.render(@_map, map.width, map.height, map.structure)
+      @map = map
+      @map.name = name_map
 
   load_army: (name_army) ->
     RArmy.load @ws, name_army, (army) =>
-      console.log(army)
       RArmy.render(@_army, army.units)
+      @army = army
+      @army.name = name_army
 
   create_game: ->
     #Validate
-    for s in ['available_games', 'game_creation', 'play_ai']
-      $("#btn_#{s}").hide()
+    @ws.send(
+      {
+        cmd: 'createGame'
+        name: @_name_game.val()
+        nameMap: @map.name
+        nameArmy: @army.name
+      },
+      =>
+        @.hide_content()
+        Session.write_location('game')
+        Game.create(
+          name: @_name_game.val(),
+          map: @map
+          army: @army
+          status: 'created'
+        )
+        AppCtrl.update_menu(true)
+        @ctrl_game.show_content()
+    )
+
+#-------- Game --------
+
+class GameCtrl extends Spine.Controller
+  elements:
+    '#game': '_location'
+
+  constructor: (el, @ws, @ctrl_about_project) ->
+    super(el: el)
+    @game_ctrls =
+      created:    new GameCreatedCtrl(el, @ws, @, @ctrl_about_project)
+      placement:  new GamePlacementCtrl(el, @ws, @, @ctrl_about_project)
+      process:    new GameProcessCtrl(el, @ws, @, @ctrl_about_project)
+
+  show_content: ->
+    @_location.show()
+    game_status = Game.first().status
+    @game_ctrls[game_status.toLowerCase()].show_content()
+
+  hide_content: ->
+    v.hide_content() for k, v of @game_ctrls
+    @_location.hide()
+
+#-------- GameCreated --------
+
+class GameCreatedCtrl extends Spine.Controller
+  elements:
+    '#game_created':                  '_location'
+    '#game_created .army_panel h3':   '_name_army'
+    '#game_created .map_panel h3':    '_name_map'
+    '#game_created .left_side h3':    '_name_game'
+    '#game_created .map':             '_map'
+    '#game_created .army':            '_army'
+
+  events:
+    'click #game_created .btn_remove':      'remove_game'
+
+  constructor: (el, @ws, @ctrl_game, @ctrl_about_project) ->
+    super(el: el)
+
+  show_content: ->
+    local_game = Game.first()
+    map = local_game.map
+    army = local_game.army
+
+    @_name_game.html(local_game.name)
+    @_name_army.html(local_game.army.name)
+    @_name_map.html(local_game.map.name)
+
+    RMap.render(@_map, map.width, map.height, map.structure)
+    RArmy.render(@_army, army.units)
+
+    @_location.show()
+
+  hide_content: ->
+    @_location.hide()
+
+  remove_game: ->
+    @ws.send { cmd: 'destroyGame' }, =>
+      @ctrl_game.hide_content()
+      Session.write_location('about_project')
+      Game.remove()
+      AppCtrl.update_menu(false)
+      @ctrl_about_project.show_content()
+
+
+#-------- GamePlacement --------
+
+class GamePlacementCtrl extends Spine.Controller
+  elements:
+    '#game_placement': '_location'
+
+  constructor: (el, @ws, @ctrl_about_project) ->
+    super(el: el)
+
+  show_content: ->
+    @_location.show()
+
+  hide_content: ->
+    @_location.hide()
+
+#-------- GameProcess --------
+
+class GameProcessCtrl extends Spine.Controller
+  elements:
+    '#game_process': '_location'
+
+  constructor: (el, @ws, @ctrl_about_project) ->
+    super(el: el)
+
+  show_content: ->
+    @_location.show()
+
+  hide_content: ->
+    @_location.hide()
 
 #-------- AboutProjectCtrl --------
 
@@ -515,11 +642,18 @@ class AppCtrl extends Spine.Controller
   elements:
     '#content': '_content'
 
+  @update_menu: (is_in_game) ->
+    f = if is_in_game then ['hide', 'show'] else ['show', 'hide']
+    for s in ['available_games', 'game_creation']
+      $("#btn_#{s}")[f[0]]()
+    $('#btn_game')[f[1]]()
+
   events:
     'click #btn_users_online':    'nav_location'
     'click #btn_available_games': 'nav_location'
     'click #btn_maps_editor':     'nav_location'
     'click #btn_game_creation':   'nav_location'
+    'click #btn_game':            'nav_location'
     'click #btn_about_project':   'nav_location'
 
   constructor: ->
@@ -528,7 +662,7 @@ class AppCtrl extends Spine.Controller
       'localhost',
       9001,
       (=>      #After opened websocket
-        @.restore_session()
+        Utils.restore_model(Session, 'Session')
         @auth_ctrl = new AuthCtrl '#top_menu', @ws, =>
           @.init_ctrls()
       ),
@@ -543,10 +677,15 @@ class AppCtrl extends Spine.Controller
       users_online:     new UsersOnlineCtrl(@_content, @ws)
       available_games:  new AvailableGamesCtrl(@_content, @ws)
       maps_editor:      new MapsEditorCtrl(@_content, @ws)
-      game_creation:    new GameCreationCtrl(@_content, @ws)
       about_project:    new AboutProjectCtrl(@_content, @ws)
 
+    @ctrls.game = new GameCtrl(@_content, @ws, @ctrls.about_project)
+    @ctrls.game_creation = new GameCreationCtrl(@_content, @ws, @ctrls.game)
+
+    Utils.restore_model(Game, 'Game')
+
     s = Session.first()
+    AppCtrl.update_menu(Game.first())
     if s.location
       @ctrls[s.location].show_content()
     else
@@ -554,23 +693,9 @@ class AppCtrl extends Spine.Controller
       s.location = 'about_project'
       s.save()
 
-  restore_session: ->
-    data = $.parseJSON(sessionStorage.getItem('Session'))
-    sessionStorage.removeItem('Session')
-    if data?
-      for rec in data
-        Session.create
-          login: rec.login
-          sid: rec.sid
-          location: rec.location
-
   nav_location: (event) ->
     ctrl = event.handleObj.selector.slice(5)
-
-    s = Session.first()
-    s.location = ctrl
-    s.save()
-
+    Session.write_location(ctrl)
     v.hide_content() for k, v of @ctrls
     @ctrls[ctrl].show_content()
 
@@ -605,7 +730,6 @@ class RArmy
 
   @render: (cont, units) ->
     u = ({ unit: k, count: v } for k, v of units)
-    console.log(u)
     Utils.compile_templ(
       '#templ_army',
       cont,
@@ -634,6 +758,15 @@ class Utils
     res = 0
     res += 1 for k, v of obj
     res
+
+  @get_selected: (ul_cont) ->
+    obj = ul_cont.find('li.selected')
+    return Utils.strip(obj.html())
+
+  @restore_model: (model, model_name) ->
+    data = $.parseJSON(sessionStorage.getItem(model_name))
+    sessionStorage.removeItem(model_name)
+    model.create(data[0]) if data?
 
 #------------- jQuery functions -------------
 
