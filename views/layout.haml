@@ -86,6 +86,25 @@
               .map_place
                 .map
 
+          #armies_editor
+            .left_side
+              .top_side
+                %ul
+                  %li
+                    %button.btn.success.btn_new New
+                  %li
+                    %button.btn.danger.btn_del Del
+                  %li
+                    %button.btn.primary.btn_save Sv
+              .list_armies
+            .right_side
+              .top_side
+                .params
+                  %input.span2#name_army{ :type => "text", :placeholder => "Name"}
+                  %button.btn#btn_clean_army Clean
+              .army_place
+                .army
+
           #game_creation
             .army_panel
               .left_side
@@ -147,7 +166,9 @@
 
             #game_process
           #about_project
-            %h3 It is super-mega gggame))))))
+            %h3 About
+            %p
+              It's online implementation of the stratego game.
 
       #right_panel
         #main_menu
@@ -231,12 +252,34 @@
       <% var v = (Math.ceil(count / col_count)); %>
       <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
       <% for (var j = 0; j < c; ++j) { %>
+      <% var unit = units[i*c+j]; %>
       <% res += "<li>"; %>
-      <% res += '<span class="img_unit_' + units[i*c+j].unit + '"></span>'; %> 
-      <% res += '<span class="unit_name">' + units[i*c+j].unit + "</span>"; %> 
-      <% res += '<span class="unit_count">' + units[i*c+j].count + "</span>"; %>
+      <% res += '<span class="img_unit_' + unit.name + '"></span>'; %> 
+      <% res += '<span class="unit_name">' + unit.name + "</span>"; %> 
+      <% res += '<span class="unit_count">' + unit.count + "</span>"; %>
       <% res += "</li>"; %>
       <% } %>
       <%= res + "</ul>" %>
       <% } %>
+
+    %script{ :type => "text/template", :id => "templ_edt_army" }
+      <% for (var i = 0; i < col_count; ++i) { %>
+      <% var res = "<ul>"; %>
+      <% var v = (Math.ceil(count / col_count)); %>
+      <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
+      <% for (var j = 0; j < c; ++j) { %>
+      <% var unit = units[i*c+j]; %>
+      <% res += "<li>"; %>
+      <% res += '<span class="img_unit_' + unit.name + '"></span>'; %> 
+      <% res += '<span class="unit_name">' + unit.name + "</span>"; %> 
+      <% res += '<select class="small unit_count">'; %> 
+      <% for (var k = unit.min_count; k <= unit.max_count; ++k) { %>
+      <% var selected = (unit.count == k ? ' selected="selected"' : ''); %>
+      <% res += "<option" + selected + ">" + k + "</option>"; %>
+      <% } %>
+      <% res += "</select></li>"; %>
+      <% } %>
+      <%= res + "</ul>" %>
+      <% } %>
+
 

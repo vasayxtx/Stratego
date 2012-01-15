@@ -332,9 +332,9 @@ class MapsEditorCtrl extends Spine.Controller
     '#maps_editor .tools':          '_tools'
 
   events:
-    'click .btn_new':                     'create_map'
-    'click .btn_del':                     'remove_map'
-    'click .btn_save':                    'save_map'
+    'click #maps_editor .btn_new':        'create_map'
+    'click #maps_editor .btn_del':        'remove_map'
+    'click #maps_editor .btn_save':       'save_map'
 
     'click #btn_gen_map':                 'generate_map'
     'click #btn_clean_map':               'clean_map'
@@ -352,7 +352,7 @@ class MapsEditorCtrl extends Spine.Controller
     @_location.show()
     Map.deleteAll()
     @ws.send { 'cmd': 'getListMaps' }, (req) =>
-        Map.create(name: m) for m in req['maps']
+        Map.create(name: m) for m in req.maps
         @.render_list()
     @.flush()
 
@@ -419,10 +419,8 @@ class MapsEditorCtrl extends Spine.Controller
     #Validate inputs
     #Validate map
     make_a = (cl) =>
-      (
-        for el in @_map.find(".map_cell.#{cl}")
-          parseInt($(el).attr('id').slice(5))
-      )
+      (for el in @_map.find(".map_cell.#{cl}")
+        parseInt($(el).attr('id').slice(5)))
 
     req =
       cmd: if @is_new then 'createMap' else 'editMap'
@@ -440,10 +438,10 @@ class MapsEditorCtrl extends Spine.Controller
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
         @_btn_del.removeAttr('disabled')
+        @is_new = false
     else
       req['cmd'] = 'editMap'
       handler = =>
-        @_btn_del.removeAttr('disabled')
         console.log('MAP SAVED!!')
 
     @ws.send(req, handler)
@@ -482,6 +480,127 @@ class MapsEditorCtrl extends Spine.Controller
 
 #-------- Armies editor --------
 
+class ArmiesEditorCtrl extends Spine.Controller
+  elements:
+    '#armies_editor':                   '_location'
+
+    '#armies_editor .list_armies':      '_list_armies'
+    '#armies_editor .army':             '_army'
+    '#armies_editor #name_army':        '_name_army'
+
+    '#armies_editor .btn_del':          '_btn_del'
+    '#armies_editor .btn_save':         '_btn_save'
+    '#armies_editor #btn_clean_army':   '_btn_clean_army'
+
+  events:
+    'click #armies_editor .btn_new':        'create_army'
+    'click #armies_editor .btn_del':        'remove_army'
+    'click #armies_editor .btn_save':       'save_army'
+    'click #armies_editor #btn_clean_army': 'clean_army'
+
+  constructor: (el, @ws) ->
+    super(el: el)
+
+  show_content: ->
+    @_location.show()
+    @.flush()
+    Army.deleteAll()
+    @ws.send { 'cmd': 'getListArmies' }, (req) =>
+        for a in req.armies
+          Army.create(name: a)
+        @.render_list()
+
+  hide_content: ->
+    @.flush()
+    @_list_armies.empty()
+    @_location.hide()
+
+  flush: ->
+    @_army.empty()
+    @_name_army.val('')
+
+    for obj in [@_name_army, @_btn_clean_army]
+      obj.hide()
+    for btn in [@_btn_del, @_btn_save]
+      btn.attr('disabled', 'disabled')
+    @_list_armies.find('li').removeClass('selected')
+
+  render_list: (army_selected) ->
+    Utils.compile_templ(
+      '#templ_list',
+      @_list_armies,
+      { list: Army.all(), el_selected: army_selected }
+    )
+    @_list_armies.find('li').on 'click', (event) =>
+      obj = $(event.target)
+      @is_new = false
+      Utils.select_li(obj)
+      @.load_army(Utils.strip(obj.html()))
+
+  load_army: (name_army) ->
+    RArmy.load @ws, name_army, (army) =>
+      @_name_army.val(name_army)
+      RArmy.render_edt(@_army, army.units)
+
+      for obj in [@_name_army, @_btn_clean_army]
+        obj.show()
+      for btn in [@_btn_save, @_btn_del]
+        btn.removeAttr('disabled')
+
+  create_army: ->
+    @ws.send { cmd: 'getAllUnits' }, (data) =>
+      units = data.units
+      for k, v of units
+        units[k].count = v.minCount
+      RArmy.render_edt(@_army, units)
+
+      for obj in [@_name_army, @_btn_clean_army]
+        obj.show()
+      @_btn_save.removeAttr('disabled')
+      @_btn_del.attr('disabled', 'disabled')
+      @_list_armies.find('li').removeClass('selected')
+
+      @_name_army.val('')
+      @is_new = true
+
+  remove_army: ->
+    n = Utils.get_selected(@_list_armies)
+    @ws.send { cmd: 'destroyArmy', name: n }, =>
+      Army.destroy(Army.findByAttribute('name', n).id)
+      @.render_list()
+      @.flush()
+
+  save_army: ->
+    req =
+      name: @_name_army.val()
+      units: {}
+
+    @_army.find('.unit_count').each (i, el) =>
+      obj_count = $(el)
+      obj_name = obj_count.parent().find('.unit_name')
+      count = parseInt(obj_count.val())
+      name = Utils.strip(obj_name.html())
+      req.units[name] = count
+
+    if @is_new
+      req.cmd = 'createArmy'
+      handler = =>
+        Army.create(name: @_name_army.val())
+        @.render_list(@_name_army.val())
+        @_btn_del.removeAttr('disabled')
+        @is_new = false
+    else
+      req.cmd = 'editArmy'
+      handler = =>
+        console.log('ARMY SAVED!!')
+
+    @ws.send(req, handler)
+
+  clean_army: ->
+    @_army.find('.unit_count').each (i, el) =>
+      obj = $(el)
+      obj.find('option').removeAttr('selected')
+      obj.find('option:first-child').attr('selected', 'selected')
 
 #-------- GameCreationCtrl --------
 
@@ -541,7 +660,9 @@ class GameCreationCtrl extends Spine.Controller
 
   load_army: (name_army) ->
     RArmy.load @ws, name_army, (army) =>
-      RArmy.render(@_army, army.units)
+      units = {}
+      units[k] = v.count for k, v of army.units
+      RArmy.render(@_army, units)
       @army = army
       @army.name = name_army
 
@@ -826,6 +947,7 @@ class AppCtrl extends Spine.Controller
     'click #btn_users_online':    'nav_location'
     'click #btn_available_games': 'nav_location'
     'click #btn_maps_editor':     'nav_location'
+    'click #btn_armies_editor':   'nav_location'
     'click #btn_game_creation':   'nav_location'
     'click #btn_game':            'nav_location'
     'click #btn_about_project':   'nav_location'
@@ -864,15 +986,14 @@ class AppCtrl extends Spine.Controller
     @.init_ctrls()
 
   handle_logout: ->
-    @_profile.hide()
-    @_auth.show()
-
     @ws.unsubscribe_all()
 
     Session.remove()
     Session.create(location: 'about_project')
     Game.remove()
 
+    @_profile.hide()
+    @_auth.show()
     obj.hide() for obj in [@_top_menu, @_middle_menu]
     @_btn_about_project.click()
 
@@ -883,6 +1004,7 @@ class AppCtrl extends Spine.Controller
     @ctrls.users_online     = new UsersOnlineCtrl(@_content, @ws)
     @ctrls.available_games  = new AvailableGamesCtrl(@_content, @ws, @ctrls.game)
     @ctrls.maps_editor      = new MapsEditorCtrl(@_content, @ws)
+    @ctrls.armies_editor    = new ArmiesEditorCtrl(@_content, @ws)
 
     Utils.restore_model(Game, 'Game')
 
@@ -935,9 +1057,9 @@ class RArmy
     )
 
   @render: (cont, units, col_count = 3) ->
-    u = ({ unit: k, count: v } for k, v of units)
+    u = ({ name: k, count: v } for k, v of units)
     Utils.compile_templ(
-      '#templ_army',
+      "#templ_army",
       cont,
       {
         units: u
@@ -945,6 +1067,27 @@ class RArmy
         col_count: col_count
       }
     )
+
+  @render_edt: (cont, units, col_count = 3) ->
+    u = (
+      for k, v of units
+        {
+          name: k
+          count: v.count
+          min_count: v.minCount
+          max_count: v.maxCount
+        }
+    )
+    Utils.compile_templ(
+      "#templ_edt_army",
+      cont,
+      {
+        units: u
+        count: u.length
+        col_count: col_count
+      }
+    )
+
 
 #------------- Utils -------------
 

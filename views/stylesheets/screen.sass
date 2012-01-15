@@ -581,3 +581,62 @@ footer
     .map_place
       +map
 
+//---------- Armies editor ----------
+
+#armies_editor
+  $col_count: 18
+  $top_side_height: 50px
+  +container
+  width: $col_count * $bgrid_width
+
+  .left_side
+    $col_count: 4
+    +column($col_count)
+
+    .top_side
+      +container
+      width: $col_count * $bgrid_width - 1px
+      border-right: 1px solid black
+      height: $top_side_height
+
+      .btn
+        width: 50px
+        height: 40px
+
+      ul
+        +horizontal-list
+
+        li
+          margin-right: 10px
+
+    .list_armies
+      +list_resources($col_count)
+
+  .right_side
+    $col_count: 14
+    +column($col_count)
+
+    .top_side
+      width: $col_count * $bgrid_width - 20px
+      height: $top_side_height
+      border-bottom: 1px solid black
+
+      .params
+        #name_army
+          +input_name
+          margin:
+            top: 6px
+            left: 193px
+
+        #btn_clean_army
+          margin:
+            top: 6px
+            left: 10px
+
+    .army_place
+      +army_place
+
+      .unit_count
+        width: 40px
+        margin-top: 7px
+
