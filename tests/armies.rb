@@ -210,10 +210,18 @@ req = {
   'cmd' => 'getArmyUnits',
   'name' => Generator::ARMY_CL['name']
 }
+units = {}
+Generator::ARMY_CL['units'].each_pair do |u_name, u_count|
+  units[u_name] = {
+    'count' => u_count,
+    'minCount' => Generator::UNITS[u_name][2].min,
+    'maxCount' => Generator::UNITS[u_name][2].max
+  }
+end
 resp = {
   0 => {
     'status' => 'ok',
-    'units' => Generator::ARMY_CL['units']
+    'units' => units
   }
 }
 t.push_test([[0, req, resp]])

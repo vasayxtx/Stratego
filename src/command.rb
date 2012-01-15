@@ -532,7 +532,17 @@ class CmdGetArmyUnits < Cmd
     user = get_user req['sid']
     army = get_by_name 'armies', req['name']
 
-    [{ 'units' => army['units'] },{},{}]
+    units = army['units']
+    units.each_pair do |u_name, u_count|
+      unit = @@db['units'].find_one 'name' => u_name
+      units[u_name] = {
+        'count'     => u_count,
+        'minCount'  => unit['min_count'],
+        'maxCount'  => unit['max_count']
+      }
+    end
+
+    [{ 'units' => units },{},{}]
   end
 end
 

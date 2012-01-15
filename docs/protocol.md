@@ -255,7 +255,11 @@
     {
         "status": "ok",
         "units": {
-            <name of the unit>: <count>
+            <name of the unit>: {
+                "count": <count>,
+                "minCount": <min count>,
+                "maxCount": <max count>
+            },
             ...
         }
     }
