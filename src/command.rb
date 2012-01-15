@@ -30,7 +30,7 @@ module Database
   end
 
   def get_user(sid)
-    user = @@db['users'].find_one 'sid' => sid
+    user = @@db['users'].find_one('sid' => sid)
     if user.nil?
       raise ResponseBadSession, 'Incorrect session id'
     end
@@ -40,7 +40,7 @@ module Database
 
   def get_by_name(coll, name, case_sensitive = false)
     sel = case_sensitive ? name : Regexp.new(name, true)
-    res = @@db[coll].find_one 'name' => sel
+    res = @@db[coll].find_one('name' => sel)
     if res.nil?
       raise ResponseBadResource, 'Resource is\'t exist'
     end
@@ -60,7 +60,7 @@ module Database
 
   def cur_to_arr(coll_name, sel, field)
     arr = []
-    cur = @@db[coll_name].find sel, :fields => [field]
+    cur = @@db[coll_name].find(sel, :fields => [field])
     cur.each { |foo| arr << foo[field] }
 
     arr
@@ -95,12 +95,12 @@ class Cmd
   }
 
   def initialize(req, fields)
-    check_fields req, fields
+    check_fields(req, fields)
   end
 
   def check_fields(req, fields)
     fields.each do |f|
-      unless req.has_key? f
+      unless req.has_key?(f)
         raise ResponseBadCommand, MSGS[:flds_num_l]
       end
     end
@@ -110,7 +110,7 @@ class Cmd
   end
 
   def encode(val, salt)
-    Digest::SHA2.hexdigest "#{val}--#{salt}"
+    Digest::SHA2.hexdigest("#{val}--#{salt}")
   end
   private :encode
 end
@@ -121,10 +121,10 @@ class CmdDropDB < Cmd
   def_init self
 
   def handle(req)
-    @@db_conn.drop_database @@db.name
+    @@db_conn.drop_database(@@db.name)
 
-    Seed.create_indexes @@db
-    Seed.seed_units @@db
+    Seed.create_indexes(@@db)
+    Seed.seed_units(@@db)
 
     [{}, {}]
   end
@@ -136,11 +136,11 @@ class CmdSignup < Cmd
   def_init self, 'login', 'password'
 
   def handle(req)
-    Validator.validate @@db['users'], req, V_USER
+    Validator.validate(@@db['users'], req, V_USER)
 
     t = Time.now.utc
-    e_passw = encode req['password'], t
-    sid = encode req['login'], Time.now.utc
+    e_passw = encode(req['password'], t)
+    sid = encode(req['login'], Time.now.utc)
 
     id = @@db['users'].insert({
       'login' => req['login'],
@@ -170,18 +170,18 @@ class CmdLogin < Cmd
   def_init self, 'login', 'password'
 
   def handle(req)
-    user = @@db['users'].find_one 'login' => Regexp.new(req['login'], true)
+    user = @@db['users'].find_one('login' => Regexp.new(req['login'], true))
 
     if user.nil?
       raise ResponseBadAction, 'Incorrect login'
     end
 
-    e_passw = encode req['password'], user['created_at']
+    e_passw = encode(req['password'], user['created_at'])
     unless e_passw == user['password']
       raise ResponseBadAction, 'Incorrect password'
     end
 
-    sid = encode user['login'], Time.now.utc
+    sid = encode(user['login'], Time.now.utc)
 
     @@db['users'].update(
       { '_id' => user['_id'] },
@@ -208,7 +208,7 @@ class CmdLogout < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
+    user = get_user(req['sid'])
 
     @@db['users'].update(
       { '_id' => user['_id'] },
@@ -232,7 +232,7 @@ class CmdCheckSid < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
+    user = get_user(req['sid'])
     [{}, {}, { 'reg' => user['_id'] }]
   end
 end
@@ -241,7 +241,7 @@ class CmdGetUsersOnline < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    get_user req['sid']
+    get_user(req['sid'])
 
     users = cur_to_arr(
       'users',
@@ -259,7 +259,7 @@ class CmdGetAllUnits < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
+    user = get_user(req['sid'])
 
     units = {}
     @@db['units'].find().each do |u|
@@ -284,9 +284,7 @@ module Map
     #Check values
     check_value = ->(a) do
       max_val = width * height
-      a.each do |val|  
-        return false unless (0...max_val).include?(val)
-      end
+      a.each { |val| return false unless (0...max_val).include?(val) }
       true
     end
 
@@ -329,11 +327,11 @@ class CmdCreateMap < Cmd
   def_init self, 'sid', 'name', 'width', 'height', 'structure'
 
   def handle(req)
-    Validator.validate @@db['maps'], req, V_MAP
+    Validator.validate(@@db['maps'], req, V_MAP)
 
-    check_map req['width'], req['height'], req['structure']
+    check_map(req['width'], req['height'], req['structure'])
     
-    user = get_user req['sid']
+    user = get_user(req['sid'])
 
     @@db['maps'].insert(
       {
@@ -355,15 +353,15 @@ class CmdEditMap < Cmd
   def_init self, 'sid', 'name', 'width', 'height', 'structure'
 
   def handle(req)
-    v_map = clone V_MAP
-    v_map.delete 'name'
-    Validator.validate @@db['maps'], req, v_map
+    v_map = clone(V_MAP)
+    v_map.delete('name')
+    Validator.validate(@@db['maps'], req, v_map)
 
-    check_map req['width'], req['height'], req['structure']
+    check_map(req['width'], req['height'], req['structure'])
     
-    user = get_user req['sid']
-    map = get_by_name 'maps', req['name']
-    check_access user, map
+    user = get_user(req['sid'])
+    map = get_by_name('maps', req['name'])
+    check_access(user, map)
 
     @@db['maps'].update(
       { '_id' => map['_id'] },
@@ -380,11 +378,11 @@ class CmdDestroyMap < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    user = get_user req['sid']
-    map = get_by_name 'maps', req['name']
-    check_access user, map
+    user = get_user(req['sid'])
+    map = get_by_name('maps', req['name'])
+    check_access(user, map)
 
-    @@db['maps'].remove '_id' => map['_id']
+    @@db['maps'].remove('_id' => map['_id'])
 
     [{},{},{}]
   end
@@ -394,8 +392,8 @@ class CmdGetListMaps < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
-    maps = cur_to_arr 'maps', get_selector(user), 'name'
+    user = get_user(req['sid'])
+    maps = cur_to_arr('maps', get_selector(user), 'name')
 
     [{ 'maps' => maps },{},{}]
   end
@@ -415,8 +413,8 @@ class CmdGetMapParams < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    get_user req['sid']
-    map = get_by_name 'maps', req['name']
+    get_user(req['sid'])
+    map = get_by_name('maps', req['name'])
 
     [h_slice(map, %w[width height structure]),{},{}]
   end
@@ -432,7 +430,7 @@ module Army
   def check_army(units)
     raise ResponseBadArmy, ERR_MSG if units.empty?
     units.each_pair do |army_unit, count|
-      u = @@db['units'].find_one 'name' => army_unit
+      u = @@db['units'].find_one('name' => army_unit)
 
       raise ResponseBadArmy, ERR_MSG if u.nil?
 
@@ -448,18 +446,18 @@ class CmdCreateArmy < Cmd
   def_init self, 'sid', 'name', 'units'
 
   def handle(req)
-    Validator.validate @@db['armies'], req, V_ARMY
+    Validator.validate(@@db['armies'], req, V_ARMY)
 
-    check_army req['units']
+    check_army(req['units'])
     
-    user = get_user req['sid']
+    user = get_user(req['sid'])
 
-    @@db['armies'].insert({
+    @@db['armies'].insert(
       'name' => req['name'],
       'creator' => user['_id'],
       'units' => req['units'],
       'created_at' => Time.now.utc
-    })
+    )
 
     [{},{},{}]
   end
@@ -471,19 +469,15 @@ class CmdEditArmy < Cmd
   def_init self, 'sid', 'name', 'units'
 
   def handle(req)
-    check_army req['units']
+    check_army(req['units'])
     
-    user = get_user req['sid']
-    army = get_by_name 'armies', req['name']
-    check_access user, army
+    user = get_user(req['sid'])
+    army = get_by_name('armies', req['name'])
+    check_access(user, army)
 
     @@db['armies'].update(
       { '_id' => army['_id'] },
-      { 
-        '$set' => {
-          'units' => req['units'],
-        }
-      }
+      { '$set' => { 'units' => req['units'] } }
     )
 
     [{},{},{}]
@@ -494,11 +488,11 @@ class CmdDestroyArmy < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    user = get_user req['sid']
-    army = get_by_name 'armies', req['name']
-    check_access user, army
+    user = get_user(req['sid'])
+    army = get_by_name('armies', req['name'])
+    check_access(user, army)
 
-    @@db['armies'].remove '_id' => army['_id']
+    @@db['armies'].remove('_id' => army['_id'])
 
     [{},{},{}]
   end
@@ -508,8 +502,8 @@ class CmdGetListArmies < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
-    armies = cur_to_arr 'armies', get_selector(user), 'name'
+    user = get_user(req['sid'])
+    armies = cur_to_arr('armies', get_selector(user), 'name')
 
     [{ 'armies' => armies },{},{}]
   end
@@ -529,12 +523,12 @@ class CmdGetArmyUnits < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    user = get_user req['sid']
-    army = get_by_name 'armies', req['name']
+    user = get_user(req['sid'])
+    army = get_by_name('armies', req['name'])
 
     units = army['units']
     units.each_pair do |u_name, u_count|
-      unit = @@db['units'].find_one 'name' => u_name
+      unit = @@db['units'].find_one('name' => u_name)
       units[u_name] = {
         'count'     => u_count,
         'minCount'  => unit['min_count'],
@@ -563,11 +557,10 @@ module Game
   end
 
   def check_user(user_id)
-    sel = { '$or' => [
-      { 'creator' => user_id },
-      { 'opponent' => user_id }
-    ] }
-    if (exist?('games', sel))
+    sel = {
+      '$or' => [{ 'creator' => user_id }, { 'opponent' => user_id }]
+    }
+    if exist?('games', sel)
       raise ResponseBadAction, 'User already in a game'
     end
   end
@@ -593,9 +586,8 @@ module Game
   end
 
   def turn?(game, is_pl1)
-    is_pl1 ?
-      game['moves']['pl1'].size == game['moves']['pl2'].size :
-      game['moves']['pl1'].size > game['moves']['pl2'].size
+    pl1, pl2 = game['moves']['pl1'].size, game['moves']['pl2'].size
+    is_pl1 ? pl1 == pl2 : pl1 > pl2
   end
 
   def reflect_pos(p, map)
@@ -609,23 +601,23 @@ class CmdCreateGame < Cmd
 
   def_init self, 'sid', 'name', 'nameMap', 'nameArmy'
   def handle(req)
-    Validator.validate @@db['games'], req, V_GAME
+    Validator.validate(@@db['games'], req, V_GAME)
 
-    user = get_user req['sid']
-    check_user user['_id']
+    user = get_user(req['sid'])
+    check_user(user['_id'])
 
-    map = get_by_name 'maps', req['nameMap']
-    army = get_by_name 'armies', req['nameArmy']
+    map = get_by_name('maps', req['nameMap'])
+    army = get_by_name('armies', req['nameArmy'])
 
-    check_game map, army
+    check_game(map, army)
 
-    @@db['games'].insert({
+    @@db['games'].insert(
       'name' => req['name'],
       'creator' => user['_id'],
       'map' => map['_id'],
       'army' => army['_id'],
       'created_at' => Time.now.utc
-    })
+    )
     
     [
       {},
@@ -644,10 +636,10 @@ class CmdGetGameParams < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    get_user req['sid']
-    game = get_by_name 'games', req['name']
-    map = get_by_id 'maps', game['map']
-    army = get_by_id 'armies', game['army']
+    get_user(req['sid'])
+    game = get_by_name('games', req['name'])
+    map = get_by_id('maps', game['map'])
+    army = get_by_id('armies', game['army'])
     
     [
       {
@@ -663,8 +655,12 @@ class CmdGetAvailableGames < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    get_user req['sid']
-    games = cur_to_arr 'games', { 'opponent' => { '$exists' => false } }, 'name'
+    get_user(req['sid'])
+    games = cur_to_arr(
+      'games',
+      { 'opponent' => { '$exists' => false } },
+      'name'
+    )
     
     [{ 'games' => games }, {}, {}]
   end
@@ -674,8 +670,8 @@ class CmdDestroyGame < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
-    game = @@db['games'].find_one 'creator' => user['_id']
+    user = get_user(req['sid'])
+    game = @@db['games'].find_one('creator' => user['_id'])
 
     if game.nil?
       raise ResponseBadAction, 'User hasn\'t created any game'
@@ -685,11 +681,9 @@ class CmdDestroyGame < Cmd
     end
 
     name_game = game['name']
-    @@db['games'].remove '_id' => game['_id']
+    @@db['games'].remove('_id' => game['_id'])
 
-    [{}, {
-      :all => { 'cmd' => 'delAvailableGame', 'name' => name_game }
-    }, {}]
+    [{}, { :all => { 'cmd' => 'delAvailableGame', 'name' => name_game } }, {}]
   end
 end
 
@@ -699,10 +693,10 @@ class CmdJoinGame < Cmd
   def_init self, 'sid', 'name'
 
   def handle(req)
-    user = get_user req['sid']
-    check_user user['_id']
+    user = get_user(req['sid'])
+    check_user(user['_id'])
 
-    game = get_by_name 'games', req['name']
+    game = get_by_name('games', req['name'])
     
     unless game['opponent'].nil?
       raise ResponseBadAction, 'The game isn\'t available'
@@ -733,17 +727,15 @@ class CmdLeaveGame < Cmd
   def_init self, 'sid'
 
   def handle(req)
-    user = get_user req['sid']
-    game = get_game_by_user user['_id']
+    user = get_user(req['sid'])
+    game = get_game_by_user(user['_id'])
 
     second_user = user['_id'] == game['creator'] ? 
       game['opponent'] : game['creator']
 
-    @@db['games'].remove '_id' => game['_id']
+    @@db['games'].remove('_id' => game['_id'])
 
-    [{}, {
-      second_user => { 'cmd' => 'endGame' }
-    }, {}]
+    [{}, { second_user => { 'cmd' => 'endGame' } }, {}]
   end
 end
 
@@ -753,7 +745,7 @@ class CmdGetGame < Cmd
   def_init self, 'sid'
 
   def prepare_process(game, is_pl1, pl, opp)
-    map = get_by_id 'maps', game['map']
+    map = get_by_id('maps', game['map'])
 
     s = map['width'] * map['height']
     p = game['placement']
@@ -793,17 +785,17 @@ class CmdGetGame < Cmd
   end
 
   def handle(req)
-    user = get_user req['sid']
-    game = get_game_by_user user['_id']
+    user = get_user(req['sid'])
+    game = get_game_by_user(user['_id'])
 
     is_pl1 = user['_id'] == game['creator']
     pl, opp = is_pl1 ? %w[pl1 pl2] : %w[pl2 pl1]
 
-    resp = prepare_process game, is_pl1, pl, opp
+    resp = prepare_process(game, is_pl1, pl, opp)
 
     resp['game_name'] = game['name']
 
-    army = get_by_id 'armies', game['army']
+    army = get_by_id('armies', game['army'])
     resp['army'] = h_slice(army, %w[name units])
 
     get_login = ->(user_id) do
@@ -823,8 +815,8 @@ class CmdSetPlacement < Cmd
   def_init self, 'sid', 'placement'
 
   def handle(req)
-    user = get_user req['sid']
-    game = get_game_by_user user['_id']
+    user = get_user(req['sid'])
+    game = get_game_by_user(user['_id'])
 
     unless game['moves'].nil?
       raise ResponseBadAction, 'Game has already started'
@@ -875,8 +867,8 @@ class CmdMakeMove < Cmd
   def_init self, 'sid', 'posFrom', 'posTo'
 
   def handle(req)
-    user = get_user req['sid']
-    game = get_game_by_user user['_id']
+    user = get_user(req['sid'])
+    game = get_game_by_user(user['_id'])
 
     if game['moves'].nil?
       raise ResponseBadAction, 'Game isn\'t started'
@@ -891,20 +883,19 @@ class CmdMakeMove < Cmd
     pl1, pl2, opp = is_pl1 ? %w[pl1 pl2 opponent] : %w[pl2 pl1 creator]
     opp_id = game[opp]
 
-    map = get_by_id 'maps', game['map']
+    map = get_by_id('maps', game['map'])
 
     duel, duel_opp = make_move(
-      game, map, req['posFrom'], req['posTo'], is_pl1
-    )
+      game, map, req['posFrom'], req['posTo'], is_pl1)
 
     resp = duel.empty? ? {} : { 'duel' => duel }
     resp_opp = duel_opp.empty? ? {} : { 'duel' => duel_opp }
 
-    resp_opp.merge!({
+    resp_opp.merge!(
       'cmd' => 'makeMove',
       'posFrom' => reflect_pos(req['posFrom'], map),
       'posTo'   => reflect_pos(req['posTo'], map)
-    })
+    )
 
     [resp, { opp_id => resp_opp }, {}]
   end
@@ -960,8 +951,8 @@ class CmdMakeMove < Cmd
     pl, opp = is_pl1 ? %w[pl1 pl2] : %w[pl2 pl1]
 
     unless is_pl1
-      p_from = reflect_pos p_from, map
-      p_to = reflect_pos p_to, map
+      p_from = reflect_pos(p_from, map)
+      p_to = reflect_pos(p_to, map)
     end
 
     pl_placement = game['placement'][pl]
@@ -969,26 +960,26 @@ class CmdMakeMove < Cmd
     opp_placement = game['placement'][opp]
     opp_positions = opp_placement.keys.map { |el| el.to_i }
 
-    check_positions p_from, p_to, pl_positions, map
+    check_positions(p_from, p_to, pl_positions, map)
 
     #puts "\n\nCHECKING_POSITIONS: OK\n\n"
 
     unit_name = pl_placement[p_from.to_s]
-    pl_unit = get_by_name 'units', unit_name
+    pl_unit = get_by_name('units', unit_name)
 
-    check_move p_from, p_to, map, game['placement'], pl_unit
+    check_move(p_from, p_to, map, game['placement'], pl_unit)
 
     #puts "\n\nCHECKING_MOVING: OK\n\n"
 
     if opp_positions.include?(p_to)
       unit_name = opp_placement[p_to.to_s]
-      opp_unit = get_by_name 'units', unit_name
+      opp_unit = get_by_name('units', unit_name)
 
       duel = {
         'attacker' => pl_unit['name'],
         'protector' => opp_unit['name'],
       }
-      duel_opp = clone duel
+      duel_opp = clone(duel)
       
       pl_win_duels = pl_unit['win_duels']
       opp_win_duels = opp_unit['win_duels']
@@ -1017,7 +1008,7 @@ class CmdMakeMove < Cmd
       'created_at' => Time.now.utc
     }
 
-    pl_placement.delete p_from.to_s
+    pl_placement.delete(p_from.to_s)
 
     @@db['games'].update(
       { '_id' => game['_id'] },

@@ -5,17 +5,15 @@ require File.join(File.dirname(__FILE__), '..', 'db', 'seeds')
 
 CLIENTS_NUM = 5
 
-t = Tester.new(CLIENTS_NUM) do |i|
-  ["User#{i}", 'password']
-end
+t = Tester.new(CLIENTS_NUM) { |i| ["User#{i}", 'password'] }
 
 #Test1
 #--------------------------------
-auth t
+auth(t)
 
 #Test2
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 req['name'] = 'ab'
 resp = {
@@ -28,7 +26,7 @@ t.push_test([[0, req, resp]])
 
 #Test3
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 req['name'] = 'ab#$asfsd'
 resp = {
@@ -41,7 +39,7 @@ t.push_test([[0, req, resp]])
 
 #Test4
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 req['units'] = []
 resp = {
@@ -54,7 +52,7 @@ t.push_test([[0, req, resp]])
 
 #Test5
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 req['units'][:Flag] = 0
 resp = {
@@ -67,7 +65,7 @@ t.push_test([[0, req, resp]])
 
 #Test6
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 req['units'][:Chubaka] = 10
 resp = {
@@ -80,7 +78,7 @@ t.push_test([[0, req, resp]])
 
 #Test7
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 resp = {
   0 => { 'status' => 'ok' }
@@ -89,7 +87,7 @@ t.push_test([[0, req, resp]])
 
 #Test8
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 resp = {
   0 => {
@@ -101,7 +99,7 @@ t.push_test([[0, req, resp]])
 
 #Test9
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'editArmy'
 req['name'] = 'habrahabr'
 resp = {
@@ -114,12 +112,12 @@ t.push_test([[0, req, resp]])
 
 #Test10
 #--------------------------------
-req1 = clone Generator::ARMY_MINI
+req1 = clone(Generator::ARMY_MINI)
 req1['cmd'] = 'createArmy'
 resp1 = {
   1 => { 'status' => 'ok' }
 }
-req0 = clone Generator::ARMY_MINI
+req0 = clone(Generator::ARMY_MINI)
 req0['cmd'] = 'editArmy'
 resp0 = {
   0 => {
@@ -134,7 +132,7 @@ t.push_test([
 
 #Test11
 #--------------------------------
-req = clone Generator::ARMY_CL
+req = clone(Generator::ARMY_CL)
 req['cmd'] = 'editArmy'
 req['units'] = Generator::ARMY_CL['units']
 resp = {
@@ -228,7 +226,7 @@ t.push_test([[0, req, resp]])
 
 #Test
 #--------------------------------
-logout t
+logout(t)
 
 t.run
 

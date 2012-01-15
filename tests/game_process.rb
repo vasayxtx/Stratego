@@ -2,9 +2,7 @@
 
 require File.join(File.dirname(__FILE__), 'game_helper')
 
-t = Tester.new(CLIENTS_NUM) do |i|
-  ["User#{i}", 'password']
-end
+t = Tester.new(CLIENTS_NUM) { |i| ["User#{i}", 'password'] }
 
 MAP_SIZE = Generator::MAP_MINI['width'] * Generator::MAP_MINI['height']
 
@@ -25,7 +23,7 @@ end
 
 #Test1
 #--------------------------------
-auth t
+auth(t)
 
 #Test2 
 #--------------------------------
@@ -152,8 +150,8 @@ test = [
 t.push_test(test)
 
 #--------------------------------------------------------------------------
-cl0_pl1 = Generator::make_tactic Generator::TACTIC_TEST
-cl1_pl1 = clone cl0_pl1
+cl0_pl1 = Generator::make_tactic(Generator::TACTIC_TEST)
+cl1_pl1 = clone(cl0_pl1)
 
 #Test7
 #--------------------------------
@@ -177,7 +175,7 @@ cl1_pl1 = clone cl0_pl1
 
 =end
 
-req, resp1 = make_move 5, 17
+req, resp1 = make_move(5, 17)
 resp = {
   0 => { 'status' => 'ok' },
   1 => resp1
@@ -206,7 +204,7 @@ t.push_test([[0, req, resp]])
 
 =end
 
-req, resp0 = make_move 6, 18
+req, resp0 = make_move(6, 18)
 resp = {
   1 => { 'status' => 'ok' },
   0 => resp0
@@ -253,7 +251,7 @@ t.push_test([
 
 #Test
 #--------------------------------
-logout t
+logout(t)
 
 t.run
 
