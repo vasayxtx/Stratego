@@ -293,6 +293,8 @@ class AvailableGamesCtrl extends Spine.Controller
     )
 
   join_game: ->
+    unless @_list_games.find('li.selected').size()
+      return alert('Game isn\'t selected')
     name_game = Utils.get_selected(@_list_games)
     @ws.send(
       {
@@ -346,7 +348,6 @@ class MapsEditorCtrl extends Spine.Controller
     for el in [@_width_map, @_height_map]
       el.force_num_only($.proxy(@.generate_map, @))
 
-
   show_content: ->
     @_location.show()
     Map.deleteAll()
@@ -357,8 +358,8 @@ class MapsEditorCtrl extends Spine.Controller
 
   hide_content: ->
     obj.empty() for obj in [@_map, @_list_maps]
+    @.flush()
     @_location.hide()
-
 
   flush: ->
     @_map.empty()
@@ -366,9 +367,9 @@ class MapsEditorCtrl extends Spine.Controller
       @["_#{el}_map"].val('')
     for obj in [@_list_maps, @_tools]
       obj.find('li').removeClass('selected')
+    @_tools.hide()
     for btn in [@_btn_del, @_btn_save, @_btn_clean]
       btn.attr('disabled', 'disabled')
-
 
   render_list: (map_selected) ->
     Utils.compile_templ(
@@ -381,29 +382,27 @@ class MapsEditorCtrl extends Spine.Controller
       @is_new = false
       Utils.select_li(obj)
       @.load_map(Utils.strip(obj.html()))
-
+      @_btn_del.removeAttr('disabled')
 
   load_map: (name_map) ->
     RMap.load @ws, name_map, (map) =>
       @.init_map_params(name_map, map.width, map.height)
       @.render_map(map.width, map.height, map.structure)
 
-
   init_map_params: (name, width, height) ->
     @_name_map.val(name)
     @_width_map.val(width)
     @_height_map.val(height)
 
-
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
 
+    @_tools.show()
     Utils.select_li(@_tools.find('li:first'))
-    for btn in [@_btn_del, @_btn_save, @_btn_clean]
+    for btn in [@_btn_save, @_btn_clean]
       btn.removeAttr('disabled')
 
     @_last_width = width
-
 
   remove_map: ->
     n = Utils.get_selected(@_list_maps)
@@ -411,12 +410,10 @@ class MapsEditorCtrl extends Spine.Controller
       Map.destroy(Map.findByAttribute('name', n).id)
       @.render_list()
       @.flush()
-
   
   create_map: ->
     @.flush()
     @is_new = true
-
 
   save_map: ->
     #Validate inputs
@@ -442,13 +439,14 @@ class MapsEditorCtrl extends Spine.Controller
       handler = =>
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
+        @_btn_del.removeAttr('disabled')
     else
       req['cmd'] = 'editMap'
       handler = =>
+        @_btn_del.removeAttr('disabled')
         console.log('MAP SAVED!!')
 
     @ws.send(req, handler)
-
   
   generate_map: ->
     #Validate inputs
@@ -470,21 +468,17 @@ class MapsEditorCtrl extends Spine.Controller
 
     @.render_map(width, height, structure)
 
-
   clean_map: ->
     @_map.find('.map_cell').removeClass('pl1 pl2 obst')
 
-
   select_tool: (event) ->
     Utils.select_li($(event.target))
-
 
   set_map_cell: (event) ->
     obj_cell = $(event.target)
     t = @_tools.find('li.selected .map_cell')
     tool_cl = t.attr('class').split(' ')[1] || ''
     obj_cell.attr('class', "map_cell #{tool_cl}")
-
 
 #-------- Armies editor --------
 
@@ -520,6 +514,7 @@ class GameCreationCtrl extends Spine.Controller
     for obj in [@_map, @_list_armies, @_list_maps]
       obj.empty()
     obj.empty() for obj in [@_army, @_map]
+    @_name_game.val('')
     @_location.hide()
 
   load_list: (res, model, cont, handler) ->
@@ -560,7 +555,6 @@ class GameCreationCtrl extends Spine.Controller
         nameArmy: @army.name
       },
       =>
-        @.hide_content()
         Session.write_location('game')
         Game.remove()
         Game.create(
@@ -570,6 +564,7 @@ class GameCreationCtrl extends Spine.Controller
           status: 'created'
         )
         AppCtrl.update_menu(true)
+        @.hide_content()
         @ctrl_game.show_content()
     )
 
