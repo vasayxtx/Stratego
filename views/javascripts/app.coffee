@@ -321,15 +321,19 @@ class AvailableGamesCtrl extends Spine.Controller
 class MapsEditorCtrl extends Spine.Controller
   elements:
     '#maps_editor':                 '_location'
+
+    '#maps_editor .tools':          '_tools'
+
     '#maps_editor .list_maps':      '_list_maps'
     '#maps_editor .map':            '_map'
-    '#name_map':                    '_name_map'
-    '#width_map':                   '_width_map'
-    '#height_map':                  '_height_map'
+    '#maps_editor #name_map':       '_name_map'
+    '#maps_editor #width_map':      '_width_map'
+    '#maps_editor #height_map':     '_height_map'
+
     '#maps_editor .btn_del':        '_btn_del'
     '#maps_editor .btn_save':       '_btn_save'
-    '#btn_clean_map':               '_btn_clean'
-    '#maps_editor .tools':          '_tools'
+    '#maps_editor #btn_clean_map':  '_btn_clean'
+    '#maps_editor #btn_gen_map':    '_btn_generate'
 
   events:
     'click #maps_editor .btn_new':        'create_map'
@@ -344,32 +348,43 @@ class MapsEditorCtrl extends Spine.Controller
 
   constructor: (el, @ws) ->
     super(el: el)
-    @is_new = true
     for el in [@_width_map, @_height_map]
       el.force_num_only($.proxy(@.generate_map, @))
 
   show_content: ->
     @_location.show()
+    @.flush()
     Map.deleteAll()
     @ws.send { 'cmd': 'getListMaps' }, (req) =>
-        Map.create(name: m) for m in req.maps
+        for m in req.maps
+          Map.create(name: m)
         @.render_list()
-    @.flush()
 
   hide_content: ->
-    obj.empty() for obj in [@_map, @_list_maps]
     @.flush()
+    @_list_maps.empty()
     @_location.hide()
 
   flush: ->
     @_map.empty()
     for el in ['name', 'width', 'height']
       @["_#{el}_map"].val('')
+    
+    objects = [
+      @_name_map
+      @_width_map
+      @_height_map
+      @_btn_clean
+      @_btn_generate
+      @_tools
+    ]
+    for obj in objects
+      obj.hide()
+
+    for btn in [@_btn_del, @_btn_save]
+      btn.attr('disabled', 'disabled')
     for obj in [@_list_maps, @_tools]
       obj.find('li').removeClass('selected')
-    @_tools.hide()
-    for btn in [@_btn_del, @_btn_save, @_btn_clean]
-      btn.attr('disabled', 'disabled')
 
   render_list: (map_selected) ->
     Utils.compile_templ(
@@ -382,27 +397,50 @@ class MapsEditorCtrl extends Spine.Controller
       @is_new = false
       Utils.select_li(obj)
       @.load_map(Utils.strip(obj.html()))
-      @_btn_del.removeAttr('disabled')
 
   load_map: (name_map) ->
     RMap.load @ws, name_map, (map) =>
-      @.init_map_params(name_map, map.width, map.height)
+      for el in ['width', 'height']
+        @["_#{el}_map"].show().val(map[el])
+      @_name_map.show().val(name_map)
       @.render_map(map.width, map.height, map.structure)
 
-  init_map_params: (name, width, height) ->
-    @_name_map.val(name)
-    @_width_map.val(width)
-    @_height_map.val(height)
+      for obj in [@_btn_del, @_btn_save]
+        obj.removeAttr('disabled')
+      @_btn_generate.show()
 
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
 
     @_tools.show()
     Utils.select_li(@_tools.find('li:first'))
-    for btn in [@_btn_save, @_btn_clean]
-      btn.removeAttr('disabled')
+
+    @_btn_save.removeAttr('disabled')
+    @_btn_clean.show()
 
     @_last_width = width
+
+  create_map: ->
+    @_map.empty()
+
+    objects = [
+      @_name_map
+      @_width_map
+      @_height_map
+      @_btn_generate
+    ]
+    for obj in objects
+      obj.show()
+    for obj in [@_tools, @_btn_clean]
+      obj.hide()
+
+    for obj in [@_btn_del, @_btn_save]
+      obj.attr('disabled', 'disabled')
+    @_list_maps.find('li').removeClass('selected')
+
+    for obj in [@_name_map, @_width_map, @_height_map]
+      obj.val('')
+    @is_new = true
 
   remove_map: ->
     n = Utils.get_selected(@_list_maps)
@@ -410,10 +448,6 @@ class MapsEditorCtrl extends Spine.Controller
       Map.destroy(Map.findByAttribute('name', n).id)
       @.render_list()
       @.flush()
-  
-  create_map: ->
-    @.flush()
-    @is_new = true
 
   save_map: ->
     #Validate inputs
@@ -423,7 +457,6 @@ class MapsEditorCtrl extends Spine.Controller
         parseInt($(el).attr('id').slice(5)))
 
     req =
-      cmd: if @is_new then 'createMap' else 'editMap'
       name: @_name_map.val()
       width: parseInt(@_width_map.val())
       height: parseInt(@_height_map.val())
@@ -571,6 +604,7 @@ class ArmiesEditorCtrl extends Spine.Controller
       @.flush()
 
   save_army: ->
+    #Validate name of the army
     req =
       name: @_name_army.val()
       units: {}
@@ -580,7 +614,7 @@ class ArmiesEditorCtrl extends Spine.Controller
       obj_name = obj_count.parent().find('.unit_name')
       count = parseInt(obj_count.val())
       name = Utils.strip(obj_name.html())
-      req.units[name] = count
+      req.units[name] = count if count
 
     if @is_new
       req.cmd = 'createArmy'
@@ -661,9 +695,10 @@ class GameCreationCtrl extends Spine.Controller
   load_army: (name_army) ->
     RArmy.load @ws, name_army, (army) =>
       units = {}
-      units[k] = v.count for k, v of army.units
+      for k, v of army.units
+        units[k] = v.count
       RArmy.render(@_army, units)
-      @army = army
+      @army = { units: units }
       @army.name = name_army
 
   create_game: ->
@@ -836,12 +871,14 @@ class GamePlacementCtrl extends Spine.Controller
 
   restore_prev_unit: (obj_cell) ->
     a_cl = ['pl1', 'map_cell']
-    obj_cell.removeClass(cl) for cl in a_cl
+    for cl in a_cl
+      obj_cell.removeClass(cl)
     unless (cl = obj_cell.attr('class')) == ''
       prev = @_army.find(".#{cl}").parent().find('.unit_count')
       prev.html(parseInt(prev.html()) + 1)
       obj_cell.attr('class', '')
-    obj_cell.addClass(cl) for cl in a_cl
+    for cl in a_cl
+      obj_cell.addClass(cl)
 
   set_map_cell: (event) ->
     return if @is_disabled
@@ -880,11 +917,13 @@ class GamePlacementCtrl extends Spine.Controller
       obj = $(el)
       a_cl = ['pl1', 'map_cell']
 
-      obj.removeClass(cl) for cl in a_cl
+      for cl in a_cl
+        obj.removeClass(cl)
       id = parseInt(obj.attr('id').slice(5))  #cell_<Id>
       unit = obj.attr('class').slice(9)       #img_unit_<Name>
       placement[id] = unit
-      obj.addClass(cl) for cl in a_cl
+      for cl in a_cl
+        obj.addClass(cl)
 
     for k, v of placement
       return alert('Not all units placed') if v == ''
@@ -982,7 +1021,8 @@ class AppCtrl extends Spine.Controller
   handle_login: ->
     @_auth.hide()
     @_profile.show()
-    obj.show() for obj in [@_top_menu, @_middle_menu]
+    for obj in [@_top_menu, @_middle_menu]
+      obj.show()
     @.init_ctrls()
 
   handle_logout: ->
@@ -994,7 +1034,8 @@ class AppCtrl extends Spine.Controller
 
     @_profile.hide()
     @_auth.show()
-    obj.hide() for obj in [@_top_menu, @_middle_menu]
+    for obj in [@_top_menu, @_middle_menu]
+      obj.hide()
     @_btn_about_project.click()
 
   init_ctrls: ->
@@ -1020,7 +1061,8 @@ class AppCtrl extends Spine.Controller
   nav_location: (event) ->
     ctrl = event.handleObj.selector.slice(5)
     Session.write_location(ctrl)
-    v.hide_content() for k, v of @ctrls
+    for k, v of @ctrls
+      v.hide_content()
     @ctrls[ctrl].show_content()
 
 #------------- Resources -------------
