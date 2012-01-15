@@ -274,12 +274,12 @@
     {
         "status": "ok",
         "units": {
-            <name of the unit>: [
-                <rank>,
-                <length of the move>,
-                <min count>,
-                <max count>
-            ],
+            <name of the unit>: {
+                "minCount": <min count>,
+                "maxCount": <max count>
+                "moveLength": <length of the move>,
+                "rank": <rank>,
+            },
             ...
         }
     }

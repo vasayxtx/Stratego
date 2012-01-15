@@ -16,12 +16,19 @@ auth t
 #Test2
 #--------------------------------
 req = { 'cmd' => 'getAllUnits' }
-foo = clone Generator::UNITS
-foo.each_pair { |k, v| foo[k] = v[0..1] + [v[2].min, v[2].max] }
+units = {}
+Generator::UNITS.each_pair do |u, p|
+  units[u] = {
+    'rank'        => p[0],
+    'moveLength'  => p[1],
+    'minCount'    => p[2].min,
+    'maxCount'    => p[2].max,
+  }
+end
 resp = {
   0 => {
     'status' => 'ok',
-    'units' => foo
+    'units' => units
   }
 }
 t.push_test([[0, req, resp]])

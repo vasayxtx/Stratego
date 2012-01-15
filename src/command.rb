@@ -262,13 +262,13 @@ class CmdGetAllUnits < Cmd
     user = get_user req['sid']
 
     units = {}
-    @@db['units'].find().each do |unit|
-      units[unit['name']] = [
-        unit['rank'],
-        unit['move_length'],
-        unit['min_count'],
-        unit['max_count']
-      ]
+    @@db['units'].find().each do |u|
+      units[u['name']] = {
+        'rank'        => u['rank'],
+        'moveLength'  => u['move_length'],
+        'minCount'    => u['min_count'],
+        'maxCount'    => u['max_count']
+      }
     end
 
     [{ 'units' => units }, {}, {}]
