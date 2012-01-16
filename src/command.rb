@@ -824,22 +824,24 @@ class CmdSetPlacement < Cmd
 
     map = get_by_id 'maps', game['map']
 
-    pl, opp = if user['_id'] == game['creator']
-                %w[pl1 opponent]
-              else
-                req['placement'] = reflect_placement(
-                  req['placement'],
-                  map['width'] * map['height']
-                )
-                %w[pl2 creator]
-              end
+    pl, opp =
+      if user['_id'] == game['creator']
+        %w[pl1 opponent]
+      else
+        req['placement'] = reflect_placement(
+          req['placement'],
+          map['width'] * map['height']
+        )
+        %w[pl2 creator]
+      end
 
-    r, r_opp = if p = game['placement']
-                 raise ResponseBadAction, 'Already placed' if p[pl]
-                 [true, 'startGame' ]
-               else
-                 [false, 'readyOpponent']
-               end
+    r, r_opp =
+      if p = game['placement']
+        raise ResponseBadAction, 'Already placed' if p[pl]
+        [true, 'startGame' ]
+      else
+        [false, 'readyOpponent']
+      end
                                             
     check_placement(
       req['placement'], pl, map,
@@ -948,6 +950,32 @@ class CmdMakeMove < Cmd
     end
   end
 
+  def calc_duel(pl_unit, opp_unit)
+      duel = {
+        'attacker' => pl_unit['name'],
+        'protector' => opp_unit['name'],
+      }
+      duel_opp = clone(duel)
+      
+      pl_win_duels = pl_unit['win_duels']['attack']
+      opp_win_duels = opp_unit['win_duels']['protect']
+      
+      duel['result'], duel_opp['result'] = 
+        if pl_win_duels.include?(opp_unit['_id'])
+          [:win, :loss]
+        elsif opp_win_duels == :all || opp_win_duels.include?(pl_unit['_id'])
+          [:loss, :win]
+        else
+          h = { 1 => :win, -1 => :loss, 0 => :draw }
+          [
+            h[pl_unit['rank'] <=> opp_unit['rank']],
+            h[opp_unit['rank'] <=> pl_unit['rank']]
+          ]
+        end
+
+      [duel, duel_opp]
+  end
+
   def make_move(game, map, p_from, p_to, is_pl1)
     pl, opp = is_pl1 ? %w[pl1 pl2] : %w[pl2 pl1]
 
@@ -976,29 +1004,14 @@ class CmdMakeMove < Cmd
       unit_name = opp_placement[p_to.to_s]
       opp_unit = get_by_name('units', unit_name)
 
-      duel = {
-        'attacker' => pl_unit['name'],
-        'protector' => opp_unit['name'],
-      }
-      duel_opp = clone(duel)
-      
-      pl_win_duels = pl_unit['win_duels']
-      opp_win_duels = opp_unit['win_duels']
+      duel, duel_opp = calc_duel(pl_unit, opp_unit)
 
-      if pl_win_duels['attack'].include?(opp_unit['_id'])
-        r, r_opp = :win, :loss
-      elsif opp_win_duels['protect'] == :all || opp_win_duels['protect'].include?(pl_unit['_id'])
-        r, r_opp = :loss, :win
-      else
-        h = { 1 => :win, -1 => :loss, 0 => :draw }
-        r = h[pl_unit['rank'] <=> opp_unit['rank']]
-        r_opp = h[opp_unit['rank'] <=> pl_unit['rank']]
+      if [:win, :draw].include?(pl_duel['result'])
+        opp_placement.delete(p_to.to_s) 
+        pl_placement[p_to.to_s] = pl_unit['name']
       end
-      duel['result'], duel_opp['result'] = r, r_opp
-
-      opp_placement.delete(p_to.to_s) if [:win, :draw].include?(r)
     else
-      duel, duel_opp = {}, {}
+      pl_duel, opp_duel = {}, {}
       pl_placement[p_to.to_s] = pl_unit['name']
     end
 
@@ -1021,7 +1034,7 @@ class CmdMakeMove < Cmd
       }
     )
 
-    [duel, duel_opp]
+    [pl_duel, opp_duel]
   end
 end
 

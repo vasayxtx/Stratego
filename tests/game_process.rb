@@ -19,17 +19,14 @@ class GameProcess
   def make_move(p_from, p_to)
     req, r = GameProcess.make_cmd(p_from, p_to)
 
-    if @turn == :pl
-      @turn = :opp
-      placement = @pl_placement
-      sender = 0
-    else
-      @turn = :pl
-      p_from = MAP_SIZE - p_from - 1
-      p_to = MAP_SIZE - p_to - 1
-      placement = @opp_placement
-      sender = 1
-    end
+    @turn, placement, sender =
+      if @turn == :pl
+        [:opp, @pl_placement, 0]
+      else
+        p_from = MAP_SIZE - p_from - 1
+        p_to = MAP_SIZE - p_to - 1
+        [:pl, @opp_placement, 1]
+      end
     placement[p_to.to_s] = placement[p_from.to_s]
     placement.delete(p_from.to_s)
 
@@ -199,7 +196,7 @@ resp = {
 }
 t.push_test([[1, GameProcess.make_cmd(8, 20)[0], resp]])
 
-#Test5 (bad positions)
+#Test6 (bad positions)
 #--------------------------------
 resp = {
   0 => {
@@ -218,7 +215,7 @@ test = [
 ].map { |el| [0, GameProcess.make_cmd(el[0], el[1])[0], resp] }
 t.push_test(test)
 
-#Test6 (bad lenght of the move)
+#Test7 (bad lenght of the move)
 #--------------------------------
 resp = {
   0 => {
@@ -240,7 +237,7 @@ t.push_test(test)
 cl0_pl1 = Generator::make_tactic(Generator::TACTIC_TEST)
 cl1_pl1 = clone(cl0_pl1)
 
-#Test7 (pl1)
+#Test8 (pl1)
 #--------------------------------
 =begin
 
@@ -264,7 +261,7 @@ cl1_pl1 = clone(cl0_pl1)
 
 t.push_test(game_process.make_move(5, 17))
 
-#Test8 (pl2)
+#Test9 (pl2)
 #--------------------------------
 =begin
 
@@ -288,7 +285,7 @@ t.push_test(game_process.make_move(5, 17))
 
 t.push_test(game_process.make_move(6, 18))
 
-#Test9 (pl1)
+#Test10 (pl1)
 #--------------------------------
 =begin
 
@@ -312,7 +309,7 @@ t.push_test(game_process.make_move(6, 18))
 
 t.push_test(game_process.make_move(6, 18))
 
-#Test10 (pl2)
+#Test11 (pl2)
 #--------------------------------
 =begin
 
@@ -336,7 +333,7 @@ t.push_test(game_process.make_move(6, 18))
 
 t.push_test(game_process.make_move(7, 19))
 
-#Test11 (pl1)
+#Test12 (pl1)
 #--------------------------------
 =begin
 
@@ -360,7 +357,7 @@ t.push_test(game_process.make_move(7, 19))
 
 t.push_test(game_process.make_move(18, 19))
 
-#Test12 (pl2)
+#Test13 (pl2)
 #--------------------------------
 =begin
 
@@ -384,7 +381,7 @@ t.push_test(game_process.make_move(18, 19))
 
 t.push_test(game_process.make_move(18, 17))
 
-#Test13 (pl1)
+#Test14 (pl1)
 #--------------------------------
 =begin
 
@@ -408,7 +405,7 @@ t.push_test(game_process.make_move(18, 17))
 
 t.push_test(game_process.make_move(4, 6))
 
-#Test14 (pl2)
+#Test15 (pl2)
 #--------------------------------
 =begin
 
@@ -432,7 +429,7 @@ t.push_test(game_process.make_move(4, 6))
 
 t.push_test(game_process.make_move(8, 20))
 
-#Test15 (pl1)
+#Test16 (pl1)
 #--------------------------------
 =begin
 
@@ -456,7 +453,7 @@ t.push_test(game_process.make_move(8, 20))
 
 t.push_test(game_process.make_move(3, 15))
 
-#Test16 (pl2)
+#Test17 (pl2)
 #--------------------------------
 =begin
 
@@ -480,7 +477,31 @@ t.push_test(game_process.make_move(3, 15))
 
 t.push_test(game_process.make_move(10, 22))
 
-#Test17 (pl1)
+#Test18 (pl1)
+#--------------------------------
+=begin
+
+    11    10     9     8     7     6     5     4     3     2     1     0 
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  | C(8)|     | M(3)|     |     |     | L(5)| S(2)| S(1)|B(-1)| F(0)| S(4)|
+  |     |     |     |     |     |     |     |     |     |     |     |     |
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |xxxxx| G(9)|     |M(10)| M(7)|     | C(6)|  &  |     |     |     |xxxxx|
+  |xxxxx|     |     |     |     |     |     |     |     |     |     |xxxxx|
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |xxxxx|     |     |     |     |     |     |  *  |     |     |     |xxxxx|
+  |xxxxx|     |     |S(1) |     |L(5) |     |C(6) |     |     |     |xxxxx|
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |     |     |     |     |     |     |     |     |     |     |     |     |
+  |S(4) |F(0) |B(-1)|     |     |     |S(2) |M(7) |M(10)|M(3) |G(9) |C(8) |
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+     0     1     2     3     4     5     6     7     8     9     10    11 
+
+=end
+
+t.push_test(game_process.make_move(19, 31))
+
+#Test18 (pl1)
 #--------------------------------
 =begin
 
