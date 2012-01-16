@@ -5,6 +5,7 @@
   em-websocket-client
   json
   fiber
+  awesome_print
 ].each { |gem| require gem }
 require File.join(File.dirname(__FILE__), '..', 'src', 'utils')
 
@@ -73,6 +74,11 @@ class Tester
               puts "REQUEST: #{req}"
               puts "EXP_RESP:\n#{exp_resp}"
               puts "RESP:\n#{resp}"
+              puts "Diff\n"
+              exp_resp.each_pair do |k, v|
+                puts "#{v}\n#{resp[k]}\n" unless v == resp[k]
+              end
+              puts "\n\n"
             end
           end
         end

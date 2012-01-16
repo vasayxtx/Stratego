@@ -885,11 +885,10 @@ class CmdMakeMove < Cmd
 
     map = get_by_id('maps', game['map'])
 
-    duel, duel_opp = make_move(
+    duels = make_move(
       game, map, req['posFrom'], req['posTo'], is_pl1)
 
-    resp = duel.empty? ? {} : { 'duel' => duel }
-    resp_opp = duel_opp.empty? ? {} : { 'duel' => duel_opp }
+    resp, resp_opp = duels.map { |d| d.empty? ? {} : { 'duel' => d } }
 
     resp_opp.merge!(
       'cmd' => 'makeMove',
@@ -901,6 +900,8 @@ class CmdMakeMove < Cmd
   end
 
   def check_positions(p_from, p_to, pl_positions, map)
+    #Ok, if player move to space or opponent cell
+    
     r = 0...(map['width'] * map['height'])
 
     cond = 
@@ -956,8 +957,8 @@ class CmdMakeMove < Cmd
     end
 
     pl_placement = game['placement'][pl]
-    pl_positions = pl_placement.keys.map { |el| el.to_i }
     opp_placement = game['placement'][opp]
+    pl_positions = pl_placement.keys.map { |el| el.to_i }
     opp_positions = opp_placement.keys.map { |el| el.to_i }
 
     check_positions(p_from, p_to, pl_positions, map)
@@ -998,7 +999,7 @@ class CmdMakeMove < Cmd
       opp_placement.delete(p_to.to_s) if [:win, :draw].include?(r)
     else
       duel, duel_opp = {}, {}
-      pl_placement[p_to.to_s] = pl_unit
+      pl_placement[p_to.to_s] = pl_unit['name']
     end
 
     moves = game['moves'][pl]
