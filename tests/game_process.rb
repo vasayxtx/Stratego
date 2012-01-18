@@ -16,44 +16,95 @@ class GameProcess
     @turn = :pl
   end
 
-  def make_move(p_from, p_to)
-    req, r = GameProcess.make_cmd(p_from, p_to)
-
-    @turn, placement, sender =
+  def make_move(pos_from, pos_to, duel = {})
+    @turn, pl_plac, opp_plac, sender, p_from, p_to =
       if @turn == :pl
-        [:opp, @pl_placement, 0]
+        [
+          :opp,
+          @pl_placement,
+          @opp_placement,
+          0,
+          pos_from.to_s,
+          pos_to.to_s
+        ]
       else
-        p_from = MAP_SIZE - p_from - 1
-        p_to = MAP_SIZE - p_to - 1
-        [:pl, @opp_placement, 1]
+        [
+          :pl,
+          @opp_placement,
+          @pl_placement,
+          1,
+          (MAP_SIZE - pos_from - 1).to_s,
+          (MAP_SIZE - pos_to - 1).to_s
+        ]
       end
-    placement[p_to.to_s] = placement[p_from.to_s]
-    placement.delete(p_from.to_s)
 
-     resp = { sender => { 'status' => 'ok' } }
-     resp[(sender + 1) % 2] = r
+    request, responses = 
+      if duel.empty?
+        pl_plac[p_to] = pl_plac[p_from]
+        GameProcess.make_move_cmd(pos_from, pos_to, sender)
+      else
+        results = 
+          if duel[:result] == :win
+            pl_plac[p_to] = pl_plac[p_from]
+            opp_plac.delete(p_to)
+            [:win, :loss]
+          elsif duel[:result] == :loss
+            [:loss, :win]
+          else
+            opp_plac.delete(p_to)
+            [:draw, :draw]
+          end
+        req_duels = Array.new(2) do |i|
+          {
+            'attacker'  => duel[:attacker],
+            'protector' => duel[:protector],
+            'result'    => results[i].to_s
+          }
+        end
+        GameProcess.make_move_duel_cmd(pos_from, pos_to, sender, req_duels)
+      end
+
+    pl_plac.delete(p_from)
 
     _req = { 'cmd' => 'getGame' }
     _resp = get_game
 
     [
-      [sender, req, resp],
+      [sender, request, responses],
       [0, _req, _resp[0]],
       [1, _req, _resp[1]],
     ]
   end
 
-  def self.make_cmd(p_from, p_to)
+  def self.req_make_move_cmd(p_from, p_to)
+    {
+      'cmd' => 'makeMove',
+      'posFrom' => p_from,
+      'posTo' => p_to
+    }
+  end
+
+  def self.make_move_duel_cmd(p_from, p_to, sender, results)
+    res = GameProcess.make_move_cmd(p_from, p_to, sender)
+
+    res[1][sender].merge!('duel' => results[sender])
+
+    opp = (sender + 1) % 2
+    res[1][opp].merge!('duel' => results[opp])
+
+    res
+  end
+
+  def self.make_move_cmd(p_from, p_to, sender)
     [
+      GameProcess.req_make_move_cmd(p_from, p_to),
       {
-        'cmd' => 'makeMove',
-        'posFrom' => p_from,
-        'posTo' => p_to
-      },
-      {
-        'cmd' => 'makeMove',
-        'posFrom' => MAP_SIZE - p_from - 1,
-        'posTo' => MAP_SIZE - p_to - 1
+        sender => { 'status' => 'ok' },
+        ((sender + 1) % 2) => {
+          'cmd' => 'opponentMakeMove',
+          'posFrom' => MAP_SIZE - p_from - 1,
+          'posTo' => MAP_SIZE - p_to - 1
+        }
       }
     ]
   end
@@ -139,7 +190,7 @@ resp = {
     'message' => 'Game isn\'t started'
   }
 }
-t.push_test([[1, GameProcess.make_cmd(8, 20)[0], resp]])
+t.push_test([[1, GameProcess.req_make_move_cmd(8, 20), resp]])
 
 #Test4
 #--------------------------------
@@ -194,7 +245,7 @@ resp = {
     'message' => 'It isn\'t your turn now'
   }
 }
-t.push_test([[1, GameProcess.make_cmd(8, 20)[0], resp]])
+t.push_test([[1, GameProcess.req_make_move_cmd(8, 20), resp]])
 
 #Test6 (bad positions)
 #--------------------------------
@@ -212,7 +263,7 @@ test = [
   [13, 14],
   [1, 2],
   [0, 12],
-].map { |el| [0, GameProcess.make_cmd(el[0], el[1])[0], resp] }
+].map { |el| [0, GameProcess.req_make_move_cmd(el[0], el[1]), resp] }
 t.push_test(test)
 
 #Test7 (bad lenght of the move)
@@ -229,8 +280,8 @@ test = [
   [2, 14],
   [3, 27],
   [4, 15],
-  [6, 30]
-].map { |el| [0, GameProcess.make_cmd(el[0], el[1])[0], resp] }
+  [6, 30],
+].map { |el| [0, GameProcess.req_make_move_cmd(el[0], el[1]), resp] }
 t.push_test(test)
 
 #--------------------------------------------------------------------------
@@ -501,7 +552,7 @@ t.push_test(game_process.make_move(10, 22))
 
 t.push_test(game_process.make_move(19, 31))
 
-#Test18 (pl1)
+#Test18 (pl2)
 #--------------------------------
 =begin
 
@@ -510,11 +561,11 @@ t.push_test(game_process.make_move(19, 31))
   | C(8)|     | M(3)|     |     |     | L(5)| S(2)| S(1)|B(-1)| F(0)| S(4)|
   |     |     |     |     |     |     |     |     |     |     |     |     |
   +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-  |xxxxx| G(9)|     |M(10)| M(7)|     | C(6)|  &  |     |     |     |xxxxx|
-  |xxxxx|     |     |     |     |     |     |     |     |     |     |xxxxx|
+  |xxxxx| G(9)|     |M(10)| M(7)|     | C(6)|     |     |     |     |xxxxx|
+  |xxxxx|     |     |     |  *  |  &  |     |C(6) |     |     |     |xxxxx|
   +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-  |xxxxx|     |     |     |     |     |     |  *  |     |     |     |xxxxx|
-  |xxxxx|     |     |S(1) |     |L(5) |     |C(6) |     |     |     |xxxxx|
+  |xxxxx|     |     |     |     |     |     |     |     |     |     |xxxxx|
+  |xxxxx|     |     |S(1) |     |L(5) |     |     |     |     |     |xxxxx|
   +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
   |     |     |     |     |     |     |     |     |     |     |     |     |
   |S(4) |F(0) |B(-1)|     |     |     |S(2) |M(7) |M(10)|M(3) |G(9) |C(8) |
@@ -523,7 +574,39 @@ t.push_test(game_process.make_move(19, 31))
 
 =end
 
-t.push_test(game_process.make_move(19, 31))
+t.push_test(game_process.make_move(19, 18))
+
+#Test19 (pl1, duel: Scout -> Captain)
+#--------------------------------
+=begin
+
+    11    10     9     8     7     6     5     4     3     2     1     0 
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  | C(8)|     | M(3)|     |     |     | L(5)| S(2)| S(1)|B(-1)| F(0)| S(4)|
+  |     |     |     |     |     |     |     |     |     |     |     |     |
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |xxxxx| G(9)|     |M(10)|     | M(7)| C(6)|     |     |     |     |xxxxx|
+  |xxxxx|     |     |     |     |     |  &  |C(6) |     |     |     |xxxxx|
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |xxxxx|     |     |     |     |     |     |     |     |     |     |xxxxx|
+  |xxxxx|     |     |S(1) |     |L(5) |     |     |     |     |     |xxxxx|
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+  |     |     |     |     |     |     |  *  |     |     |     |     |     |
+  |S(4) |F(0) |B(-1)|     |     |     |S(2) |M(7) |M(10)|M(3) |G(9) |C(8) |
+  +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+     0     1     2     3     4     5     6     7     8     9     10    11 
+
+=end
+
+t.push_test(
+  game_process.make_move(
+    6, 30, {
+      :result     => :loss,
+      :attacker   => 'Scout',
+      :protector  => 'Captain'
+    }
+  )
+)
 
 #Test
 #--------------------------------

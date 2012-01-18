@@ -893,7 +893,7 @@ class CmdMakeMove < Cmd
     resp, resp_opp = duels.map { |d| d.empty? ? {} : { 'duel' => d } }
 
     resp_opp.merge!(
-      'cmd' => 'makeMove',
+      'cmd' => 'opponentMakeMove',
       'posFrom' => reflect_pos(req['posFrom'], map),
       'posTo'   => reflect_pos(req['posTo'], map)
     )
@@ -999,19 +999,19 @@ class CmdMakeMove < Cmd
     check_move(p_from, p_to, map, game['placement'], pl_unit)
 
     #puts "\n\nCHECKING_MOVING: OK\n\n"
-
+    
+    pl_duel, opp_duel = {}, {}
     if opp_positions.include?(p_to)
       unit_name = opp_placement[p_to.to_s]
       opp_unit = get_by_name('units', unit_name)
 
-      duel, duel_opp = calc_duel(pl_unit, opp_unit)
+      pl_duel, duel_opp = calc_duel(pl_unit, opp_unit)
 
       if [:win, :draw].include?(pl_duel['result'])
         opp_placement.delete(p_to.to_s) 
         pl_placement[p_to.to_s] = pl_unit['name']
       end
     else
-      pl_duel, opp_duel = {}, {}
       pl_placement[p_to.to_s] = pl_unit['name']
     end
 

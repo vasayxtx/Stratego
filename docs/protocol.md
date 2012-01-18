@@ -464,7 +464,7 @@
     }
 ### Response for other player
     {
-        "cmd": "makeMove",
+        "cmd": "opponentMakeMove",
         "posFrom": <position from>,
         "posTo": <position to>,
         "duel": {                         //Optional
