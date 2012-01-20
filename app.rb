@@ -107,7 +107,7 @@ EventMachine.run do
 
       rescue Exception => ex
        resp = { 
-          'status' => 'badRequest',
+          'status'  => 'badRequest',
           'message' => ex.message
           #'message' => 'Incorrect json'
         }
@@ -118,4 +118,3 @@ EventMachine.run do
 
   App.run! :port => cnfg['app_server']['port']
 end
-

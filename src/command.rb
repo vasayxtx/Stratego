@@ -69,7 +69,7 @@ module Database
   def get_game_by_user(user_id)
     game = @@db['games'].find_one(
       { '$or' => [
-        { 'creator' => user_id },
+        { 'creator'  => user_id },
         { 'opponent' => user_id }
       ] }
     )
@@ -606,16 +606,16 @@ class CmdCreateGame < Cmd
     user = get_user(req['sid'])
     check_user(user['_id'])
 
-    map = get_by_name('maps', req['nameMap'])
+    map  = get_by_name('maps', req['nameMap'])
     army = get_by_name('armies', req['nameArmy'])
 
     check_game(map, army)
 
     @@db['games'].insert(
-      'name' => req['name'],
-      'creator' => user['_id'],
-      'map' => map['_id'],
-      'army' => army['_id'],
+      'name'       => req['name'],
+      'creator'    => user['_id'],
+      'map'        => map['_id'],
+      'army'       => army['_id'],
       'created_at' => Time.now.utc
     )
     
@@ -637,13 +637,14 @@ class CmdGetGameParams < Cmd
 
   def handle(req)
     get_user(req['sid'])
+
     game = get_by_name('games', req['name'])
-    map = get_by_id('maps', game['map'])
+    map  = get_by_id('maps', game['map'])
     army = get_by_id('armies', game['army'])
     
     [
       {
-        'map' => h_slice(map, %w[name width height structure]),
+        'map'  => h_slice(map, %w[name width height structure]),
         'army' => h_slice(army, %w[name units])
       },
       {}, {}
@@ -714,7 +715,7 @@ class CmdJoinGame < Cmd
           'cmd' => 'startGamePlacement'
         },
         :all => {
-          'cmd' => 'delAvailableGame',
+          'cmd'  => 'delAvailableGame',
           'name' => game['name']
         }
       },
@@ -887,18 +888,23 @@ class CmdMakeMove < Cmd
 
     map = get_by_id('maps', game['map'])
 
-    duels = make_move(
+    pl_duel, opp_duel, is_end = make_move(
       game, map, req['posFrom'], req['posTo'], is_pl1)
 
-    resp, resp_opp = duels.map { |d| d.empty? ? {} : { 'duel' => d } }
+    pl_resp, opp_resp = [pl_duel, opp_duel].map { |d| d.empty? ? {} : { 'duel' => d } }
 
-    resp_opp.merge!(
-      'cmd' => 'opponentMakeMove',
+    opp_resp.merge!(
+      'cmd'     => 'opponentMakeMove',
       'posFrom' => reflect_pos(req['posFrom'], map),
       'posTo'   => reflect_pos(req['posTo'], map)
     )
 
-    [resp, { opp_id => resp_opp }, {}]
+    if is_end
+      pl_resp['isEnd']  = true
+      opp_resp['isEnd'] = true
+    end
+
+    [pl_resp, { opp_id => opp_resp }, {}]
   end
 
   def check_positions(p_from, p_to, pl_positions, map)
@@ -919,7 +925,7 @@ class CmdMakeMove < Cmd
   def check_move(p_from, p_to, map, placement, unit)
     pos_to_cord = ->(p) { [p % map['width'], p / map['width']] }
     x_from, y_from = pos_to_cord.(p_from)
-    x_to, y_to = pos_to_cord.(p_to)
+    x_to, y_to     = pos_to_cord.(p_to)
 
     check_line = ->(c_from, c_to, dir) do
       m_len = (c_to - c_from).abs
@@ -952,12 +958,12 @@ class CmdMakeMove < Cmd
 
   def calc_duel(pl_unit, opp_unit)
       duel = {
-        'attacker' => pl_unit['name'],
+        'attacker'  => pl_unit['name'],
         'protector' => opp_unit['name'],
       }
       duel_opp = clone(duel)
       
-      pl_win_duels = pl_unit['win_duels']['attack']
+      pl_win_duels  = pl_unit['win_duels']['attack']
       opp_win_duels = opp_unit['win_duels']['protect']
       
       duel['result'], duel_opp['result'] = 
@@ -968,12 +974,12 @@ class CmdMakeMove < Cmd
         else
           h = { 1 => :win, -1 => :loss, 0 => :draw }
           [
-            h[pl_unit['rank'] <=> opp_unit['rank']],
+            h[pl_unit['rank']  <=> opp_unit['rank']],
             h[opp_unit['rank'] <=> pl_unit['rank']]
           ]
         end
 
-      [duel, duel_opp]
+      [duel, duel_opp, opp_unit['name'] == 'Flag']
   end
 
   def make_move(game, map, p_from, p_to, is_pl1)
@@ -984,57 +990,58 @@ class CmdMakeMove < Cmd
       p_to = reflect_pos(p_to, map)
     end
 
-    pl_placement = game['placement'][pl]
+    pl_placement  = game['placement'][pl]
     opp_placement = game['placement'][opp]
-    pl_positions = pl_placement.keys.map { |el| el.to_i }
+    pl_positions  = pl_placement.keys.map { |el| el.to_i }
     opp_positions = opp_placement.keys.map { |el| el.to_i }
 
     check_positions(p_from, p_to, pl_positions, map)
-
-    #puts "\n\nCHECKING_POSITIONS: OK\n\n"
 
     unit_name = pl_placement[p_from.to_s]
     pl_unit = get_by_name('units', unit_name)
 
     check_move(p_from, p_to, map, game['placement'], pl_unit)
-
-    #puts "\n\nCHECKING_MOVING: OK\n\n"
     
-    pl_duel, opp_duel = {}, {}
+    pl_duel, opp_duel, is_end = {}, {}, false
     if opp_positions.include?(p_to)
       unit_name = opp_placement[p_to.to_s]
       opp_unit = get_by_name('units', unit_name)
 
-      pl_duel, duel_opp = calc_duel(pl_unit, opp_unit)
+      pl_duel, opp_duel, is_end = calc_duel(pl_unit, opp_unit)
 
-      if [:win, :draw].include?(pl_duel['result'])
+      if pl_duel['result'] == :win
         opp_placement.delete(p_to.to_s) 
-        pl_placement[p_to.to_s] = pl_unit['name']
+        pl_placement[p_to.to_s] = pl_unit['name'];
+      elsif pl_duel['result'] == :draw
+        opp_placement.delete(p_to.to_s)
       end
     else
       pl_placement[p_to.to_s] = pl_unit['name']
     end
 
-    moves = game['moves'][pl]
-    moves << {
-      'pos_from' => p_from,
-      'pos_to' => p_to,
-      'created_at' => Time.now.utc
-    }
-
-    pl_placement.delete(p_from.to_s)
-
-    @@db['games'].update(
-      { '_id' => game['_id'] },
-      { '$set' =>
-        {
-          'moves' => game['moves'],
-          'placement' => game['placement']
-        }
+    if is_end
+      @@db['games'].remove('_id' => game['_id'])
+    else
+      moves = game['moves'][pl]
+      moves << {
+        'pos_from'   => p_from,
+        'pos_to'     => p_to,
+        'created_at' => Time.now.utc
       }
-    )
 
-    [pl_duel, opp_duel]
+      pl_placement.delete(p_from.to_s)
+
+      @@db['games'].update(
+        { '_id'  => game['_id'] },
+        { '$set' =>
+          {
+            'moves'     => game['moves'],
+            'placement' => game['placement']
+          }
+        }
+      )
+    end
+
+    [pl_duel, opp_duel, is_end]
   end
 end
-

@@ -456,21 +456,23 @@
 ### Response
     {
         "status": "ok",
-        "duel": {                         //Optional
+        "duel": {                       //Optional
             "result": <result of the duel (win, loss, draw)>,
             "attacker": <attacker unit>,
             "protector": <protector unit>,
-        }
+        },
+        "isEnd": true                   //Optional
     }
 ### Response for other player
     {
         "cmd": "opponentMakeMove",
         "posFrom": <position from>,
         "posTo": <position to>,
-        "duel": {                         //Optional
+        "duel": {                       //Optional
             "result": <result of the duel (win, loss, draw)>,
             "attacker": <attacker unit>,
             "protector": <protector unit>,
-        }
+        },
+        "isEnd": true                   //Optional
     }
 
