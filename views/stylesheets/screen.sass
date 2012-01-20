@@ -21,7 +21,6 @@ $map_cell_size: 40px
 
 $selected_color: #E0E0E0
 
-
 @mixin input_name
   width: 125px
 
@@ -295,23 +294,43 @@ footer
         background-color: $selected_color
 
 
-//---------- Maps editor ----------
+//---------- Location ----------
+$top_side_height: 50px
 
-#maps_editor
+@mixin location
   $col_count: 18
-  $top_side_height: 50px
+  $left_col_count: 4
+  $right_col_count: 14
+
   +container
   width: $col_count * $bgrid_width
 
   .left_side
-    $col_count: 4
-    +column($col_count)
-
+    +column($left_col_count)
+    
     .top_side
       +container
-      width: $col_count * $bgrid_width - 1px
+      width: $left_col_count * $bgrid_width - 1px
+
+  .right_side
+    +column($right_col_count)
+
+    .top_side
+      width: $right_col_count * $bgrid_width - 20px
+
+  .top_side
+    height: $top_side_height
+  
+//---------- Maps editor ----------
+
+#maps_editor
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
+
+  .left_side
+    .top_side
       border-right: 1px solid black
-      height: $top_side_height
 
       .btn
         width: 50px
@@ -324,7 +343,7 @@ footer
           margin-right: 10px
 
     .list_maps
-      +list_resources($col_count)
+      +list_resources($left_col_count)
 
     .tools
       display: none
@@ -351,12 +370,7 @@ footer
             background-color: $selected_color
 
   .right_side
-    $col_count: 14
-    +column($col_count)
-
     .top_side
-      width: $col_count * $bgrid_width - 20px
-      height: $top_side_height
       border-bottom: 1px solid black
 
       .params
@@ -379,33 +393,21 @@ footer
 //---------- Creation of the game ----------
 
 #game_creation
-  $col_count: 18
-  $top_side_height: 50px
-  +container
-  width: $col_count * $bgrid_width
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
 
   .army_panel, .map_panel
     .left_side
-      $col_count: 4
-      +column($col_count)
-
       .top_side
-        +container
-        width: $col_count * $bgrid_width - 1px
         border-right: 1px solid black
-        height: $top_side_height
         text-align: center
 
       .list_maps, .list_armies
-        +list_resources($col_count)
+        +list_resources($left_col_count)
 
     .right_side
-      $col_count: 14
-      +column($col_count)
-
       .top_side
-        width: $col_count * $bgrid_width - 20px
-        height: $top_side_height
         border-bottom: 1px solid black
 
       .map_place
@@ -428,19 +430,12 @@ footer
 //---------- Created game ----------
 
 #game_created
-  $col_count: 18
-  $top_side_height: 50px
-  +container
-  width: $col_count * $bgrid_width
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
 
   .left_side
-    $col_count: 4
-    +column($col_count)
-
     .top_side
-      display: block
-      width: $col_count * $bgrid_width - 1px
-      height: $top_side_height
       text-align: center
       border:
         bottom: 1px solid black
@@ -452,12 +447,7 @@ footer
         left: 45px
 
   .right_side
-    $col_count: 14
-    +column($col_count)
-
     .top_side
-      width: $col_count * $bgrid_width - 20px
-      height: $top_side_height
       border-bottom: 1px solid black
 
       h3
@@ -475,19 +465,12 @@ footer
 //---------- AvailableGames ----------
 
 #available_games
-  $col_count: 18
-  $top_side_height: 50px
-  +container
-  width: $col_count * $bgrid_width
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
 
   .left_side
-    $col_count: 4
-    +column($col_count)
-
     .top_side
-      display: block
-      width: $col_count * $bgrid_width - 1px
-      height: $top_side_height
       border-right: 1px solid black
 
       > *
@@ -495,15 +478,10 @@ footer
         margin-left: 55px
 
     .list_games
-      +list_resources($col_count)
+      +list_resources($left_col_count)
 
   .right_side
-    $col_count: 14
-    +column($col_count)
-
     .top_side
-      width: $col_count * $bgrid_width - 20px
-      height: $top_side_height
       border-bottom: 1px solid black
 
       h3
@@ -521,19 +499,12 @@ footer
 //---------- GamePlacement ----------
 
 #game_placement
-  $col_count: 18
-  $top_side_height: 50px
-  +container
-  width: $col_count * $bgrid_width
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
 
   .left_side
-    $col_count: 4
-    +column($col_count)
-
     .top_side
-      display: block
-      width: $col_count * $bgrid_width - 1px
-      height: $top_side_height
       border-bottom: 1px solid black
       border-right: 1px solid black
 
@@ -555,12 +526,7 @@ footer
             background-color: $selected_color
 
   .right_side
-    $col_count: 14
-    +column($col_count)
-
     .top_side
-      width: $col_count * $bgrid_width - 20px
-      height: $top_side_height
       border-bottom: 1px solid black
 
       > div
@@ -571,9 +537,9 @@ footer
         +column(10)
 
       .right_side
-        $col_count: 4
-        +column($col_count)
-        width: $col_count * $bgrid_width - 20px
+        $rr_col_count: 4
+        +column($rr_col_count)
+        width: $rr_col_count * $bgrid_width - 20px
 
         .btn_leave_game
           float: right
@@ -584,20 +550,13 @@ footer
 //---------- Armies editor ----------
 
 #armies_editor
-  $col_count: 18
-  $top_side_height: 50px
-  +container
-  width: $col_count * $bgrid_width
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
 
   .left_side
-    $col_count: 4
-    +column($col_count)
-
     .top_side
-      +container
-      width: $col_count * $bgrid_width - 1px
       border-right: 1px solid black
-      height: $top_side_height
 
       .btn
         width: 50px
@@ -610,15 +569,10 @@ footer
           margin-right: 10px
 
     .list_armies
-      +list_resources($col_count)
+      +list_resources($left_col_count)
 
   .right_side
-    $col_count: 14
-    +column($col_count)
-
     .top_side
-      width: $col_count * $bgrid_width - 20px
-      height: $top_side_height
       border-bottom: 1px solid black
 
       .params
