@@ -140,31 +140,11 @@ class AuthCtrl extends Spine.Controller
     )
 
   show_modal: (cmd) ->
-    template = $('#templ_modal_auth').html()
-    compiled = _.template(template)
-    $('body').append(compiled(
-      header: Utils.capitalize(cmd)
-    ))
-
-    obj = $('#modal_auth')
-
-    obj.on 'hidden', ->
-      $(@).remove()
-
-    obj.modal
-      backdrop: true,
-      keyboard: true,
-      show: true
-    
-    obj.find('.cancel').on 'click', =>
-      obj.modal('hide')
-
-    obj.find('.apply').on 'click', =>
-      @.auth(
-        cmd,
-        obj.find('input.login').val(),
-        obj.find('input.password').val(),
-      )
+    new ModalAuth(
+      header:     Utils.capitalize(cmd)
+      handle_ok:  (login, password) =>
+        @.auth(cmd, login, password)
+    )
 
   auth: (cmd, login, passw) ->
     @ws.auth(
@@ -332,9 +312,11 @@ class MapsEditorCtrl extends Spine.Controller
     '#maps_editor #btn_clean_map':  '_btn_clean'
     '#maps_editor #btn_gen_map':    '_btn_generate'
 
+    '#modal_map_del':               '_modal_del'
+
   events:
-    'click #maps_editor .btn_new':        'create_map'
-    'click #maps_editor .btn_del':        'remove_map'
+    'click #maps_editor .btn_new':        'add_map'
+    'click #maps_editor .btn_del':        'delete_map'
     'click #maps_editor .btn_save':       'save_map'
 
     'click #btn_gen_map':                 'generate_map'
@@ -417,7 +399,7 @@ class MapsEditorCtrl extends Spine.Controller
 
     @_last_width = width
 
-  create_map: ->
+  add_map: ->
     @_map.empty()
 
     objects = [
@@ -439,12 +421,17 @@ class MapsEditorCtrl extends Spine.Controller
       obj.val('')
     @is_new = true
 
-  remove_map: ->
+  delete_map: ->
     n = Utils.get_selected(@_list_maps)
-    @ws.send { cmd: 'destroyMap', name: n }, =>
-      Map.destroy(Map.findByAttribute('name', n).id)
-      @.render_list()
-      @.flush()
+    new ModalYesNo(
+      header:     'Deletion of the map' 
+      text:       "A you want to delete '#{n}' map"
+      handle_ok:  =>
+        @ws.send { cmd: 'destroyMap', name: n }, =>
+          Map.destroy(Map.findByAttribute('name', n).id)
+          @.render_list()
+          @.flush()
+    )
 
   save_map: ->
     #Validate inputs
@@ -464,18 +451,22 @@ class MapsEditorCtrl extends Spine.Controller
 
     if @is_new
       req['cmd'] = 'createMap'
-      handler = =>
+      @ws.send req, =>
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
         @_btn_del.removeAttr('disabled')
         @is_new = false
-    else
-      req['cmd'] = 'editMap'
-      handler = =>
-        console.log('MAP SAVED!!')
+      return
 
-    @ws.send(req, handler)
-  
+    new ModalYesNo(
+      header:     'Saving of the map' 
+      text:       "A you want to save '#{req.name}' map"
+      handle_ok:  =>
+        req['cmd'] = 'editMap'
+        @ws.send req, =>
+          console.log('Map saved')
+    )
+
   generate_map: ->
     #Validate inputs
     width = parseInt(@_width_map.val())
@@ -808,6 +799,7 @@ class GamePlacementCtrl extends Spine.Controller
     '#game_placement h3':           '_game_name'
 
     '#game_placement .btn_ready':   '_btn_ready'
+    '#game_placement .btn_clean':   '_btn_clean'
 
   events:
     'click #game_placement .map_cell':          'set_map_cell'
@@ -855,7 +847,7 @@ class GamePlacementCtrl extends Spine.Controller
       @_game_name.html(game.game_name)
 
       unless _.isArray(game.state.pl1)      #If not placed yet
-        for btn in [@_btn_ready, @btn_clean]
+        for btn in [@_btn_ready, @_btn_clean]
           btn.attr('disabled', 'disabled')
         @_army.find('.unit_count').html(0)
         @is_disabled = true
@@ -934,6 +926,7 @@ class GamePlacementCtrl extends Spine.Controller
         placement: placement
       },
       (data) =>
+        @is_disabled = true
         @.go_to_process() if data.isGameStarted
     )
 
@@ -947,17 +940,96 @@ class GamePlacementCtrl extends Spine.Controller
 
 class GameProcessCtrl extends Spine.Controller
   elements:
-    '#game_process': '_location'
+    '#game_process':                  '_location'
+    '#game_process .map':             '_map'
+    '#game_process .left_side h3':    '_game_name'
+
+  events:
+    'click #game_process .map_cell.pl1':    'take_unit'
+    'click #game_process .map_cell':        'make_move'
 
   constructor: (el, @ws, @ctrl_about_project) ->
     super(el: el)
+    @ws.subscribe('endGame', $.proxy(@.exit_game, @))
+    @ws.subscribe('opponentMakeMove', $.proxy(@.opponent_move, @))
 
   show_content: ->
     @_location.show()
-    console.log('PROCESS')
+    @ws.send { cmd: 'getGame' }, (game) =>
+      map = game.map
+      structure =
+        obst: map.obst
+        pl1: game.state.pl1
+        pl2: game.state.pl2
+      @.render_map(map.width, map.height, structure)
+      @_game_name.html(game.game_name)
+
+    new ModalDuel(
+      attacker:   'Miner'
+      protector:  'Bomb'
+      result:     'win'
+    )
 
   hide_content: ->
     @_location.hide()
+    obj.empty() for obj in [@_map]
+
+  exit_game: ->
+    @ctrl_game.exit_game()
+    @.hide_content()
+
+  render_map: (width, height, structure) ->
+    RMap.render(@_map, width, height, structure)
+  
+  opponent_move: (move) ->
+    if move.duel
+      console.log('Duel')
+    else
+      pos_from = move.posFrom
+      pos_to = move.posTo
+      @_map.find("#cell_#{pos_from}").removeClass('pl2')
+      @_map.find("#cell_#{pos_to}").addClass('pl2')
+      
+    if move.isEnd
+      console.log('You loss')
+
+  take_unit: (event) -> 
+    obj_cell = $(event.target)
+    if obj_cell.hasClass('selected')
+      obj_cell.removeClass('selected')
+      return
+    @_map.find('.selected').removeClass('selected')
+    obj_cell.addClass('selected')
+
+  make_move: ->
+    obj_cell = $(event.target)
+    if obj_cell.hasClass('pl1') || obj_cell.hasClass('obst')
+      return
+
+    cell_from = @_map.find('.selected')
+    return unless cell_from.size()
+
+    pos_from = parseInt(cell_from.attr('id').slice(5))
+    pos_to = parseInt(obj_cell.attr('id').slice(5))
+
+    @ws.send(
+      {
+        cmd: 'makeMove'
+        posFrom: pos_from
+        posTo: pos_to
+      },
+      (data) =>
+        if data.duel
+          console.log('Duel')
+        else
+          cell_from.removeClass('map_cell pl1')
+          cl = cell_from.attr('class')
+          cell_from.attr('class', '').addClass('map_cell')
+          obj_cell.addClass("pl1 #{cl}")
+
+        if data.isEnd
+          console.log('You win!')
+    )
 
 #-------- AboutProjectCtrl --------
 
@@ -1167,6 +1239,58 @@ class Utils
     data = $.parseJSON(sessionStorage.getItem(model_name))
     sessionStorage.removeItem(model_name)
     model.create(data[0]) if data?
+
+#------------- Modals -------------
+
+class Modal
+  constructor: (modal_id, params) ->
+    template = $("#templ_#{modal_id}").html()
+    compiled = _.template(template)
+    $('body').append(compiled(params))
+
+    @modal = $("##{modal_id}")
+
+    @modal.on 'hidden', ->
+      $(@).remove()
+
+    @modal.modal
+      backdrop: true
+      keyboard: true
+      show:     true
+
+class ModalAuth extends Modal
+  constructor: (opts) ->
+    super(
+      'modal_auth',
+      { header: opts.header }
+    )
+
+    @modal.find('.cancel').on 'click', =>
+      @modal.modal('hide')
+
+    @modal.find('.ok').on 'click', =>
+      opts.handle_ok(
+        @modal.find('input.login').val(),
+        @modal.find('input.password').val(),
+      )
+      @modal.modal('hide')
+
+class ModalYesNo extends Modal
+  constructor: (opts) ->
+    super(
+      'modal_yes_no',
+      { header: opts.header, text: opts.text }
+    )
+    
+    @modal.find('.no').on 'click', =>
+      @modal.modal('hide')
+
+    @modal.find('.yes').on 'click', =>
+      opts.handle_ok()
+      @modal.modal('hide')
+
+class ModalDuel extends Modal
+  constructor: (opts) ->
 
 #------------- jQuery functions -------------
 

@@ -170,11 +170,26 @@
                   .map
 
             #game_process
+              .left_side
+                .top_side
+                  %h3
+                / .army
+              .right_side
+                .top_side
+                  .left_side
+                  .right_side
+                    %ul
+                      %li
+                        %button.btn.danger.btn_leave_game Leave game
+                .map_place
+                  .map
+              
           #about_project
             %h3 About
             %p
               It's online implementation of the stratego game.
 
+          .modal_container
       #right_panel
         #main_menu
           %ul.top_menu
@@ -196,9 +211,41 @@
           %ul.bottom_menu
             %li
               %button.btn.large#btn_about_project About project
+          %ul.notificatons
       #layout_footer
     %footer
     
+
+    %script{ :type => "text/template", :id => "templ_modal_duel" }
+      #modal_yes_no.modal.hide.fade
+        .modal-header
+          %h3
+            <%= header %>
+        .modal-body
+          %p
+            <%= text %>
+        .modal-footer
+          %ul
+            %li
+              %button.btn.no No
+            %li
+              %button.btn.success.yes Yes
+
+    %script{ :type => "text/template", :id => "templ_modal_yes_no" }
+      #modal_yes_no.modal.hide.fade
+        .modal-header
+          %h3
+            <%= header %>
+        .modal-body
+          %p
+            <%= text %>
+        .modal-footer
+          %ul
+            %li
+              %button.btn.no No
+            %li
+              %button.btn.success.yes Yes
+                
     %script{ :type => "text/template", :id => "templ_modal_auth" }
       #modal_auth.modal.hide.fade
         .modal-header
@@ -219,7 +266,7 @@
             %li
               %button.btn.cancel Cancel
             %li
-              %button.btn.success.apply
+              %button.btn.success.ok
                 <%= header %>
 
     %script{ :type => "text/template", :id => "templ_resources" }

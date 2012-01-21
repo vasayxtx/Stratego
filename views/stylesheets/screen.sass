@@ -127,6 +127,13 @@ footer
 .modal
   display: none
 
+  .modal-footer ul
+    +horizontal-list
+    +float-right
+
+    li
+      margin-left: 5px
+
 #modal_auth
   width: 350px
   margin-left: -200px
@@ -149,12 +156,12 @@ footer
           margin-left: 15px
           color: #B94A48
 
-  .modal-footer ul
-    +horizontal-list
-    +float-right
+#modal_yes_no
+  width: 350px
+  margin-left: -200px
 
-    li
-      margin-left: 5px
+  .modal-body p
+    text-align: center
 
 //---------- Users online ----------
 
@@ -164,7 +171,6 @@ footer
 
     li
       margin-top: 10px
-
 
 //---------- Map ----------
 @mixin map
@@ -197,11 +203,15 @@ footer
 
   &.pl1
     background-color: red
+
     @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
       &.img_unit_#{$f}
         background-image: image-url("/images/#{$f}.png")
         background-repeat: no-repeat
         background-color: white
+
+        &.selected
+          background-color: $selected_color
 
   &.pl2
     background-color: blue
@@ -528,6 +538,61 @@ $top_side_height: 50px
             cursor: pointer
           &.selected
             background-color: $selected_color
+
+  .right_side
+    .top_side
+      border-bottom: 1px solid black
+
+      > div
+        height: $top_side_height - 6px
+        margin-top: 6px
+
+      .left_side
+        +column(8)
+
+      .right_side
+        $rr_col_count: 6
+        +column($rr_col_count)
+        width: $rr_col_count * $bgrid_width - 20px
+
+        ul
+          +horizontal-list
+          +float-right
+
+    .map_place
+      +map
+
+//---------- GameProcess ----------
+
+#game_process
+  +location
+  $left_col_count: 4
+  $right_col_count: 14
+
+  .left_side
+    .top_side
+      border-bottom: 1px solid black
+      border-right: 1px solid black
+
+      h3
+        text-align: center
+
+    // .army
+    //   +army
+    //   ul
+    //     $w: 4 * $bgrid_width - 1px
+    //     border-right: 1px solid black
+    //     width: $w
+
+    //     li
+    //       width: $w
+    //       &:first-child
+    //         margin-top: 10px
+    //       &:hover
+    //         background-color: $selected_color
+    //         cursor: pointer
+    //       &.selected
+    //         background-color: $selected_color
 
   .right_side
     .top_side
