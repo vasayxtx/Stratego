@@ -295,6 +295,7 @@ footer
 
 
 //---------- Location ----------
+
 $top_side_height: 50px
 
 @mixin location
@@ -508,6 +509,9 @@ $top_side_height: 50px
       border-bottom: 1px solid black
       border-right: 1px solid black
 
+      h3
+        text-align: center
+
     .army
       +army
       ul
@@ -534,15 +538,16 @@ $top_side_height: 50px
         margin-top: 6px
 
       .left_side
-        +column(10)
+        +column(8)
 
       .right_side
-        $rr_col_count: 4
+        $rr_col_count: 6
         +column($rr_col_count)
         width: $rr_col_count * $bgrid_width - 20px
 
-        .btn_leave_game
-          float: right
+        ul
+          +horizontal-list
+          +float-right
 
     .map_place
       +map
@@ -593,4 +598,3 @@ $top_side_height: 50px
       .unit_count
         width: 40px
         margin-top: 7px
-

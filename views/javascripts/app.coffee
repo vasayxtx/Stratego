@@ -90,7 +90,6 @@ class Game extends Spine.Model
     g.status = status
     g.save()
 
-
 class UserOnline extends Spine.Model
   @configure 'UserOnline', 'login'
 
@@ -186,8 +185,6 @@ class AuthCtrl extends Spine.Controller
         @_user_login.html(req.login)
         @handler_login()
     )
-
-
 
 #-------- UsersOnline --------
 
@@ -516,11 +513,11 @@ class MapsEditorCtrl extends Spine.Controller
 class ArmiesEditorCtrl extends Spine.Controller
   elements:
     '#armies_editor':                   '_location'
-
+    
     '#armies_editor .list_armies':      '_list_armies'
     '#armies_editor .army':             '_army'
     '#armies_editor #name_army':        '_name_army'
-
+    
     '#armies_editor .btn_del':          '_btn_del'
     '#armies_editor .btn_save':         '_btn_save'
     '#armies_editor #btn_clean_army':   '_btn_clean_army'
@@ -754,7 +751,6 @@ class GameCtrl extends Spine.Controller
     @.hide_content()
     @ctrl_about_project.show_content()
 
-
 #-------- GameCreated --------
 
 class GameCreatedCtrl extends Spine.Controller
@@ -818,6 +814,7 @@ class GamePlacementCtrl extends Spine.Controller
     'dblclick #game_placement .map_cell':       'clean_map_cell'
     'click #game_placement .btn_leave_game':    'leave_game'
     'click #game_placement .btn_ready':         'ready'
+    'click #game_placement .btn_clean':         'clean'
 
   constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
@@ -825,8 +822,10 @@ class GamePlacementCtrl extends Spine.Controller
   show_content: ->
     @ws.subscribe 'readyOpponent', =>
       alert('Opponent READY')
+
     @ws.subscribe('endGame', $.proxy(@.exit_game, @))
     @ws.subscribe('startGame', $.proxy(@.go_to_process, @))
+
     @_location.show()
     @.load_game()
 
@@ -855,8 +854,9 @@ class GamePlacementCtrl extends Spine.Controller
       @.render_army(game.army.units)
       @_game_name.html(game.game_name)
 
-      unless _.isArray(game.state.pl1)
-        @_btn_ready.attr('disabled', 'disabled')
+      unless _.isArray(game.state.pl1)      #If not placed yet
+        for btn in [@_btn_ready, @btn_clean]
+          btn.attr('disabled', 'disabled')
         @_army.find('.unit_count').html(0)
         @is_disabled = true
 
@@ -936,6 +936,12 @@ class GamePlacementCtrl extends Spine.Controller
       (data) =>
         @.go_to_process() if data.isGameStarted
     )
+
+  clean: ->
+    $('.map_cell.pl1').each (i, el) =>
+      obj_cell = $(el)
+      @.restore_prev_unit(obj_cell)
+      obj_cell.attr('title', '')
 
 #-------- GameProcess --------
 
@@ -1130,7 +1136,6 @@ class RArmy
       }
     )
 
-
 #------------- Utils -------------
 
 class Utils
@@ -1183,4 +1188,3 @@ jQuery.fn.force_num_only = (enter_handler) ->
         key in [48..57] ||
         key in [96..105]
       )
-
