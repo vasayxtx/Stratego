@@ -996,6 +996,7 @@ class GameProcessCtrl extends Spine.Controller
     '#game_process':                  '_location'
     '#game_process .map':             '_map'
     '#game_process .left_side h3':    '_game_name'
+    '#game_process .turn_display':    '_turn_display'
 
   events:
     'click #game_process .map_cell.pl1':    'take_unit'
@@ -1023,6 +1024,7 @@ class GameProcessCtrl extends Spine.Controller
         pl2: game.state.pl2
       @.render_map(map.width, map.height, structure)
       @_game_name.html(game.game_name)
+      @.update_turn(game.isTurn)
 
   hide_content: ->
     @_location.hide()
@@ -1032,33 +1034,36 @@ class GameProcessCtrl extends Spine.Controller
     RMap.render(@_map, width, height, structure)
   
   opponent_move: (move) ->
+    @.update_turn(true)
+
     pos_from = move.posFrom
     pos_to = move.posTo
     @_map.find("#cell_#{pos_from}").removeClass('pl2')
     cell_to = @_map.find("#cell_#{pos_to}")
 
-    if d = move.duel
-      new ModalDuel(
-        attacker:   d.attacker
-        protector:  d.protector
-        result:     d.result
-      )
-
-      if d.result == 'loss'
-        cell_to
-          .attr('class', 'map_cell pl2')
-          .attr('title', '')
-
-      if d.result == 'draw'
-        cell_to
-          .attr('class', 'map_cell')
-          .attr('title', '')
-
-    else
+    unless move.duel
       cell_to.addClass('pl2')
-      
-    if move.isEnd
-      @ctrl_game.end_game(false)
+      return 
+
+    d = move.duel
+    new ModalDuel(
+      attacker:   d.attacker
+      protector:  d.protector
+      result:     d.result
+      handle_ok:  =>
+        if d.result == 'loss'
+          cell_to
+            .attr('class', 'map_cell pl2')
+            .attr('title', '')
+
+        if d.result == 'draw'
+          cell_to
+            .attr('class', 'map_cell')
+            .attr('title', '')
+
+        if move.isEnd
+          @ctrl_game.end_game(false)
+    )
 
   take_unit: (event) -> 
     obj_cell = $(event.target)
@@ -1068,7 +1073,7 @@ class GameProcessCtrl extends Spine.Controller
     @_map.find('.selected').removeClass('selected')
     obj_cell.addClass('selected')
 
-  make_move: ->
+  make_move: (event) ->
     obj_cell = $(event.target)
     if obj_cell.hasClass('pl1') || obj_cell.hasClass('obst')
       return
@@ -1079,46 +1084,55 @@ class GameProcessCtrl extends Spine.Controller
     pos_from = parseInt(cell_from.attr('id').slice(5))
     pos_to = parseInt(obj_cell.attr('id').slice(5))
 
+    handle_move = (move) ->
+      @.update_turn(false)
+
+      cell_from.removeClass('map_cell pl1 selected')
+      cl_from = cell_from.attr('class')
+      cell_from.attr('class', 'map_cell')
+      unit_name = cell_from.attr('title')
+      cell_from.attr('title', '')
+
+      unless move.duel
+        obj_cell
+          .addClass("pl1 #{cl_from}")
+          .attr('title', unit_name)
+        return
+
+      d = move.duel
+      new ModalDuel(
+        attacker:   d.attacker
+        protector:  d.protector
+        result:     d.result
+        handle_ok:  =>
+          if d.result == 'win'
+            obj_cell
+              .removeClass('pl2')
+              .addClass("pl1 #{cl_from}")
+              .attr('title', unit_name)
+
+          if d.result == 'draw'
+            obj_cell.removeClass('pl2')
+
+          if move.isEnd
+           @ctrl_game.end_game(true)
+      )
+
     @ws.send(
       {
         cmd: 'makeMove'
         posFrom: pos_from
         posTo: pos_to
       },
-      (data) =>
-        cell_from.removeClass('map_cell pl1 selected')
-        cl_from = cell_from.attr('class')
-        cell_from.attr('class', 'map_cell')
-        unit_name = cell_from.attr('title')
-        cell_from.attr('title', '')
-
-        if d = data.duel
-          new ModalDuel(
-            attacker:   d.attacker
-            protector:  d.protector
-            result:     d.result
-          )
-
-          if d.result == 'win'
-            obj_cell
-              .removeClass('pl2')
-              .addClass("pl1 #{cl_from}")
-              .att('title', unit_name)
-
-          if d.result == 'draw'
-            obj_cell.removeClass('pl2')
-
-        else
-          obj_cell
-            .addClass("pl1 #{cl_from}")
-            .attr('title', unit_name)
-
-        if data.isEnd
-         @ctrl_game.end_game(true)
+      $.proxy(handle_move, @)
     )
 
   leave_game: ->
     @ctrl_game.leave_game()
+
+  update_turn: (@is_turn) ->
+    pl = if @is_turn then 'You' else 'Opponent'
+    @_turn_display.html("Turn: #{pl}")
 
 #-------- AboutProjectCtrl --------
 
@@ -1399,6 +1413,7 @@ class ModalDuel extends Modal
     set_unit(@modal.find('.protector_place'), opts.protector)
     
     @modal.find('.ok').on 'click', =>
+      opts.handle_ok()
       @modal.modal('hide')
 
 class ModalYesNo extends Modal
