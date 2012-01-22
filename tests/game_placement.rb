@@ -1,8 +1,8 @@
 #coding: utf-8
 
-require File.join(File.dirname(__FILE__), 'game_helper')
+require File.join(File.dirname(__FILE__), 'test_helper')
 
-MAP_SIZE = Generator::MAP_MINI['width'] * Generator::MAP_MINI['height']
+MAP_MINI_SIZE = Generator::MAP_MINI['width'] * Generator::MAP_MINI['height']
 
 t = Tester.new(CLIENTS_NUM) do |i|
   ["User#{i}", 'password']
@@ -46,10 +46,10 @@ r0 = {
 }
 r1 = clone r0
 r1['state'] = {
-  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_SIZE),
-  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_SIZE),
+  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_MINI_SIZE),
+  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_MINI_SIZE),
 }
-r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_MINI_SIZE
 
 t.push_test([
   [0, req, { 0 => r0 }],
@@ -88,10 +88,10 @@ r0 = {
 }
 r1 = clone r0
 r1['state'] = {
-  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_SIZE),
-  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_SIZE),
+  'pl1' => reflect_a(Generator::MAP_MINI['structure']['pl2'], MAP_MINI_SIZE),
+  'pl2' => reflect_a(Generator::MAP_MINI['structure']['pl1'], MAP_MINI_SIZE),
 }
-r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_MINI_SIZE
 
 t.push_test([
   [0, req, { 0 => r0 }],
@@ -100,7 +100,19 @@ t.push_test([
 
 #Test7
 #--------------------------------
-placement = Generator.make_tactic Generator::TACTIC_TEST
+tactics = [Generator::TACTIC_MINI, Generator::TACTIC_TEST]
+req = { 'cmd' => 'getGameTactics' }
+resp = {
+  0 => {
+    'status' => 'ok',
+    'tactics' => (tactics.map { |t| { t['name'] => Generator::make_tactic(t) } })
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test8
+#--------------------------------
+placement = Generator.make_tactic(Generator::TACTIC_TEST)
 req = {
   'cmd' => 'setPlacement',
   'placement' => placement
@@ -114,7 +126,7 @@ resp = {
 }
 t.push_test([[1, req, resp]])
 
-#Test8
+#Test9
 #--------------------------------
 req = { 'cmd' => 'getGame' }
 r0 = {
@@ -126,15 +138,15 @@ r0 = {
   'isTurn' => true,
   'state' => {
     'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
-    'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_TEST), MAP_SIZE),
+    'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_TEST), MAP_MINI_SIZE),
   }
 }
 r1 = clone r0
 r1['state'] = {
   'pl1' => Generator::make_tactic(Generator::TACTIC_TEST),
-  'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_MINI), MAP_SIZE),
+  'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_MINI), MAP_MINI_SIZE),
 }
-r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_SIZE
+r1['map']['obst'] = reflect_a r1['map']['obst'], MAP_MINI_SIZE
 r1['isTurn'] = false
 
 t.push_test([
@@ -142,7 +154,7 @@ t.push_test([
   [1, req, { 1 => r1 }],
 ])
 
-#Test9
+#Test10
 #--------------------------------
 req = { 'cmd' => 'leaveGame' }
 resp = {
@@ -156,4 +168,3 @@ t.push_test([[0, req, resp]])
 logout t
 
 t.run
-

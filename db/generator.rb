@@ -92,7 +92,7 @@ class Generator
   
   TACTIC_CL = 
   {
-    'name' => "Scout's Gambit",
+    'name' => "ScoutGambit",
     'placement' => {
       'Flag'        =>  [0], 
       'Bomb'        =>  [1, 10, 14, 19, 21, 26], 

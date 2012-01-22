@@ -1,6 +1,6 @@
 #coding: utf-8
 
-require File.join(File.dirname(__FILE__), 'game_helper')
+require File.join(File.dirname(__FILE__), 'test_helper')
 
 t = Tester.new(CLIENTS_NUM) { |i| ["User#{i}", 'password'] }
 

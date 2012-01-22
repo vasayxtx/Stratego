@@ -123,5 +123,22 @@ module Validations
       ]
     }
   }
+
+  V_TACTIC = {
+    'name' => {
+      'unique' => [
+        true,
+        'Tactic with this name already exists'
+      ],
+      'length' => [
+        3..20, 
+        'Length of the name of the tactic must be in 3..20 characters'
+      ],
+      'format' => [
+        /^\w+$/,
+        'Invalid format of name of the tactic. It must contain only word characters (letter, number, underscore)'
+      ]
+    }
+  }
 end
 

@@ -138,6 +138,7 @@ class Seed
       army  = db['armies'].find_one('name' => tactic[1]['name'])
       coll.insert(
         'name'       => tactic[2]['name'],
+        'creator'    => admin['_id'],
         'map'        => map['_id'],
         'army'       => army['_id'],
         'created_at' => Time.now.utc,

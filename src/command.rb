@@ -49,7 +49,7 @@ module Database
   end
 
   def get_by_id(coll, id)
-    @@db[coll].find_one '_id' => id
+    @@db[coll].find_one('_id' => id)
   end
 
   def check_access(user, res)
@@ -124,7 +124,9 @@ class CmdDropDB < Cmd
     @@db_conn.drop_database(@@db.name)
 
     Seed.create_indexes(@@db)
-    Seed.seed_units(@@db)
+    %w[units].each do |r|
+      Seed.method("seed_#{r}".to_sym).call(@@db)
+    end
 
     [{}, {}]
   end
@@ -219,7 +221,7 @@ class CmdLogout < Cmd
       {},
       {
         :all => {
-          'cmd' => 'delUserOnline',
+          'cmd'   => 'delUserOnline',
           'login' => user['login']
         },
       },
@@ -335,8 +337,8 @@ class CmdCreateMap < Cmd
 
     @@db['maps'].insert(
       {
-        'name' => req['name'],
-        'creator' => user['_id'],
+        'name'       => req['name'],
+        'creator'    => user['_id'],
         'created_at' => Time.now.utc
       }.merge(
         h_slice(req, %w[width height structure])
@@ -453,9 +455,9 @@ class CmdCreateArmy < Cmd
     user = get_user(req['sid'])
 
     @@db['armies'].insert(
-      'name' => req['name'],
-      'creator' => user['_id'],
-      'units' => req['units'],
+      'name'       => req['name'],
+      'creator'    => user['_id'],
+      'units'      => req['units'],
       'created_at' => Time.now.utc
     )
 
@@ -476,7 +478,7 @@ class CmdEditArmy < Cmd
     check_access(user, army)
 
     @@db['armies'].update(
-      { '_id' => army['_id'] },
+      { '_id'  => army['_id'] },
       { '$set' => { 'units' => req['units'] } }
     )
 
@@ -539,7 +541,6 @@ class CmdGetArmyUnits < Cmd
     [{ 'units' => units },{},{}]
   end
 end
-
 
 #--------------------- Games --------------------- 
 
@@ -623,7 +624,7 @@ class CmdCreateGame < Cmd
       {},
       {
         :all => {
-          'cmd' => 'addAvailableGame',
+          'cmd'  => 'addAvailableGame',
           'name' => req['name']
         }
       },
@@ -704,7 +705,7 @@ class CmdJoinGame < Cmd
     end
 
     @@db['games'].update(
-      { '_id' => game['_id'] },
+      { '_id'  => game['_id'] },
       { '$set' => { 'opponent' => user['_id'] } }
     )
   
@@ -852,7 +853,7 @@ class CmdSetPlacement < Cmd
     c_update = { "placement.#{pl}" => req['placement'] }
     c_update['moves'] = { 'pl1' => [], 'pl2' => [] } if r
     @@db['games'].update(
-      { '_id' => game['_id'] },
+      { '_id'  => game['_id'] },
       { '$set' => c_update }
     )
 
@@ -1043,5 +1044,57 @@ class CmdMakeMove < Cmd
     end
 
     [pl_duel, opp_duel, is_end]
+  end
+end
+
+#--------------------- Tactics --------------------- 
+
+class CmdCreateTactic < Cmd
+  include Game
+
+  def_init self, 'sid', 'name', 'nameMap', 'nameArmy', 'placement'
+
+  def handle(req)
+    Validator.validate(@@db['tactics'], req, V_TACTIC)
+
+    user = get_user(req['sid'])
+    map  = get_by_name('maps', req['nameMap'])
+    army = get_by_name('armies', req['nameArmy'])
+
+
+    %w[pl1 pl2].each do |pl|
+      check_placement(
+        req['placement'][pl], pl, map, army['units'])
+    end
+
+    @@db['tactics'].insert(
+      'name'       => req['name'],
+      'creator'    => user['_id'],
+      'map'        => map['_id'],
+      'army'       => army['_id'],
+      'placement'  => req['placement'],
+      'created_at' => Time.now.utc
+    )
+
+    [{},{},{}]
+  end
+end
+
+class CmdGetGameTactics < Cmd
+  def_init self, 'sid'
+
+  def handle(req)
+    user = get_user(req['sid'])
+    game = get_game_by_user(user['_id'])
+
+    pl = game['creator'] == user['_id'] ? 'pl1' : 'pl2'
+
+    db_tactics = @@db['tactics'].find(
+      'map'  => game['map'],
+      'army' => game['army']
+    )
+    tactics = db_tactics.map { |t| { t['name'] => t['placement'][pl] } }
+
+    [{ 'tactics' => tactics },{},{}]
   end
 end

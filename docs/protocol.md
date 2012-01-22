@@ -266,10 +266,34 @@
 
 <!-- Tacktics -->
 
+## Creation of the tactic
+### Request
+    {
+        "cmd": "createTactic",
+        "sid": <sid>,
+        "name": <name of the tactic>,
+        "nameMap": <name of the map>,
+        "nameArmy": <name of the army>,
+        "placement": {
+            "pl1": {
+                <position>: <name of the unit>,
+                ...
+            },
+            "pl2": {
+                <position>: <name of the unit>,
+                ...
+            }
+        }
+    }
+### Response
+    {
+        "status": "ok",
+    }
+
 ## Getting tactics for player in the game
 ### Request
     {
-        "cmd": "getGameTactic",
+        "cmd": "getGameTactics",
         "sid": <sid>,
     }
 ### Response

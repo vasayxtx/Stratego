@@ -33,12 +33,8 @@ class RequestHandler
     'getListAllArmies',
     'getListArmies',
     'getArmyUnits',
-
-=begin
-    'getArmyUnitsMoveLengths',
-    #----- Lobby -----
-=end
     
+    #----- Games -----
     'createGame',
     'getGameParams',
     'getAvailableGames',
@@ -49,18 +45,9 @@ class RequestHandler
     'setPlacement',
     'makeMove',
 
-=begin
-    'getLogin',
-    'getCreatedGame',
-    'getStartedGame',
-
-    #----- Game -----
-    'getGamePlacement',
-    'setPlacement',
-    'getGameSituation',
-    'makeMove',
-
-=end
+    #----- Tactics -----
+    'createTactic',
+    'getGameTactics',
 ]
 
   @@cmd_map = {}
