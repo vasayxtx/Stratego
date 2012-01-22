@@ -299,12 +299,12 @@
 ### Response
     {
         "status": "ok",
-        "tactics": [
+        "tactics": {
             <tactic name>: {
                 <position>: <name of the unit>,
                 ...
             }
-        ]
+        }
     }
 
 <!-- Units -->

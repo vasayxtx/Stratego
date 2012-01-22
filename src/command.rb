@@ -1093,7 +1093,8 @@ class CmdGetGameTactics < Cmd
       'map'  => game['map'],
       'army' => game['army']
     )
-    tactics = db_tactics.map { |t| { t['name'] => t['placement'][pl] } }
+    tactics = Hash.new
+    db_tactics.each { |t| tactics[t['name']] = t['placement'][pl] }
 
     [{ 'tactics' => tactics },{},{}]
   end
