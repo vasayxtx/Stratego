@@ -385,6 +385,7 @@ class MapsEditorCtrl extends Spine.Controller
 
       for obj in [@_btn_del, @_btn_save]
         obj.removeAttr('disabled')
+      @_name_map.attr('disabled', 'disabled')
       @_btn_generate.show()
 
   render_map: (width, height, structure) ->
@@ -414,6 +415,7 @@ class MapsEditorCtrl extends Spine.Controller
 
     for obj in [@_btn_del, @_btn_save]
       obj.attr('disabled', 'disabled')
+    @_name_map.removeAttr('disabled')
     @_list_maps.find('li').removeClass('selected')
 
     for obj in [@_name_map, @_width_map, @_height_map]
@@ -454,6 +456,7 @@ class MapsEditorCtrl extends Spine.Controller
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
         @_btn_del.removeAttr('disabled')
+        @_name_map.attr('disabled', 'disabled')
         @is_new = false
       return
 
@@ -513,7 +516,7 @@ class ArmiesEditorCtrl extends Spine.Controller
     '#armies_editor #btn_clean_army':   '_btn_clean_army'
 
   events:
-    'click #armies_editor .btn_new':        'create_army'
+    'click #armies_editor .btn_new':        'add_army'
     'click #armies_editor .btn_del':        'delete_army'
     'click #armies_editor .btn_save':       'save_army'
     'click #armies_editor #btn_clean_army': 'clean_army'
@@ -566,8 +569,9 @@ class ArmiesEditorCtrl extends Spine.Controller
         obj.show()
       for btn in [@_btn_save, @_btn_del]
         btn.removeAttr('disabled')
+      @_name_army.attr('disabled', 'disabled')
 
-  create_army: ->
+  add_army: ->
     @ws.send { cmd: 'getAllUnits' }, (data) =>
       units = data.units
       for k, v of units
@@ -577,6 +581,7 @@ class ArmiesEditorCtrl extends Spine.Controller
       for obj in [@_name_army, @_btn_clean_army]
         obj.show()
       @_btn_save.removeAttr('disabled')
+      @_name_army.removeAttr('disabled')
       @_btn_del.attr('disabled', 'disabled')
       @_list_armies.find('li').removeClass('selected')
 
@@ -610,12 +615,12 @@ class ArmiesEditorCtrl extends Spine.Controller
 
     if @is_new
       req.cmd = 'createArmy'
-      handler = =>
+      @ws.send req, =>
         Army.create(name: req.name)
         @.render_list(@_name_army.val())
         @_btn_del.removeAttr('disabled')
         @is_new = false
-      @ws.send(req, handler)
+        @_name_army.attr('disabled', 'disabled')
       return
 
     new ModalYesNo(
