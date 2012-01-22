@@ -101,7 +101,6 @@ class Map extends Spine.Model
 class Army extends Spine.Model
   @configure 'Army', 'name'
 
-
 #------------- Controllers -------------
 
 #-------- Auth --------
@@ -827,14 +826,16 @@ class GameCreatedCtrl extends Spine.Controller
 
 class GamePlacementCtrl extends Spine.Controller
   elements:
-    '#game_placement':              '_location'
+    '#game_placement':                '_location'
 
-    '#game_placement .map':         '_map'
-    '#game_placement .army':        '_army'
-    '#game_placement h3':           '_game_name'
+    '#game_placement .map':           '_map'
+    '#game_placement .army':          '_army'
+    '#game_placement h3':             '_game_name'
 
-    '#game_placement .btn_ready':   '_btn_ready'
-    '#game_placement .btn_clean':   '_btn_clean'
+    '#game_placement .btn_ready':     '_btn_ready'
+    '#game_placement .btn_clean':     '_btn_clean'
+
+    '#game_placement .game_tactics':  '_game_tactics'
 
   events:
     'click #game_placement .map_cell':          'set_map_cell'
@@ -879,9 +880,12 @@ class GamePlacementCtrl extends Spine.Controller
       @.render_army(game.army.units)
       @_game_name.html(game.game_name)
 
-      unless _.isArray(game.state.pl1)      #If not placed yet
-        for btn in [@_btn_ready, @_btn_clean]
-          btn.attr('disabled', 'disabled')
+      @ws.send { cmd: 'getGameTactics' }, (data) =>
+        @.render_game_tactics(data.tactics)
+
+      unless _.isArray(game.state.pl1)  #If already placed
+        for obj in [@_btn_ready, @_btn_clean, @_game_tactics]
+          obj.attr('disabled', 'disabled')
         @_army.find('.unit_count').html(0)
         @is_disabled = true
 
@@ -894,6 +898,21 @@ class GamePlacementCtrl extends Spine.Controller
     @_army.find('li').on 'click', ->
       Utils.select_li($(@))
 
+  render_game_tactics: (tactics) ->
+    Utils.compile_templ(
+      '#templ_game_tactics',
+      @_game_tactics,
+      { tactics: tactics }
+    )
+    @_game_tactics.on 'click', (event) =>
+      tactic = tactics[@_game_tactics.val()]
+      for k, v of tactic
+        @_map.find("#cell_#{k}")
+          .attr('class', "map_cell pl1 img_unit_#{v}")
+          .attr('title', v)
+
+      @_army.find('.unit_count').html(0)
+      
   restore_prev_unit: (obj_cell) ->
     a_cl = ['pl1', 'map_cell']
     for cl in a_cl
@@ -956,6 +975,8 @@ class GamePlacementCtrl extends Spine.Controller
       },
       (data) =>
         @is_disabled = true
+        for obj in [@_btn_ready, @_btn_clean, @_game_tactics]
+          obj.attr('disabled', 'disabled')
         @.go_to_process() if data.isGameStarted
     )
 
@@ -1022,10 +1043,17 @@ class GameProcessCtrl extends Spine.Controller
         protector:  d.protector
         result:     d.result
       )
+
       if d.result == 'loss'
-        cell_to.attr('class', 'map_cell pl2')
+        cell_to
+          .attr('class', 'map_cell pl2')
+          .attr('title', '')
+
       if d.result == 'draw'
-        cell_to.attr('class', 'map_cell')
+        cell_to
+          .attr('class', 'map_cell')
+          .attr('title', '')
+
     else
       cell_to.addClass('pl2')
       
@@ -1061,6 +1089,8 @@ class GameProcessCtrl extends Spine.Controller
         cell_from.removeClass('map_cell pl1 selected')
         cl_from = cell_from.attr('class')
         cell_from.attr('class', 'map_cell')
+        unit_name = cell_from.attr('title')
+        cell_from.attr('title', '')
 
         if d = data.duel
           new ModalDuel(
@@ -1068,12 +1098,20 @@ class GameProcessCtrl extends Spine.Controller
             protector:  d.protector
             result:     d.result
           )
+
           if d.result == 'win'
-            obj_cell.removeClass('pl2').addClass("pl1 #{cl_from}")
+            obj_cell
+              .removeClass('pl2')
+              .addClass("pl1 #{cl_from}")
+              .att('title', unit_name)
+
           if d.result == 'draw'
             obj_cell.removeClass('pl2')
+
         else
-          obj_cell.addClass("pl1 #{cl_from}")
+          obj_cell
+            .addClass("pl1 #{cl_from}")
+            .attr('title', unit_name)
 
         if data.isEnd
          @ctrl_game.end_game(true)
@@ -1218,7 +1256,9 @@ class RMap
             $("#cell_#{i}").addClass(cl)
         else
           for p, u of structure[cl]
-            $("#cell_#{p}").addClass(cl).addClass("img_unit_#{u}")
+            $("#cell_#{p}")
+              .addClass("#{cl} img_unit_#{u}")
+              .attr('title', u)
 
 class RArmy
   @load: (@ws, name_army, handler) ->

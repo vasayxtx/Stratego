@@ -161,6 +161,8 @@
                   .right_side
                     %ul
                       %li
+                        %select.small.game_tactics
+                      %li
                         %button.btn.btn_clean Clean
                       %li
                         %button.btn.success.btn_ready Ready
@@ -292,6 +294,11 @@
             %li
               %button.btn.success.ok
                 <%= header %>
+
+    %script{ :type => "text/template", :id => "templ_game_tactics" }
+      <% for (var t in tactics) { %>
+      <%= "<option>" + t + "</option>" %>
+      <% } %>
 
     %script{ :type => "text/template", :id => "templ_resources" }
       %h3
