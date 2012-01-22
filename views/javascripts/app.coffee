@@ -964,12 +964,6 @@ class GameProcessCtrl extends Spine.Controller
       @.render_map(map.width, map.height, structure)
       @_game_name.html(game.game_name)
 
-    new ModalDuel(
-      attacker:   'Miner'
-      protector:  'Bomb'
-      result:     'win'
-    )
-
   hide_content: ->
     @_location.hide()
     obj.empty() for obj in [@_map]
@@ -982,13 +976,23 @@ class GameProcessCtrl extends Spine.Controller
     RMap.render(@_map, width, height, structure)
   
   opponent_move: (move) ->
-    if move.duel
-      console.log('Duel')
+    pos_from = move.posFrom
+    pos_to = move.posTo
+    @_map.find("#cell_#{pos_from}").removeClass('pl2')
+    cell_to = @_map.find("#cell_#{pos_to}")
+
+    if d = move.duel
+      new ModalDuel(
+        attacker:   d.attacker
+        protector:  d.protector
+        result:     d.result
+      )
+      if d.result == 'loss'
+        cell_to.attr('class', 'map_cell pl2')
+      if d.result == 'draw'
+        cell_to.attr('class', 'map_cell')
     else
-      pos_from = move.posFrom
-      pos_to = move.posTo
-      @_map.find("#cell_#{pos_from}").removeClass('pl2')
-      @_map.find("#cell_#{pos_to}").addClass('pl2')
+      cell_to.addClass('pl2')
       
     if move.isEnd
       console.log('You loss')
@@ -1019,13 +1023,22 @@ class GameProcessCtrl extends Spine.Controller
         posTo: pos_to
       },
       (data) =>
-        if data.duel
-          console.log('Duel')
+        cell_from.removeClass('map_cell pl1 selected')
+        cl_from = cell_from.attr('class')
+        cell_from.attr('class', 'map_cell')
+
+        if d = data.duel
+          new ModalDuel(
+            attacker:   d.attacker
+            protector:  d.protector
+            result:     d.result
+          )
+          if d.result == 'win'
+            obj_cell.removeClass('pl2').addClass("pl1 #{cl_from}")
+          if d.result == 'draw'
+            obj_cell.removeClass('pl2')
         else
-          cell_from.removeClass('map_cell pl1')
-          cl = cell_from.attr('class')
-          cell_from.attr('class', '').addClass('map_cell')
-          obj_cell.addClass("pl1 #{cl}")
+          obj_cell.addClass("pl1 #{cl_from}")
 
         if data.isEnd
           console.log('You win!')
@@ -1291,6 +1304,24 @@ class ModalYesNo extends Modal
 
 class ModalDuel extends Modal
   constructor: (opts) ->
+    super(
+      'modal_duel',
+      {
+        attacker:   opts.attacker
+        protector:  opts.protector
+        result:     opts.result.toUpperCase()
+      }
+    )
+
+    set_unit = (place, unit) ->
+      c = place.find('.img_unit')
+      c.attr('class', "#{c.attr('class')}_#{unit}")
+
+    set_unit(@modal.find('.attacker_place'), opts.attacker)
+    set_unit(@modal.find('.protector_place'), opts.protector)
+    
+    @modal.find('.ok').on 'click', =>
+      @modal.modal('hide')
 
 #------------- jQuery functions -------------
 

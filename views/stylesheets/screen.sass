@@ -126,6 +126,7 @@ footer
 
 .modal
   display: none
+  margin-left: -200px
 
   .modal-footer ul
     +horizontal-list
@@ -136,7 +137,6 @@ footer
 
 #modal_auth
   width: 350px
-  margin-left: -200px
 
   .modal-body ul
     list-style-type: none
@@ -158,10 +158,46 @@ footer
 
 #modal_yes_no
   width: 350px
-  margin-left: -200px
 
   .modal-body p
     text-align: center
+
+#modal_duel
+  $col_count: 5
+  width: $bgrid_width * $col_count + 30px
+
+  .modal-body
+    $h: 70px
+    +container
+    width: $bgrid_width * $col_count
+    height: 100px
+
+    .middle_side
+      +column(1)
+      height: $h
+
+    .left_side, .right_side
+      +column(2)
+      height: $h
+
+      .attacker_place, .protector_place
+        background-color: white
+        @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
+          .img_unit_#{$f}
+            margin-left: 30px
+            width: $map_cell_size
+            height: $map_cell_size
+            background-image: image-url("/images/#{$f}.png")
+            background-repeat: no-repeat
+            background-color: white
+
+      p
+        text-align: center
+        margin-top: 10px
+
+    h4
+      text-align: center
+      margin-top: 10px
 
 //---------- Users online ----------
 
@@ -173,6 +209,7 @@ footer
       margin-top: 10px
 
 //---------- Map ----------
+
 @mixin map
   $col_count: 14
   width: ($col_count - 2) * $bgrid_width

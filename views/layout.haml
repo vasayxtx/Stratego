@@ -217,19 +217,30 @@
     
 
     %script{ :type => "text/template", :id => "templ_modal_duel" }
-      #modal_yes_no.modal.hide.fade
+      #modal_duel.modal.hide.fade
         .modal-header
           %h3
-            <%= header %>
+            Duel
         .modal-body
-          %p
-            <%= text %>
+          .left_side
+            .attacker_place
+              .img_unit
+            %p
+              <%= attacker %>
+          .middle_side
+            %h4
+              VS
+          .right_side
+            .protector_place
+              .img_unit
+            %p
+              <%= protector %>
+          %h4
+            <%= result %>
         .modal-footer
           %ul
             %li
-              %button.btn.no No
-            %li
-              %button.btn.success.yes Yes
+              %button.btn.success.ok Ok
 
     %script{ :type => "text/template", :id => "templ_modal_yes_no" }
       #modal_yes_no.modal.hide.fade
