@@ -310,7 +310,7 @@
               <% } %>
 
     %script{ :type => "text/template", :id => "templ_army" }
-      <% for (var i = 0; i < col_count; ++i) { %>
+      <% for (var i = 0; i < Math.min(count, col_count); ++i) { %>
       <% var res = "<ul>"; %>
       <% var v = (Math.ceil(count / col_count)); %>
       <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
@@ -326,7 +326,7 @@
       <% } %>
 
     %script{ :type => "text/template", :id => "templ_edt_army" }
-      <% for (var i = 0; i < col_count; ++i) { %>
+      <% for (var i = 0; i < Math.min(count, col_count); ++i) { %>
       <% var res = "<ul>"; %>
       <% var v = (Math.ceil(count / col_count)); %>
       <% var c = (i == col_count - 1 ? count - (col_count - 1) * v : v); %>
