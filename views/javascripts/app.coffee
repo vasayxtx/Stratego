@@ -425,7 +425,7 @@ class MapsEditorCtrl extends Spine.Controller
     n = Utils.get_selected(@_list_maps)
     new ModalYesNo(
       header:     'Deletion of the map' 
-      text:       "A you want to delete '#{n}' map"
+      text:       "Are you want to delete '#{n}' map"
       handle_ok:  =>
         @ws.send { cmd: 'destroyMap', name: n }, =>
           Map.destroy(Map.findByAttribute('name', n).id)
@@ -460,7 +460,7 @@ class MapsEditorCtrl extends Spine.Controller
 
     new ModalYesNo(
       header:     'Saving of the map' 
-      text:       "A you want to save '#{req.name}' map"
+      text:       "Are you want to save '#{req.name}' map"
       handle_ok:  =>
         req['cmd'] = 'editMap'
         @ws.send req, =>
@@ -742,6 +742,22 @@ class GameCtrl extends Spine.Controller
     @.hide_content()
     @ctrl_about_project.show_content()
 
+  end_game: (is_win) ->
+    new ModalEndGame(
+      is_win:     is_win
+      handle_ok:  =>
+        @.exit_game() 
+    )
+
+  leave_game: ->
+    new ModalYesNo(
+      header:     'Living' 
+      text:       "Are you want living"
+      handle_ok:  =>
+        @ws.send { cmd: 'leaveGame' }, =>
+          @.end_game(false)
+    )
+
 #-------- GameCreated --------
 
 class GameCreatedCtrl extends Spine.Controller
@@ -815,19 +831,19 @@ class GamePlacementCtrl extends Spine.Controller
     @ws.subscribe 'readyOpponent', =>
       alert('Opponent READY')
 
-    @ws.subscribe('endGame', $.proxy(@.exit_game, @))
+    @ws.subscribe 'endGame', =>
+      @ctrl_game.end_game(true)
+
     @ws.subscribe('startGame', $.proxy(@.go_to_process, @))
 
     @_location.show()
     @.load_game()
 
   hide_content: ->
+    console.log('placement')
+    console.log(@)
     @_location.hide()
     obj.empty() for obj in [@_army, @_map]
-
-  exit_game: ->
-    @ctrl_game.exit_game()
-    @.hide_content()
 
   go_to_process: ->
     Game.write_status('process')
@@ -899,10 +915,6 @@ class GamePlacementCtrl extends Spine.Controller
     @.restore_prev_unit(obj_cell)
     obj_cell.attr('title', '')
 
-  leave_game: ->
-    @ws.send { cmd: 'leaveGame' }, =>
-      @ctrl_game.exit_game()
-
   ready: ->
     placement = {}
     @_map.find('.map_cell.pl1').each (i, el) =>
@@ -936,6 +948,9 @@ class GamePlacementCtrl extends Spine.Controller
       @.restore_prev_unit(obj_cell)
       obj_cell.attr('title', '')
 
+  leave_game: ->
+    @ctrl_game.leave_game()
+
 #-------- GameProcess --------
 
 class GameProcessCtrl extends Spine.Controller
@@ -947,14 +962,21 @@ class GameProcessCtrl extends Spine.Controller
   events:
     'click #game_process .map_cell.pl1':    'take_unit'
     'click #game_process .map_cell':        'make_move'
+    'click #game_process .btn_leave_game':  'leave_game'
 
-  constructor: (el, @ws, @ctrl_about_project) ->
+  constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
-    @ws.subscribe('endGame', $.proxy(@.exit_game, @))
-    @ws.subscribe('opponentMakeMove', $.proxy(@.opponent_move, @))
 
   show_content: ->
+    @ws.subscribe 'endGame', =>
+      @ctrl_game.end_game(true)
+
+    @ws.subscribe('opponentMakeMove', $.proxy(@.opponent_move, @))
+
+    @.get_game()
     @_location.show()
+
+  get_game: ->
     @ws.send { cmd: 'getGame' }, (game) =>
       map = game.map
       structure =
@@ -965,12 +987,9 @@ class GameProcessCtrl extends Spine.Controller
       @_game_name.html(game.game_name)
 
   hide_content: ->
+    console.log('process')
     @_location.hide()
     obj.empty() for obj in [@_map]
-
-  exit_game: ->
-    @ctrl_game.exit_game()
-    @.hide_content()
 
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
@@ -995,7 +1014,7 @@ class GameProcessCtrl extends Spine.Controller
       cell_to.addClass('pl2')
       
     if move.isEnd
-      console.log('You loss')
+      @ctrl_game.end_game(false)
 
   take_unit: (event) -> 
     obj_cell = $(event.target)
@@ -1041,8 +1060,11 @@ class GameProcessCtrl extends Spine.Controller
           obj_cell.addClass("pl1 #{cl_from}")
 
         if data.isEnd
-          console.log('You win!')
+         @ctrl_game.end_game(true)
     )
+
+  leave_game: ->
+    @ctrl_game.leave_game()
 
 #-------- AboutProjectCtrl --------
 
@@ -1321,6 +1343,33 @@ class ModalDuel extends Modal
     set_unit(@modal.find('.protector_place'), opts.protector)
     
     @modal.find('.ok').on 'click', =>
+      @modal.modal('hide')
+
+class ModalYesNo extends Modal
+  constructor: (opts) ->
+    super(
+      'modal_yes_no',
+      { header: opts.header, text: opts.text }
+    )
+    
+    @modal.find('.no').on 'click', =>
+      @modal.modal('hide')
+
+    @modal.find('.yes').on 'click', =>
+      opts.handle_ok()
+      @modal.modal('hide')
+
+class ModalEndGame extends Modal
+  constructor: (opts) ->
+    msg =
+      if opts.is_win
+        'You have won the game'
+      else
+        'You have lossed the game'
+    super('modal_end_game', { msg: msg })
+    
+    @modal.find('.ok').on 'click', =>
+      opts.handle_ok()
       @modal.modal('hide')
 
 #------------- jQuery functions -------------
