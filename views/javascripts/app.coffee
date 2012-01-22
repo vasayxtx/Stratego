@@ -1,5 +1,4 @@
-$(document).ready(->#
-  Spine.Route.setup(history: true)
+$(document).ready(->
   app_ctrl = new AppCtrl(el: $(document))
 )
 
@@ -450,7 +449,7 @@ class MapsEditorCtrl extends Spine.Controller
         obst: make_a('obst')
 
     if @is_new
-      req['cmd'] = 'createMap'
+      req.cmd = 'createMap'
       @ws.send req, =>
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
@@ -515,7 +514,7 @@ class ArmiesEditorCtrl extends Spine.Controller
 
   events:
     'click #armies_editor .btn_new':        'create_army'
-    'click #armies_editor .btn_del':        'remove_army'
+    'click #armies_editor .btn_del':        'delete_army'
     'click #armies_editor .btn_save':       'save_army'
     'click #armies_editor #btn_clean_army': 'clean_army'
 
@@ -584,12 +583,17 @@ class ArmiesEditorCtrl extends Spine.Controller
       @_name_army.val('')
       @is_new = true
 
-  remove_army: ->
+  delete_army: ->
     n = Utils.get_selected(@_list_armies)
-    @ws.send { cmd: 'destroyArmy', name: n }, =>
-      Army.destroy(Army.findByAttribute('name', n).id)
-      @.render_list()
-      @.flush()
+    new ModalYesNo(
+      header:     'Deletion of the army' 
+      text:       "Are you want to delete '#{n}' army"
+      handle_ok:  =>
+        @ws.send { cmd: 'destroyArmy', name: n }, =>
+          Army.destroy(Army.findByAttribute('name', n).id)
+          @.render_list()
+          @.flush()
+    )
 
   save_army: ->
     #Validate name of the army
@@ -607,16 +611,21 @@ class ArmiesEditorCtrl extends Spine.Controller
     if @is_new
       req.cmd = 'createArmy'
       handler = =>
-        Army.create(name: @_name_army.val())
+        Army.create(name: req.name)
         @.render_list(@_name_army.val())
         @_btn_del.removeAttr('disabled')
         @is_new = false
-    else
-      req.cmd = 'editArmy'
-      handler = =>
-        console.log('ARMY SAVED!!')
+      @ws.send(req, handler)
+      return
 
-    @ws.send(req, handler)
+    new ModalYesNo(
+      header:     'Saving of the army' 
+      text:       "Are you want to save '#{req.name}' army"
+      handle_ok:  =>
+        req.cmd = 'editArmy'
+        @ws.send req, =>
+          console.log('Army saved')
+    )
 
   clean_army: ->
     @_army.find('.unit_count').each (i, el) =>
@@ -751,8 +760,8 @@ class GameCtrl extends Spine.Controller
 
   leave_game: ->
     new ModalYesNo(
-      header:     'Living' 
-      text:       "Are you want living"
+      header:     'Leaving' 
+      text:       'Are you want to leave the game'
       handle_ok:  =>
         @ws.send { cmd: 'leaveGame' }, =>
           @.end_game(false)
@@ -801,8 +810,13 @@ class GameCreatedCtrl extends Spine.Controller
     obj.empty() for obj in a
 
   remove_game: ->
-    @ws.send { cmd: 'destroyGame' }, =>
-      @ctrl_game.exit_game()
+    new ModalYesNo(
+      header:     'Removing' 
+      text:       'Are you want to remove the game'
+      handle_ok:  =>
+        @ws.send { cmd: 'destroyGame' }, =>
+          @ctrl_game.exit_game()
+    )
 
 #-------- GamePlacement --------
 
@@ -840,8 +854,6 @@ class GamePlacementCtrl extends Spine.Controller
     @.load_game()
 
   hide_content: ->
-    console.log('placement')
-    console.log(@)
     @_location.hide()
     obj.empty() for obj in [@_army, @_map]
 
@@ -987,7 +999,6 @@ class GameProcessCtrl extends Spine.Controller
       @_game_name.html(game.game_name)
 
   hide_content: ->
-    console.log('process')
     @_location.hide()
     obj.empty() for obj in [@_map]
 
