@@ -100,15 +100,27 @@ t.push_test([
 
 #Test7
 #--------------------------------
-tactics = [Generator::TACTIC_MINI, Generator::TACTIC_TEST]
+tactics = [Generator::TACTIC_MINI, Generator::TACTIC_TEST].map do |t|
+  { t['name'] => Generator::make_tactic(t) }
+end
 req = { 'cmd' => 'getGameTactics' }
-resp = {
+resp0 = {
   0 => {
     'status' => 'ok',
-    'tactics' => (tactics.map { |t| { t['name'] => Generator::make_tactic(t) } })
+    'tactics' => tactics
   }
 }
-t.push_test([[0, req, resp]])
+tactics = [Generator::TACTIC_MINI, Generator::TACTIC_TEST].map do |t|
+  { t['name'] => reflect_placement(Generator::make_tactic(t), MAP_MINI_SIZE) }
+end
+resp1 = {
+  1 => {
+    'status' => 'ok',
+    'tactics' => tactics
+  }
+}
+t.push_test([[0, req, resp0]])
+t.push_test([[1, req, resp1]])
 
 #Test8
 #--------------------------------
