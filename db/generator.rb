@@ -10,23 +10,23 @@ class Generator
   #***** Maps *****
   
   MAP_CL = {
-    'name' => 'ClassicalMap',
-    'width' => 10,
-    'height' => 10,
+    'name'      => 'ClassicalMap',
+    'width'     => 10,
+    'height'    => 10,
     'structure' => {
-      'pl1' => (0..39).to_a,
-      'pl2' => (60..99).to_a,
+      'pl1'  => (0..39).to_a,
+      'pl2'  => (60..99).to_a,
       'obst' => [42, 43, 46, 47, 52, 53, 56, 57]
     }
   }
 
   MAP_MINI = {
-    'name' => 'MiniMap',
-    'width' => 12,
-    'height' => 4,
+    'name'      => 'MiniMap',
+    'width'     => 12,
+    'height'    => 4,
     'structure' => {
-      'pl1' => (0..11).to_a,
-      'pl2' => (36..47).to_a,
+      'pl1'  => (0..11).to_a,
+      'pl2'  => (36..47).to_a,
       'obst' => [12, 23, 24, 35]
     }
   }
@@ -53,38 +53,38 @@ class Generator
   #***** Armies *****
   
   ARMY_CL = {
-    'name' => "ClassicalArmy",
+    'name'  => "ClassicalArmy",
     'units' => {
-      'Flag' => 1, 
-      'Bomb' => 6, 
-      'Spy' => 1, 
-      'Scout' => 8, 
-      'Miner' => 5, 
-      'Sergeant' => 4, 
+      'Flag'       => 1, 
+      'Bomb'       => 6, 
+      'Spy'        => 1, 
+      'Scout'      => 8, 
+      'Miner'      => 5, 
+      'Sergeant'   => 4, 
       'Lieutenant' => 4, 
-      'Captain' => 4, 
-      'Major' => 3, 
-      'Colonel' => 2, 
-      'General' => 1, 
-      'Marshal' => 1
+      'Captain'    => 4, 
+      'Major'      => 3, 
+      'Colonel'    => 2, 
+      'General'    => 1, 
+      'Marshal'    => 1
     }
   }
 
   ARMY_MINI = {
-    'name' => "MiniArmy",
+    'name'  => "MiniArmy",
     'units' => {
-      'Flag' => 1, 
-      'Bomb' => 1, 
-      'Spy' => 1, 
-      'Scout' => 1,
-      'Miner' => 1, 
-      'Sergeant' => 1, 
+      'Flag'       => 1, 
+      'Bomb'       => 1, 
+      'Spy'        => 1, 
+      'Scout'      => 1,
+      'Miner'      => 1, 
+      'Sergeant'   => 1, 
       'Lieutenant' => 1, 
-      'Captain' => 1, 
-      'Major' => 1, 
-      'Colonel' => 1, 
-      'General' => 1, 
-      'Marshal' => 1
+      'Captain'    => 1, 
+      'Major'      => 1, 
+      'Colonel'    => 1, 
+      'General'    => 1, 
+      'Marshal'    => 1
     }
   }
 
@@ -159,19 +159,6 @@ class Generator
   def self.make_users(num = USERS_NUM)
     users = Array.new(num) { |i| USER.call(i) }
   end
-
-=begin
-  def make_messages(users_num = USERS_NUM)
-    hello_msgs = Array.new(users_num) do |i|
-      ["Hello, I'm User#{i}"]
-    end
-    bye_msgs = Array.new(usesr_num) do |i|
-      ["By"]
-    end
-
-    hello_msgs + bye_msgs
-  end
-=end
 
   def self.make_units
     UNITS

@@ -264,6 +264,27 @@
         }
     }
 
+<!-- Tacktics -->
+
+## Getting tactics for player in the game
+### Request
+    {
+        "cmd": "getGameTactic",
+        "sid": <sid>,
+    }
+### Response
+    {
+        "status": "ok",
+        "tactics": [
+            <tactic name>: {
+                <position>: <name of the unit>,
+                ...
+            }
+        ]
+    }
+
+<!-- Units -->
+
 ## Getting all units
 ### Request
     {

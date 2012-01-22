@@ -68,7 +68,7 @@
     + **pl2**         - *PlMove*
 + **created_at**    - *ISODate*
 
-### tacktics
+### tactics
 
 + **_id**           - *Objectid*
 + **creator**       - *ObjectId*
@@ -84,6 +84,7 @@
 
 + *PlPlacement*     - *Object*
     + **pos: unit** - *String: String*    
+    
 + *PlMove*          - *Array of 'Object's*
     + **pos_from**    - *Number*
     + **pos_to**      - *Number*
