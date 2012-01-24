@@ -101,6 +101,9 @@ class Map extends Spine.Model
 class Army extends Spine.Model
   @configure 'Army', 'name'
 
+class Unit extends Spine.Model
+  @configure 'Unit', 'count', 'move_length'
+
 #------------- Controllers -------------
 
 #-------- Auth --------
@@ -442,9 +445,25 @@ class MapsEditorCtrl extends Spine.Controller
           )
     )
 
+  validate_map: ->
+    res = true
+
+    pl1_count = @_map.find('.pl1').size()
+    pl2_count = @_map.find('.pl2').size()
+    unless pl1_count == pl2_count
+      text = 'Number of cells for two players must match'
+      res = false
+    unless pl1_count > 1
+      text = 'The number of cells for a player to be at least 2'
+      res = false
+    
+    Notifications.add({ type: 'error', text: text }) unless res
+    return res
+
   save_map: ->
     #Validate inputs
-    #Validate map
+    return unless @.validate_map()
+
     make_a = (cl) =>
       (for el in @_map.find(".map_cell.#{cl}")
         parseInt($(el).attr('id').slice(5)))
@@ -454,8 +473,8 @@ class MapsEditorCtrl extends Spine.Controller
       width: parseInt(@_width_map.val())
       height: parseInt(@_height_map.val())
       structure:
-        pl1: make_a('pl1')
-        pl2: make_a('pl2')
+        pl1:  make_a('pl1')
+        pl2:  make_a('pl2')
         obst: make_a('obst')
 
     if @is_new
@@ -620,9 +639,14 @@ class ArmiesEditorCtrl extends Spine.Controller
             text: 'Army has been deleted'
           )
     )
+  
+  validate_army: ->
+    return true
 
   save_army: ->
     #Validate name of the army
+    return unless @.validate_army()
+
     req =
       name: @_name_army.val()
       units: {}
