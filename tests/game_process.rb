@@ -125,7 +125,7 @@ class GameProcess
           'status' => 'ok',
           'game_name' => GAME_MINI,
           'players' => %w[User0 User1],
-          'army' => Generator::ARMY_MINI,
+          'army' => make_game_army
         }
       }
     end

@@ -5,7 +5,6 @@
   em-websocket-client
   json
   fiber
-  awesome_print
 ].each { |gem| require gem }
 require File.join(File.dirname(__FILE__), '..', 'src', 'utils')
 

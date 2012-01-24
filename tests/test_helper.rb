@@ -117,3 +117,14 @@ def make_opp_placement(placement, map_size)
   placement.keys.map { |el| map_size - el.to_i - 1 }
 end
 
+def make_game_army(a = Generator::ARMY_MINI)
+  army = { 'name' => a['name'], 'units' => {} }
+  a['units'].each_pair do |u_name, u_count|
+    army['units'][u_name] = {
+      'count'      => u_count,
+      'moveLength' => Generator::UNITS[u_name][1]
+    }
+  end
+
+  army
+end

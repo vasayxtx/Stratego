@@ -78,6 +78,36 @@ t.push_test([[0, req, resp]])
 
 #Test7
 #--------------------------------
+req['cmd'] = 'createArmy'
+req['units'] = {
+  'Flag'  => 1
+}
+resp = {
+  0 => {
+    'status' => 'badArmy',
+    'message' => 'Incorrect army'
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test8
+#--------------------------------
+req['cmd'] = 'createArmy'
+req['units'] = {
+  'Flag'  => 1,
+  'Bomb'  => 1,
+  'Spy'   => 1
+}
+resp = {
+  0 => {
+    'status' => 'badArmy',
+    'message' => 'Incorrect army'
+  }
+}
+t.push_test([[0, req, resp]])
+
+#Test9
+#--------------------------------
 req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
 resp = {
@@ -85,7 +115,7 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test8
+#Test10
 #--------------------------------
 req = clone(Generator::ARMY_CL)
 req['cmd'] = 'createArmy'
@@ -97,7 +127,7 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test9
+#Test11
 #--------------------------------
 req = clone(Generator::ARMY_CL)
 req['cmd'] = 'editArmy'
@@ -110,7 +140,7 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test10
+#Test12
 #--------------------------------
 req1 = clone(Generator::ARMY_MINI)
 req1['cmd'] = 'createArmy'
@@ -130,7 +160,7 @@ t.push_test([
   [0, req0, resp0]
 ])
 
-#Test11
+#Test13
 #--------------------------------
 req = clone(Generator::ARMY_CL)
 req['cmd'] = 'editArmy'
@@ -140,7 +170,7 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test12
+#Test14
 #--------------------------------
 req = { 'cmd' => 'getListAllArmies' }
 resp = {
@@ -154,7 +184,7 @@ resp = {
 }
 t.push_test([[0, req, resp]])
 
-#Test13
+#Test15
 #--------------------------------
 req0 = { 'cmd' => 'getListArmies' }
 req1 = { 'cmd' => 'getListArmies' }
@@ -179,7 +209,7 @@ t.push_test([
   [1, req1, resp1],
 ])
 
-#Test13
+#Test16
 #--------------------------------
 req1 = {
   'cmd' => 'destroyArmy',
@@ -202,7 +232,7 @@ t.push_test([
   [0, req0, resp0],
 ])
 
-#Test14
+#Test17
 #--------------------------------
 req = {
   'cmd' => 'getArmyUnits',
@@ -211,9 +241,10 @@ req = {
 units = {}
 Generator::ARMY_CL['units'].each_pair do |u_name, u_count|
   units[u_name] = {
-    'count' => u_count,
-    'minCount' => Generator::UNITS[u_name][2].min,
-    'maxCount' => Generator::UNITS[u_name][2].max
+    'minCount'   => Generator::UNITS[u_name][2].min,
+    'maxCount'   => Generator::UNITS[u_name][2].max,
+    'moveLength' => Generator::UNITS[u_name][1],
+    'count'      => u_count,
   }
 end
 resp = {

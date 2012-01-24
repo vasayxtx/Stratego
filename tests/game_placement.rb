@@ -24,7 +24,7 @@ t.push_test(initial_game_test)
 req = { 'cmd' => 'getGame' }
 resp = {
   2 => {
-    'status' => 'badAction',
+    'status'  => 'badAction',
     'message' => 'User isn\'t player of this game'
   },
 }
@@ -34,11 +34,11 @@ t.push_test([[2, req, resp]])
 #--------------------------------
 req = { 'cmd' => 'getGame' }
 r0 = {
-  'status' => 'ok',
+  'status'    => 'ok',
   'game_name' => GAME_MINI,
-  'players' => %w[User0 User1],
-  'map' => M,
-  'army' => Generator::ARMY_MINI,
+  'players'   => %w[User0 User1],
+  'map'       => M,
+  'army'      => make_game_army,
   'state' => {
     'pl1' => Generator::MAP_MINI['structure']['pl1'],
     'pl2' => Generator::MAP_MINI['structure']['pl2'],
@@ -76,11 +76,11 @@ t.push_test([[0, req, resp]])
 #--------------------------------
 req = { 'cmd' => 'getGame' }
 r0 = {
-  'status' => 'ok',
+  'status'    => 'ok',
   'game_name' => GAME_MINI,
-  'players' => %w[User0 User1],
-  'map' => M,
-  'army' => Generator::ARMY_MINI,
+  'players'   => %w[User0 User1],
+  'map'       => M,
+  'army'      => make_game_army,
   'state' => {
     'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
     'pl2' => Generator::MAP_MINI['structure']['pl2'],
@@ -107,7 +107,7 @@ end
 req = { 'cmd' => 'getGameTactics' }
 resp0 = {
   0 => {
-    'status' => 'ok',
+    'status'  => 'ok',
     'tactics' => tactics
   }
 }
@@ -117,7 +117,7 @@ tactics = {}
 end
 resp1 = {
   1 => {
-    'status' => 'ok',
+    'status'  => 'ok',
     'tactics' => tactics
   }
 }
@@ -128,7 +128,7 @@ t.push_test([[1, req, resp1]])
 #--------------------------------
 placement = Generator.make_tactic(Generator::TACTIC_TEST)
 req = {
-  'cmd' => 'setPlacement',
+  'cmd'       => 'setPlacement',
   'placement' => placement
 }
 resp = {
@@ -144,12 +144,12 @@ t.push_test([[1, req, resp]])
 #--------------------------------
 req = { 'cmd' => 'getGame' }
 r0 = {
-  'status' => 'ok',
+  'status'    => 'ok',
   'game_name' => GAME_MINI,
-  'players' => %w[User0 User1],
-  'map' => M,
-  'army' => Generator::ARMY_MINI,
-  'isTurn' => true,
+  'players'   => %w[User0 User1],
+  'map'       => M,
+  'army'      => make_game_army,
+  'isTurn'    => true,
   'state' => {
     'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
     'pl2' => make_opp_placement(Generator::make_tactic(Generator::TACTIC_TEST), MAP_MINI_SIZE),

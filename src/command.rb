@@ -284,14 +284,14 @@ module Map
 
   def check_map(width, height, struct)
     #Check values
+    max_val = width * height
     check_value = ->(a) do
-      max_val = width * height
       a.each { |val| return false unless (0...max_val).include?(val) }
       true
     end
 
-    #Check collisions
-    check_collisions = ->(a1, a2) do
+    #Check intersection
+    check_intersection = ->(a1, a2) do
       (a1.select { |p| a2.include? p }).empty?
     end
 
@@ -302,7 +302,9 @@ module Map
       true
     end
 
-    is_correct = struct['pl1'].size == struct['pl2'].size
+    is_correct = 
+      struct['pl1'].size == struct['pl2'].size &&
+      struct['pl1'].size > 1
 
     is_correct &&=
       check_value.(struct['pl1']) &&
@@ -315,9 +317,9 @@ module Map
       check_unique.(struct['obst'])
 
     is_correct &&= 
-      check_collisions.(struct['pl1'], struct['pl2']) &&
-      check_collisions.(struct['pl1'], struct['obst']) &&
-      check_collisions.(struct['pl2'], struct['obst'])
+      check_intersection.(struct['pl1'], struct['pl2']) &&
+      check_intersection.(struct['pl1'], struct['obst']) &&
+      check_intersection.(struct['pl2'], struct['obst'])
 
     raise ResponseBadMap, 'Incorrect map' unless is_correct
   end
@@ -431,14 +433,27 @@ module Army
 
   def check_army(units)
     raise ResponseBadArmy, ERR_MSG if units.empty?
+
+    common_move_lengths = 0
+    existsing = {}
     units.each_pair do |army_unit, count|
       u = @@db['units'].find_one('name' => army_unit)
-
       raise ResponseBadArmy, ERR_MSG if u.nil?
 
       r = u['min_count']..u['max_count']
       raise ResponseBadArmy, ERR_MSG unless r.include?(count)
+
+      common_move_lengths += u['move_length']
+      existsing[u['name']] = true
     end
+
+    correct_existing = existsing['Bomb'] ? existsing['Miner'] : true
+
+    if common_move_lengths == 0 || !correct_existing
+      raise ResponseBadArmy, ERR_MSG
+    end
+
+    common_count = units.values()
   end
 end
 
@@ -532,9 +547,10 @@ class CmdGetArmyUnits < Cmd
     units.each_pair do |u_name, u_count|
       unit = @@db['units'].find_one('name' => u_name)
       units[u_name] = {
-        'count'     => u_count,
-        'minCount'  => unit['min_count'],
-        'maxCount'  => unit['max_count']
+        'count'      => u_count,
+        'minCount'   => unit['min_count'],
+        'maxCount'   => unit['max_count'],
+        'moveLength' => unit['move_length']
       }
     end
 
@@ -798,7 +814,15 @@ class CmdGetGame < Cmd
     resp['game_name'] = game['name']
 
     army = get_by_id('armies', game['army'])
-    resp['army'] = h_slice(army, %w[name units])
+    units = {}
+    army['units'].each_pair do |u_name, u_count|
+      u = @@db['units'].find_one('name' => u_name)
+      units[u_name] = {
+        'count'      => u_count,
+        'moveLength' => u['move_length']
+      }
+    end
+    resp['army'] = { 'name'  => army['name'], 'units' => units }
 
     get_login = ->(user_id) do
       @@db['users'].find_one('_id' => user_id)['login']

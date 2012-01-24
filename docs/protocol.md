@@ -258,7 +258,8 @@
             <name of the unit>: {
                 "count": <count>,
                 "minCount": <min count>,
-                "maxCount": <max count>
+                "maxCount": <max count>,
+                "moveLength": <move of the length>
             },
             ...
         }
@@ -456,7 +457,10 @@
         "army": {
             "name": <name of the map>,
             "units": {
-                <name of the unit>: <count>
+                <name of the unit>: {
+                    count: <count>,
+                    moveLenght: <lenght of the move>
+                },
                 ...
             }
         },
