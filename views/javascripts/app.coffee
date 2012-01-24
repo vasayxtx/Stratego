@@ -454,7 +454,7 @@ class MapsEditorCtrl extends Spine.Controller
       text = 'The number of cells for a player to be at least 2'
       res = false
     
-    Notifications.add({ type: 'error', text: text }) unless res
+    Notifications.add(type: 'error', text: text) unless res
     return res
 
   save_map: ->
@@ -636,7 +636,30 @@ class ArmiesEditorCtrl extends Spine.Controller
     )
   
   validate_army: ->
-    return true
+    res = true
+
+    army = {}
+    common_move_lenght = 0
+    @_army.find('li').each (i, el) ->
+      obj = $(el)
+      unit_name = Utils.strip(obj.find('.unit_name').html())
+      count = parseInt(obj.find('.unit_count').val())
+      army[unit_name] = count
+      if count
+        u = Unit.findByAttribute('name', unit_name)
+        common_move_lenght += u.move_length
+
+    console.log(common_move_lenght)
+    unless common_move_lenght
+      text = 'Must be at least one active unit'
+      res = false
+    if army['Bomb'] && !army['Miner']
+      text = 'If there is a bomb, there must be a miner'
+      res = false
+      
+    Notifications.add(type: 'error', text: text) unless res
+
+    return res
 
   save_army: ->
     #Validate name of the army
