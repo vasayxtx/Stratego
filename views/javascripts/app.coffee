@@ -102,7 +102,16 @@ class Army extends Spine.Model
   @configure 'Army', 'name'
 
 class Unit extends Spine.Model
-  @configure 'Unit', 'count', 'move_length'
+  @configure 'Unit', 'name', 'count', 'move_length'
+
+  @init: (units) ->
+    @.deleteAll()
+    for k, v of units
+      @.create(
+        name: k
+        count: v.count
+        move_length: v.moveLength
+      )
 
 #------------- Controllers -------------
 
@@ -243,8 +252,7 @@ class AvailableGamesCtrl extends Spine.Controller
 
   hide_content: ->
     @_location.hide()
-    a = [@_map, @_army, @_name_army, @_name_map]
-    obj.empty() for obj in a
+    Utils.empty(@_map, @_army, @_name_army, @_name_map)
 
   render_list: ->
     @_list_games.templater(
@@ -275,7 +283,7 @@ class AvailableGamesCtrl extends Spine.Controller
     unless @_list_games.find('li.selected').size()
       Notifications.add(
         type: 'error'
-        text: 'Game isn\'t selected'
+        text: "Game isn't selected"
       )
       return
     name_game = Utils.get_selected(@_list_games)
@@ -355,21 +363,16 @@ class MapsEditorCtrl extends Spine.Controller
     for el in ['name', 'width', 'height']
       @["_#{el}_map"].val('')
     
-    objects = [
-      @_name_map
-      @_width_map
-      @_height_map
+    Utils.hide(
+      @_name_map,
+      @_width_map,
+      @_height_map,
       @_btn_clean
       @_btn_generate
       @_tools
-    ]
-    for obj in objects
-      obj.hide()
-
-    for btn in [@_btn_del, @_btn_save]
-      btn.attr('disabled', 'disabled')
-    for obj in [@_list_maps, @_tools]
-      obj.find('li').removeClass('selected')
+    )
+    Utils.disable(@_btn_del, @_btn_save)
+    Utils.unselect(@_list_maps, @_tools)
 
   render_list: (map_selected) ->
     @_list_maps.templater(
@@ -389,9 +392,8 @@ class MapsEditorCtrl extends Spine.Controller
       @_name_map.show().val(name_map)
       @.render_map(map.width, map.height, map.structure)
 
-      for obj in [@_btn_del, @_btn_save]
-        obj.removeAttr('disabled')
-      @_name_map.attr('disabled', 'disabled')
+      Utils.enable(@_btn_del, @_btn_save)
+      Utils.disable(@_name_map)
       @_btn_generate.show()
 
   render_map: (width, height, structure) ->
@@ -400,7 +402,7 @@ class MapsEditorCtrl extends Spine.Controller
     @_tools.show()
     Utils.select_li(@_tools.find('li:first'))
 
-    @_btn_save.removeAttr('disabled')
+    Utils.enable(@_btn_save)
     @_btn_clean.show()
 
     @_last_width = width
@@ -408,21 +410,16 @@ class MapsEditorCtrl extends Spine.Controller
   add_map: ->
     @_map.empty()
 
-    objects = [
+    Utils.show(
       @_name_map
       @_width_map
       @_height_map
       @_btn_generate
-    ]
-    for obj in objects
-      obj.show()
-    for obj in [@_tools, @_btn_clean]
-      obj.hide()
-
-    for obj in [@_btn_del, @_btn_save]
-      obj.attr('disabled', 'disabled')
-    @_name_map.removeAttr('disabled')
-    @_list_maps.find('li').removeClass('selected')
+    )
+    Utils.hide(@_tools, @_btn_clean)
+    Utils.disable(@_btn_del, @_btn_save)
+    Utils.enable(@_name_map)
+    Utils.unselect(@_list_maps)
 
     for obj in [@_name_map, @_width_map, @_height_map]
       obj.val('')
@@ -482,8 +479,8 @@ class MapsEditorCtrl extends Spine.Controller
       @ws.send req, =>
         Map.create(name: @_name_map.val())
         @.render_list(@_name_map.val())
-        @_btn_del.removeAttr('disabled')
-        @_name_map.attr('disabled', 'disabled')
+        Utils.enable(@_btn_del)
+        Utils.disable(@_name_map)
         @is_new = false
 
         Notifications.add(
@@ -578,11 +575,9 @@ class ArmiesEditorCtrl extends Spine.Controller
     @_army.empty()
     @_name_army.val('')
 
-    for obj in [@_name_army, @_btn_clean_army]
-      obj.hide()
-    for btn in [@_btn_del, @_btn_save]
-      btn.attr('disabled', 'disabled')
-    @_list_armies.find('li').removeClass('selected')
+    Utils.hide(@_name_army, @_btn_clean_army)
+    Utils.disable(@_btn_del, @_btn_save)
+    Utils.unselect(@_list_armies)
 
   render_list: (army_selected) ->
     @_list_armies.templater(
@@ -594,31 +589,31 @@ class ArmiesEditorCtrl extends Spine.Controller
       @is_new = false
       Utils.select_li(obj)
       @.load_army(Utils.strip(obj.html()))
-
+  
   load_army: (name_army) ->
     RArmy.load @ws, name_army, (army) =>
+      Unit.init(army.units)
+
       @_name_army.val(name_army)
       RArmy.render_edt(@_army, army.units)
 
-      for obj in [@_name_army, @_btn_clean_army]
-        obj.show()
-      for btn in [@_btn_save, @_btn_del]
-        btn.removeAttr('disabled')
-      @_name_army.attr('disabled', 'disabled')
+      Utils.show(@_name_army, @_btn_clean_army)
+      Utils.enable(@_btn_save, @_btn_del)
+      Utils.disable(@_name_army)
 
   add_army: ->
     @ws.send { cmd: 'getAllUnits' }, (data) =>
+      Unit.init(data.units)
+
       units = data.units
       for k, v of units
         units[k].count = v.minCount
       RArmy.render_edt(@_army, units)
 
-      for obj in [@_name_army, @_btn_clean_army]
-        obj.show()
-      @_btn_save.removeAttr('disabled')
-      @_name_army.removeAttr('disabled')
-      @_btn_del.attr('disabled', 'disabled')
-      @_list_armies.find('li').removeClass('selected')
+      Utils.show(@_name_army, @_btn_clean_army)
+      Utils.enable(@_btn_save, @_name_army)
+      Utils.disable(@_btn_del)
+      Utils.unselect(@_list_armies)
 
       @_name_army.val('')
       @is_new = true
@@ -663,9 +658,9 @@ class ArmiesEditorCtrl extends Spine.Controller
       @ws.send req, =>
         Army.create(name: req.name)
         @.render_list(@_name_army.val())
-        @_btn_del.removeAttr('disabled')
+        Utils.enable(@_btn_del)
         @is_new = false
-        @_name_army.attr('disabled', 'disabled')
+        Utils.disable(@_name_army)
 
         Notifications.add(
           type: 'success'
@@ -689,7 +684,7 @@ class ArmiesEditorCtrl extends Spine.Controller
   clean_army: ->
     @_army.find('.unit_count').each (i, el) =>
       obj = $(el)
-      obj.find('option').removeAttr('selected')
+      Utils.unselect(obj)
       obj.find('option:first-child').attr('selected', 'selected')
 
 #-------- GameCreationCtrl --------
@@ -720,9 +715,7 @@ class GameCreationCtrl extends Spine.Controller
       'maps', Map, @_list_maps, $.proxy(@.load_map, @))
 
   hide_content: ->
-    for obj in [@_map, @_list_armies, @_list_maps]
-      obj.empty()
-    obj.empty() for obj in [@_army, @_map]
+    Utils.empty(@_map, @_list_armies, @_list_maps, @_army, @_map)
     @_name_game.val('')
     @_location.hide()
 
@@ -864,8 +857,7 @@ class GameCreatedCtrl extends Spine.Controller
 
   hide_content: ->
     @_location.hide()
-    a = [@_map, @_army, @_name_game, @_name_army, @_name_map]
-    obj.empty() for obj in a
+    Utils.empty(@_map, @_army, @_name_game, @_name_army, @_name_map)
 
   remove_game: ->
     new ModalYesNo(
@@ -918,7 +910,7 @@ class GamePlacementCtrl extends Spine.Controller
 
   hide_content: ->
     @_location.hide()
-    obj.empty() for obj in [@_army, @_map]
+    Utils.empty(@_army, @_map)
 
   go_to_process: ->
     Game.write_status('process')
@@ -941,8 +933,7 @@ class GamePlacementCtrl extends Spine.Controller
         @.render_game_tactics(data.tactics)
 
       unless _.isArray(game.state.pl1)  #If already placed
-        for obj in [@_btn_ready, @_btn_clean, @_game_tactics]
-          obj.attr('disabled', 'disabled')
+        Utils.disable(@_btn_ready, @_btn_clean, @_game_tactics)
         @_army.find('.unit_count').html(0)
         @is_disabled = true
 
@@ -1036,8 +1027,7 @@ class GamePlacementCtrl extends Spine.Controller
       },
       (data) =>
         @is_disabled = true
-        for obj in [@_btn_ready, @_btn_clean, @_game_tactics]
-          obj.attr('disabled', 'disabled')
+        Utils.disable(@_btn_ready, @_btn_clean, @_game_tactics)
         @.go_to_process() if data.isGameStarted
     )
 
@@ -1089,7 +1079,7 @@ class GameProcessCtrl extends Spine.Controller
 
   hide_content: ->
     @_location.hide()
-    obj.empty() for obj in [@_map]
+    @_map.empty()
 
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
@@ -1130,9 +1120,9 @@ class GameProcessCtrl extends Spine.Controller
     obj_cell = $(event.target)
     if obj_cell.hasClass('selected')
       obj_cell.removeClass('selected')
-      return
-    @_map.find('.selected').removeClass('selected')
-    obj_cell.addClass('selected')
+    else
+      Utils.unselect(@_map)
+      obj_cell.addClass('selected')
 
   make_move: (event) ->
     obj_cell = $(event.target)
@@ -1263,8 +1253,7 @@ class AppCtrl extends Spine.Controller
   handle_login: ->
     @_auth.hide()
     @_profile.show()
-    for obj in [@_top_menu, @_middle_menu]
-      obj.show()
+    Utils.show(@_top_menu, @_middle_menu)
     @.init_ctrls()
 
   handle_logout: ->
@@ -1276,8 +1265,7 @@ class AppCtrl extends Spine.Controller
 
     @_profile.hide()
     @_auth.show()
-    for obj in [@_top_menu, @_middle_menu]
-      obj.hide()
+    Utils.hide(@_top_menu, @_middle_menu)
     @_btn_about_project.click()
 
   init_ctrls: ->
@@ -1339,9 +1327,12 @@ class Notifications
       obj_notif.fadeOut Notifications::FADE_DELAY, =>
         obj_notif.remove()
 
-    hide = =>
+    hide_notif = =>
       obj_notif.find('.close').click()
-    window.setTimeout(hide, Notifications::HIDE_DELAY)
+    window.setTimeout(
+      hide_notif,
+      Notifications::HIDE_DELAY
+    )
 
 
 
@@ -1380,7 +1371,7 @@ class RArmy
     )
 
   @render: (cont, units, col_count = 3) ->
-    u = ({ name: k, count: v } for k, v of units)
+    u = ({ name: k, count: v.count } for k, v of units)
     cont.templater(
       "#templ_army",
       {
@@ -1412,6 +1403,10 @@ class RArmy
 #------------- Utils -------------
 
 class Utils
+  @apply_func: (f, arr) ->
+    for obj in _.flatten(arr)
+      obj[f]()
+
   @capitalize: (str) ->
     str.slice(0, 1).toUpperCase() + str.slice(1)
 
@@ -1419,7 +1414,7 @@ class Utils
     str.replace(/^\s+|\s+$/g, '')
 
   @select_li: (obj_li) ->
-    obj_li.parent().find('li').removeClass('selected')
+    Utils.unselect(obj_li.parent())
     obj_li.addClass('selected')
 
   @get_selected: (ul_cont) ->
@@ -1430,6 +1425,27 @@ class Utils
     data = $.parseJSON(sessionStorage.getItem(model_name))
     sessionStorage.removeItem(model_name)
     model.create(data[0]) if data?
+
+  @disable: (args...) ->
+    for obj in _.flatten(args)
+      obj.attr('disabled', 'disabled')
+
+  @enable: (args...) ->
+    for obj in _.flatten(args)
+      obj.removeAttr('disabled')
+    
+  @hide: (args...) ->
+    Utils.apply_func('hide', args)
+
+  @show: (args...) ->
+    Utils.apply_func('show', args)
+
+  @empty: (args...) ->
+    Utils.apply_func('empty', args)
+
+  @unselect: (args...) ->
+    for list in _.flatten(args)
+      list.find('li,.selected').removeClass('selected')
 
 #------------- Modals -------------
 
