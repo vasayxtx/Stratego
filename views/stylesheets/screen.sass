@@ -139,6 +139,10 @@ footer
   width: $page_width
   margin: auto
 
+input.error
+  color: #B94A48
+  border-color: #EE5F5B
+
 //---------- Modals ----------
 
 .modal
@@ -241,6 +245,7 @@ footer
   
   .map
     overflow: auto
+
     .map_cell
       display: block
       width: $map_cell_size
@@ -261,6 +266,9 @@ footer
 .map_cell
   background-color: white
 
+  &.edt_selected
+    background-color: moccasin
+
   &.pl1
     background-color: red
 
@@ -279,6 +287,9 @@ footer
   &.obst
     background-color: gray
 
+  &.pl1, &.pl2, &.obst
+    &.edt_selected
+      opacity: 0.5
 
 //---------- Army ----------
 

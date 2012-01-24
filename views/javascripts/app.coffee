@@ -339,6 +339,11 @@ class MapsEditorCtrl extends Spine.Controller
     'click #maps_editor .tools li':       'select_tool'
     'click #maps_editor .map .map_cell':  'set_map_cell'
 
+    'mousedown #maps_editor .map_cell':   'start_edt_selection'
+    'mouseup #maps_editor .map_cell':     'end_edt_selection'
+    'mouseleave #maps_editor table':      'end_edt_selection'
+    'mousemove #maps_editor .map_cell':   'do_edt_selection'
+
   constructor: (el, @ws) ->
     super(el: el)
     for el in [@_width_map, @_height_map]
@@ -457,9 +462,30 @@ class MapsEditorCtrl extends Spine.Controller
     Notifications.add(type: 'error', text: text) unless res
     return res
 
+  validate_inputs: (sizes) ->
+    err_handler = (text) ->
+      Notifications.add(type: 'error', text: text)
+
+    res = @_name_map.validator(ConstValidations::NAME)
+    for s in ['width', 'height']
+      ss = Utils.capitalize(s)
+      opts = 
+        required: [true, "#{ss} is required"]
+        maxvalue: [30, "#{ss} can not be greater than 30"]
+        minvalue: [3, "#{ss} can not be less than 3"]
+        err_handler: err_handler
+      if sizes
+        opts['equal'] = [sizes[s], 'Map size and value are different']
+      res &&= @["_#{s}_map"].validator(opts)
+
+    return res
+
   save_map: ->
-    #Validate inputs
-    return unless @.validate_map()
+    @_map.find('.map_cell').removeClass('edt_selected')
+    vld_opts =
+      height: @_map.find('tr').size()
+      width:  @_map.find('tr:first-child td').size()
+    return unless @.validate_inputs(vld_opts) && @.validate_map()
 
     make_a = (cl) =>
       (for el in @_map.find(".map_cell.#{cl}")
@@ -503,7 +529,8 @@ class MapsEditorCtrl extends Spine.Controller
     )
 
   generate_map: ->
-    #Validate inputs
+    return unless @.validate_inputs()
+
     width = parseInt(@_width_map.val())
     height = parseInt(@_height_map.val())
     
@@ -526,13 +553,33 @@ class MapsEditorCtrl extends Spine.Controller
     @_map.find('.map_cell').removeClass('pl1 pl2 obst')
 
   select_tool: (event) ->
-    Utils.select_li($(event.target))
+    obj = $(event.target)
+    Utils.select_li(obj)
+    cl = obj.find('.map_cell').attr('class').split(' ')[1] || ''
+    @_map.find('.edt_selected').attr('class', "map_cell #{cl}")
 
   set_map_cell: (event) ->
+    obj_sel = @_map.find('.edt_selected')
+    if obj_sel.size()
+      obj_sel.removeClass('edt_selected')
+      return
+
     obj_cell = $(event.target)
     t = @_tools.find('li.selected .map_cell')
     tool_cl = t.attr('class').split(' ')[1] || ''
     obj_cell.attr('class', "map_cell #{tool_cl}")
+
+  start_edt_selection: (event) ->
+    event.preventDefault()
+    @map_selection = true
+
+  do_edt_selection: (event) ->
+    return unless @map_selection
+    $(event.currentTarget).addClass('edt_selected')
+
+  end_edt_selection: (event) ->
+    event.preventDefault()
+    @map_selection = false
 
 #-------- Armies editor --------
 
@@ -661,9 +708,11 @@ class ArmiesEditorCtrl extends Spine.Controller
 
     return res
 
+  validate_inputs: ->
+    return @_name_army.validator(ConstValidations::NAME)
+
   save_army: ->
-    #Validate name of the army
-    return unless @.validate_army()
+    return unless @.validate_inputs() && @.validate_army()
 
     req =
       name: @_name_army.val()
@@ -765,15 +814,16 @@ class GameCreationCtrl extends Spine.Controller
 
   load_army: (name_army) ->
     RArmy.load @ws, name_army, (army) =>
-      units = {}
-      for k, v of army.units
-        units[k] = v.count
-      RArmy.render(@_army, units)
-      @army = { units: units }
+      RArmy.render(@_army, army.units)
+      @army = army
       @army.name = name_army
 
+  validate_inputs: ->
+    return @_name_game.validator(ConstValidations::NAME)
+
   create_game: ->
-    #Validate
+    return unless @.validate_inputs()
+
     @ws.send(
       {
         cmd: 'createGame'
@@ -1073,9 +1123,9 @@ class GameProcessCtrl extends Spine.Controller
     '#game_process .turn_display':    '_turn_display'
 
   events:
-    'click #game_process .map_cell.pl1':    'take_unit'
-    'click #game_process .map_cell':        'make_move'
-    'click #game_process .btn_leave_game':  'leave_game'
+    'mousedown #game_process .map_cell.pl1':  'take_unit'
+    'click #game_process .map_cell':          'make_move'
+    'click #game_process .btn_leave_game':    'leave_game'
 
   constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
@@ -1110,9 +1160,29 @@ class GameProcessCtrl extends Spine.Controller
 
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
+
+    # obj_tbl = @_map.find('table')
+    # obj_cell = @_map.find('.map_cell')
+
+    # @_map.find('.pl1').draggable(
+    #   helper: 'clone'
+    #   opacity: 0.7
+    #   grid: [obj_cell.width() + 1, obj_cell.height() + 1]
+    #   containment: [
+    #     obj_tbl.offset().left,
+    #     obj_tbl.offset().top,
+    #     obj_tbl.offset().left + obj_tbl.width() - obj_cell.width(),
+    #     obj_tbl.offset().top + obj_tbl.height() - obj_cell.height()
+    #   ]
+    # )
   
   opponent_move: (move) ->
     @.update_turn(true)
+
+    Notifications.add(
+      type: 'warning'
+      text: 'Opponent made move'
+    )
 
     pos_from = move.posFrom
     pos_to = move.posTo
@@ -1167,7 +1237,7 @@ class GameProcessCtrl extends Spine.Controller
       
       sign = (c_to - c_from) / Math.abs(c_to - c_from)
       k = if dir == 'v' then map.width else 1
-      for i in [1..len-1]
+      for i in [1..(len-1)] by 1
         p = pos_from + i * k * sign
         obj_cell = @_map.find("#cell_#{p}")
         for cl in ['pl1', 'pl2', 'obst']
@@ -1178,7 +1248,7 @@ class GameProcessCtrl extends Spine.Controller
     if cord_from.x == cord_to.x
       res = check_line(cord_from.y, cord_to.y, 'v')
     if cord_from.y == cord_to.y
-      res = check_line(cord_from.y, cord_to.y, 'h')
+      res = check_line(cord_from.x, cord_to.x, 'h')
 
     unless res
       Notifications.add(type: 'error', text: 'Incorrect move')
@@ -1439,7 +1509,13 @@ class RArmy
     )
 
   @render: (cont, units, col_count = 3) ->
-    u = ({ name: k, count: v.count } for k, v of units)
+    u = (
+      for k, v of units
+        {
+          name: k
+          count: if _.isObject(v) then v.count else v
+        }
+    )
     cont.templater(
       "#templ_army",
       {
@@ -1467,6 +1543,17 @@ class RArmy
         col_count: col_count
       }
     )
+
+#------------- Utils -------------
+
+class ConstValidations
+  NAME:
+    required:  [true, 'Name is required']
+    maxlength: [20, 'Name must contain no more than 20 characters']
+    minlength: [3, 'Name must contain at least 3 characters']
+    format:    [/^\w+$/, 'Name must contain only word characters']
+    err_handler: (text) ->
+      Notifications.add(type: 'error', text: text)
 
 #------------- Utils -------------
 
@@ -1619,6 +1706,47 @@ jQuery.fn.templater = (sel_templ, options) ->
   templ = $(sel_templ).html()
   compiled = _.template(templ)
   this.empty().append(compiled(options))
+
+jQuery.fn.validator = (opts) ->
+  obj = $(@)
+  val = obj.val()
+
+  validators =
+    required: (v) ->
+      throw v[1] if val == ''
+
+    maxlength: (v) ->
+      throw v[1] if val.length > v[0]
+
+    minlength: (v) ->
+      throw v[1] if val.length < v[0]
+
+    minvalue: (v) ->
+      throw v[1] if parseInt(val) < v[0]
+
+    maxvalue: (v) ->
+      throw v[1] if parseInt(val) > v[0]
+
+    equal: (v) ->
+      console.log(val)
+      console.log(v[0])
+      throw v[1] unless parseInt(val) == v[0]
+
+    format: (v) ->
+      throw v[1] unless val.match(v[0])
+
+  try
+    for k, v of opts
+      validators[k](v) if validators[k]
+  catch err
+    obj.addClass('error')
+    obj.on 'focusin', =>
+      obj.removeClass('error').off('focusin')
+
+    opts.err_handler(err)
+    return false
+
+  return true
 
 jQuery.fn.force_num_only = (enter_handler) ->
   @.each ->
