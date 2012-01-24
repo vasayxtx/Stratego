@@ -1091,6 +1091,10 @@ class GameProcessCtrl extends Spine.Controller
 
   get_game: ->
     @ws.send { cmd: 'getGame' }, (game) =>
+      Game.deleteAll()
+      Game.create(game)
+      Game.write_status('process')
+
       map = game.map
       structure =
         obst: map.obst
@@ -1147,6 +1151,40 @@ class GameProcessCtrl extends Spine.Controller
       Utils.unselect(@_map)
       obj_cell.addClass('selected')
 
+  validate_move: (unit_move_length, pos_from, pos_to, map) ->
+    res = false
+
+    pos_to_cord = (p) ->
+      x: p % map.width
+      y: Math.floor(p / map.width)
+
+    cord_from = pos_to_cord(pos_from)
+    cord_to   = pos_to_cord(pos_to)
+
+    check_line = (c_from, c_to, dir) =>
+      len = Math.abs(c_to - c_from)
+      return false if len > unit_move_length
+      
+      sign = (c_to - c_from) / Math.abs(c_to - c_from)
+      k = if dir == 'v' then map.width else 1
+      for i in [1..len-1]
+        p = pos_from + i * k * sign
+        obj_cell = @_map.find("#cell_#{p}")
+        for cl in ['pl1', 'pl2', 'obst']
+          return false if obj_cell.hasClass(cl)
+
+      return true
+
+    if cord_from.x == cord_to.x
+      res = check_line(cord_from.y, cord_to.y, 'v')
+    if cord_from.y == cord_to.y
+      res = check_line(cord_from.y, cord_to.y, 'h')
+
+    unless res
+      Notifications.add(type: 'error', text: 'Incorrect move')
+
+    return res
+
   make_move: (event) ->
     obj_cell = $(event.target)
     if obj_cell.hasClass('pl1') || obj_cell.hasClass('obst')
@@ -1157,6 +1195,13 @@ class GameProcessCtrl extends Spine.Controller
 
     pos_from = parseInt(cell_from.attr('id').slice(5))
     pos_to = parseInt(obj_cell.attr('id').slice(5))
+
+    re = /img_unit_(\w+)/
+    u_name = cell_from.attr('class').match(re)[1]
+    u_move_length = Game.first().army.units[u_name].moveLength
+    is_valid_move = @.validate_move(
+      u_move_length, pos_from, pos_to, Game.first().map)
+    return unless is_valid_move
 
     handle_move = (move) ->
       @.update_turn(false)
