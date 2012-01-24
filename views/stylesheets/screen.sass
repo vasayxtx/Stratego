@@ -89,33 +89,46 @@ body
 #right_panel
   $col_count: 4
   +column($col_count)
-  width: $col_count * $bgrid_width - 2px
-  border: 
-    left: 1px solid black
-    right: 1px solid black
-    bottom: 1px solid black
-  margin-top: 50px
 
-  #btn_game, #btn_game_creation, #btn_available_games
-    display: none
+  #main_menu
+    width: $col_count * $bgrid_width - 2px
+    border: 
+      left: 1px solid black
+      right: 1px solid black
+      bottom: 1px solid black
+    margin-top: 50px
 
-  ul
-    &.top_menu, &.middle_menu
+    #btn_game, #btn_game_creation, #btn_available_games
       display: none
 
-    &.top_menu, &.middle_menu, &.bottom_menu
+    ul
+      &.top_menu, &.middle_menu
+        display: none
+
+      &.top_menu, &.middle_menu, &.bottom_menu
+        list-style-type: none
+        padding-left: 0px
+        margin-left: 20px
+
+        .btn
+          width: 160px
+
+        li
+          margin-bottom: 10px
+
+          &:last-child
+            margin-bottom: 20px
+      
+  #notifications
+    margin-top: 20px
+    list-style-type: none
+    width: $col_count * $bgrid_width
+
+    ul
       list-style-type: none
       padding-left: 0px
-      margin-left: 20px
-
-      .btn
-        width: 160px
-
-      li
-        margin-bottom: 10px
-
-        &:last-child
-          margin-bottom: 20px
+      margin-left: 0px
+      font-weight: bolder
 
 footer
   border-top: 1px solid black

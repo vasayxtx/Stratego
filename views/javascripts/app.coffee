@@ -125,13 +125,16 @@ class AuthCtrl extends Spine.Controller
     else
       @handler_logout()
 
-  login: ->
+  login: (event) ->
+    event.preventDefault()
     @.show_modal('login')
 
-  signup: ->
+  signup: (event) ->
+    event.preventDefault()
     @.show_modal('signup')
 
-  logout: ->
+  logout: (event) ->
+    event.preventDefault()
     @ws.send(
       { cmd: 'logout' },
       $.proxy(@handler_logout, @)
@@ -193,9 +196,8 @@ class UsersOnlineCtrl extends Spine.Controller
     @_location.hide()
 
   render: ->
-    Utils.compile_templ(
+    @_location.templater(
       '#templ_resources',
-      @_location,
       {
         header: 'Users online'
         resources: (u.login for u in UserOnline.all())
@@ -242,9 +244,8 @@ class AvailableGamesCtrl extends Spine.Controller
     obj.empty() for obj in a
 
   render_list: ->
-    Utils.compile_templ(
+    @_list_games.templater(
       '#templ_list',
-      @_list_games,
       { list: AvailableGame.all(), el_selected: null }
     )
     @_list_games.find('li').on 'click', (event) =>
@@ -269,7 +270,11 @@ class AvailableGamesCtrl extends Spine.Controller
 
   join_game: ->
     unless @_list_games.find('li.selected').size()
-      return alert('Game isn\'t selected')
+      Notifications.add(
+        type: 'error'
+        text: 'Game isn\'t selected'
+      )
+      return
     name_game = Utils.get_selected(@_list_games)
     @ws.send(
       {
@@ -364,9 +369,8 @@ class MapsEditorCtrl extends Spine.Controller
       obj.find('li').removeClass('selected')
 
   render_list: (map_selected) ->
-    Utils.compile_templ(
+    @_list_maps.templater(
       '#templ_list',
-      @_list_maps,
       { list: Map.all(), el_selected: map_selected }
     )
     @_list_maps.find('li').on 'click', (event) =>
@@ -431,6 +435,11 @@ class MapsEditorCtrl extends Spine.Controller
           Map.destroy(Map.findByAttribute('name', n).id)
           @.render_list()
           @.flush()
+
+          Notifications.add(
+            type: 'success'
+            text: 'Map has been deleted'
+          )
     )
 
   save_map: ->
@@ -457,6 +466,12 @@ class MapsEditorCtrl extends Spine.Controller
         @_btn_del.removeAttr('disabled')
         @_name_map.attr('disabled', 'disabled')
         @is_new = false
+
+        Notifications.add(
+          type: 'success'
+          text: 'Map has been created'
+        )
+
       return
 
     new ModalYesNo(
@@ -465,7 +480,10 @@ class MapsEditorCtrl extends Spine.Controller
       handle_ok:  =>
         req['cmd'] = 'editMap'
         @ws.send req, =>
-          console.log('Map saved')
+          Notifications.add(
+            type: 'success'
+            text: 'Map has been saved'
+          )
     )
 
   generate_map: ->
@@ -548,9 +566,8 @@ class ArmiesEditorCtrl extends Spine.Controller
     @_list_armies.find('li').removeClass('selected')
 
   render_list: (army_selected) ->
-    Utils.compile_templ(
+    @_list_armies.templater(
       '#templ_list',
-      @_list_armies,
       { list: Army.all(), el_selected: army_selected }
     )
     @_list_armies.find('li').on 'click', (event) =>
@@ -597,6 +614,11 @@ class ArmiesEditorCtrl extends Spine.Controller
           Army.destroy(Army.findByAttribute('name', n).id)
           @.render_list()
           @.flush()
+
+          Notifications.add(
+            type: 'success'
+            text: 'Army has been deleted'
+          )
     )
 
   save_army: ->
@@ -620,6 +642,12 @@ class ArmiesEditorCtrl extends Spine.Controller
         @_btn_del.removeAttr('disabled')
         @is_new = false
         @_name_army.attr('disabled', 'disabled')
+
+        Notifications.add(
+          type: 'success'
+          text: 'Army has been created'
+        )
+
       return
 
     new ModalYesNo(
@@ -628,7 +656,10 @@ class ArmiesEditorCtrl extends Spine.Controller
       handle_ok:  =>
         req.cmd = 'editArmy'
         @ws.send req, =>
-          console.log('Army saved')
+          Notifications.add(
+            type: 'success'
+            text: 'Army has been saved'
+          )
     )
 
   clean_army: ->
@@ -676,9 +707,8 @@ class GameCreationCtrl extends Spine.Controller
     @ws.send { 'cmd': "getListAll#{Utils.capitalize(res)}" }, (req) =>
       model.create(name: el) for el in req[res]
 
-      Utils.compile_templ(
+      cont.templater(
         '#templ_list',
-        cont,
         { list: model.all(), el_selected: null }
       )
 
@@ -849,7 +879,10 @@ class GamePlacementCtrl extends Spine.Controller
 
   show_content: ->
     @ws.subscribe 'readyOpponent', =>
-      alert('Opponent READY')
+      Notifications.add(
+        type: 'warning'
+        text: 'Opponent ready'
+      )
 
     @ws.subscribe 'endGame', =>
       @ctrl_game.end_game(true)
@@ -899,9 +932,8 @@ class GamePlacementCtrl extends Spine.Controller
       Utils.select_li($(@))
 
   render_game_tactics: (tactics) ->
-    Utils.compile_templ(
+    @_game_tactics.templater(
       '#templ_game_tactics',
-      @_game_tactics,
       { tactics: tactics }
     )
     @_game_tactics.on 'click', (event) =>
@@ -966,7 +998,12 @@ class GamePlacementCtrl extends Spine.Controller
         obj.addClass(cl)
 
     for k, v of placement
-      return alert('Not all units placed') if v == ''
+      if v == ''
+        Notifications.add(
+          type: 'error'
+          text: 'Not all units placed'
+        )
+        return
 
     @ws.send(
       {
@@ -1238,13 +1275,51 @@ class AppCtrl extends Spine.Controller
       @ctrls['about_project'].show_content()
       s.location = 'about_project'
       s.save()
-
+    
   nav_location: (event) ->
     ctrl = event.handleObj.selector.slice(5)
     Session.write_location(ctrl)
     for k, v of @ctrls
       v.hide_content()
     @ctrls[ctrl].show_content()
+
+#------------- Notifications -------------
+
+class Notifications
+  FADE_DELAY: 500
+  HIDE_DELAY: 5000
+
+  @counter: 0
+
+  @add: (opts) ->
+    list = $('#notifications ul')
+
+    list.append('<li>')
+    list
+      .find('li:last-child')
+      .attr('id', "notif_#{@counter}")
+    
+    obj_notif = $("#notif_#{@counter}")
+    obj_notif.hide()
+    @counter += 1
+
+    obj_notif.templater(
+      '#templ_notification',
+      opts
+    )
+
+    obj_notif.fadeIn(Notifications::FADE_DELAY);
+
+    obj_notif.find('.close').on 'click', (event) =>
+      event.preventDefault()
+      obj_notif.fadeOut Notifications::FADE_DELAY, =>
+        obj_notif.remove()
+
+    hide = =>
+      obj_notif.find('.close').click()
+    window.setTimeout(hide, Notifications::HIDE_DELAY)
+
+
 
 #------------- Resources -------------
 
@@ -1258,9 +1333,8 @@ class RMap
     )
 
   @render: (cont, width, height, structure) ->
-    Utils.compile_templ(
+    cont.templater(
       '#templ_map',
-      cont,
       { width: width, height: height  }
     )
     if structure?
@@ -1283,9 +1357,8 @@ class RArmy
 
   @render: (cont, units, col_count = 3) ->
     u = ({ name: k, count: v } for k, v of units)
-    Utils.compile_templ(
+    cont.templater(
       "#templ_army",
-      cont,
       {
         units: u
         count: u.length
@@ -1303,9 +1376,8 @@ class RArmy
           max_count: v.maxCount
         }
     )
-    Utils.compile_templ(
+    cont.templater(
       "#templ_edt_army",
-      cont,
       {
         units: u
         count: u.length
@@ -1322,19 +1394,9 @@ class Utils
   @strip: (str) ->
     str.replace(/^\s+|\s+$/g, '')
 
-  @compile_templ: (sel_templ, container, options) ->
-    templ = $(sel_templ).html()
-    compiled = _.template(templ)
-    container.empty().append(compiled(options))
-
   @select_li: (obj_li) ->
     obj_li.parent().find('li').removeClass('selected')
     obj_li.addClass('selected')
-
-  @obj_len: (obj) ->
-    res = 0
-    res += 1 for k, v of obj
-    res
 
   @get_selected: (ul_cont) ->
     obj = ul_cont.find('li.selected')
@@ -1444,6 +1506,11 @@ class ModalEndGame extends Modal
       @modal.modal('hide')
 
 #------------- jQuery functions -------------
+
+jQuery.fn.templater = (sel_templ, options) ->
+  templ = $(sel_templ).html()
+  compiled = _.template(templ)
+  this.empty().append(compiled(options))
 
 jQuery.fn.force_num_only = (enter_handler) ->
   @.each ->

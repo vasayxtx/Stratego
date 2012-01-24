@@ -15,6 +15,7 @@
     %script{ :src => "/javascripts/web_socket.js" }
 
     %script{ :src => "/javascripts/bootstrap-modal.js" }
+    %script{ :src => "/javascripts/bootstrap-alerts.js" }
 
     %script{ :src => "/javascripts/app.js" }
   %body
@@ -216,7 +217,8 @@
           %ul.bottom_menu
             %li
               %button.btn.large#btn_about_project About project
-          %ul.notificatons
+        #notifications
+          %ul
       #layout_footer
     %footer
     
@@ -367,5 +369,13 @@
       <% } %>
       <%= res + "</ul>" %>
       <% } %>
+    
+    %script{ :type => "text/template", :id => "templ_notification" }
+      <%= '<div class="alert-message ' + type + '">' %>
+      <a class="close" href="#">×</a>
+      <p>
+      <%= text %>
+      </p>
+      </div>
 
 
