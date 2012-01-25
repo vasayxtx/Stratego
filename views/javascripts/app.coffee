@@ -385,7 +385,7 @@ class MapsEditorCtrl extends Spine.Controller
       { list: Map.all(), el_selected: map_selected }
     )
     @_list_maps.find('li').on 'click', (event) =>
-      obj = $(event.target)
+      obj = $(event.currentTarget)
       @is_new = false
       Utils.select_li(obj)
       @.load_map(Utils.strip(obj.html()))
@@ -406,6 +406,7 @@ class MapsEditorCtrl extends Spine.Controller
 
     @_tools.show()
     Utils.select_li(@_tools.find('li:first'))
+    @.update_tools()
 
     Utils.enable(@_btn_save)
     @_btn_clean.show()
@@ -553,10 +554,18 @@ class MapsEditorCtrl extends Spine.Controller
     @_map.find('.map_cell').removeClass('pl1 pl2 obst')
 
   select_tool: (event) ->
-    obj = $(event.target)
+    obj = $(event.currentTarget)
     Utils.select_li(obj)
     cl = obj.find('.map_cell').attr('class').split(' ')[1] || ''
     @_map.find('.edt_selected').attr('class', "map_cell #{cl}")
+    @.update_tools()
+
+  update_tools: ->
+    for cl in ['pl1', 'pl2', 'obst']
+      c = @_map.find(".#{cl}").size()
+      @_tools.find(".#{cl}").parent().parent().find('.count').html(c)
+    @_tools.find('li:first-child').find('.count').html(
+      @_map.find('.map_cell:not(.pl1,.pl2,.obst)').size())
 
   set_map_cell: (event) ->
     obj_sel = @_map.find('.edt_selected')
@@ -568,6 +577,7 @@ class MapsEditorCtrl extends Spine.Controller
     t = @_tools.find('li.selected .map_cell')
     tool_cl = t.attr('class').split(' ')[1] || ''
     obj_cell.attr('class', "map_cell #{tool_cl}")
+    @.update_tools()
 
   start_edt_selection: (event) ->
     event.preventDefault()

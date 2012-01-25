@@ -443,13 +443,29 @@ $top_side_height: 50px
         width: inherit
 
         li
+          +container
           margin-top: 10px
           cursor: pointer
           display: block
           width: inherit
+          height: $map_cell_size
 
           &:hover, &.selected
             background-color: $selected_color
+
+          .cell
+            +column(1)
+
+          .name
+            +column(2)
+          
+          .count
+            +column(1)
+
+          .name, .count
+            text-align: center
+            line-height: $map_cell_size
+          
 
   .right_side
     .top_side
