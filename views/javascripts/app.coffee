@@ -1133,9 +1133,9 @@ class GameProcessCtrl extends Spine.Controller
     '#game_process .turn_display':    '_turn_display'
 
   events:
-    'mousedown #game_process .map_cell.pl1':  'take_unit'
-    'click #game_process .map_cell':          'make_move'
-    'click #game_process .btn_leave_game':    'leave_game'
+    'mousedown #game_process .map_cell.pl1':          'take_unit'
+    'click #game_process .map_cell:not(.pl1,.obst)':  'make_move'
+    'click #game_process .btn_leave_game':            'leave_game'
 
   constructor: (el, @ws, @ctrl_game) ->
     super(el: el)
@@ -1170,22 +1170,9 @@ class GameProcessCtrl extends Spine.Controller
 
   render_map: (width, height, structure) ->
     RMap.render(@_map, width, height, structure)
+    @.init_draggable(@_map.find('.pl1'))
+    @.init_droppable(@_map.find('.map_cell:not(.pl1,.obst)'))
 
-    # obj_tbl = @_map.find('table')
-    # obj_cell = @_map.find('.map_cell')
-
-    # @_map.find('.pl1').draggable(
-    #   helper: 'clone'
-    #   opacity: 0.7
-    #   grid: [obj_cell.width() + 1, obj_cell.height() + 1]
-    #   containment: [
-    #     obj_tbl.offset().left,
-    #     obj_tbl.offset().top,
-    #     obj_tbl.offset().left + obj_tbl.width() - obj_cell.width(),
-    #     obj_tbl.offset().top + obj_tbl.height() - obj_cell.height()
-    #   ]
-    # )
-  
   opponent_move: (move) ->
     @.update_turn(true)
 
@@ -1209,27 +1196,22 @@ class GameProcessCtrl extends Spine.Controller
       protector:  d.protector
       result:     d.result
       handle_ok:  =>
-        if d.result == 'loss'
-          cell_to
-            .attr('class', 'map_cell pl2')
-            .attr('title', '')
-
-        if d.result == 'draw'
+        if d.result in ['loss', 'draw']
           cell_to
             .attr('class', 'map_cell')
             .attr('title', '')
+            .draggable('destroy')
+          @.init_droppable(cell_to)
+        
+        cell_to.addClass('pl2') if d.result == 'loss'
 
         if move.isEnd
           @ctrl_game.end_game(false)
     )
 
   take_unit: (event) -> 
-    obj_cell = $(event.target)
-    if obj_cell.hasClass('selected')
-      obj_cell.removeClass('selected')
-    else
-      Utils.unselect(@_map)
-      obj_cell.addClass('selected')
+    Utils.unselect(@_map)
+    $(event.target).addClass('selected')
 
   validate_move: (unit_move_length, pos_from, pos_to, map) ->
     res = false
@@ -1266,12 +1248,16 @@ class GameProcessCtrl extends Spine.Controller
     return res
 
   make_move: (event) ->
-    obj_cell = $(event.target)
-    if obj_cell.hasClass('pl1') || obj_cell.hasClass('obst')
-      return
-
     cell_from = @_map.find('.selected')
     return unless cell_from.size()
+    unless @is_turn
+      Notifications.add(
+        type: 'error'
+        text: "It isn't your turn now"
+      )
+      return
+
+    obj_cell = $(event.target)
 
     pos_from = parseInt(cell_from.attr('id').slice(5))
     pos_to = parseInt(obj_cell.attr('id').slice(5))
@@ -1286,7 +1272,11 @@ class GameProcessCtrl extends Spine.Controller
     handle_move = (move) ->
       @.update_turn(false)
 
-      cell_from.removeClass('map_cell pl1 selected')
+      cell_from
+        .removeClass('map_cell pl1 selected')
+        .draggable('destroy')
+      @.init_droppable(cell_from)
+
       cl_from = cell_from.attr('class')
       cell_from.attr('class', 'map_cell')
       unit_name = cell_from.attr('title')
@@ -1296,6 +1286,8 @@ class GameProcessCtrl extends Spine.Controller
         obj_cell
           .addClass("pl1 #{cl_from}")
           .attr('title', unit_name)
+          .droppable('destroy')
+        @.init_draggable(obj_cell)
         return
 
       d = move.duel
@@ -1309,9 +1301,12 @@ class GameProcessCtrl extends Spine.Controller
               .removeClass('pl2')
               .addClass("pl1 #{cl_from}")
               .attr('title', unit_name)
+              .droppable('destroy')
+            @.init_draggable(obj_cell)
 
           if d.result == 'draw'
             obj_cell.removeClass('pl2')
+            @.init_droppable(obj_cell)
 
           if move.isEnd
            @ctrl_game.end_game(true)
@@ -1332,7 +1327,29 @@ class GameProcessCtrl extends Spine.Controller
   update_turn: (@is_turn) ->
     pl = if @is_turn then 'You' else 'Opponent'
     @_turn_display.html("Turn: #{pl}")
+  
+  init_draggable: (obj) ->
+    obj_tbl = @_map.find('table')
+    obj_cell = @_map.find('.map_cell')
 
+    obj.draggable(
+      helper: 'clone'
+      opacity: 0.7
+      grid: [obj_cell.width() + 1, obj_cell.height() + 1]
+      containment: [
+        obj_tbl.offset().left,
+        obj_tbl.offset().top,
+        obj_tbl.offset().left + obj_tbl.width() - obj_cell.width(),
+        obj_tbl.offset().top + obj_tbl.height() - obj_cell.height()
+      ]
+    )
+
+  init_droppable: (obj) ->
+    obj.droppable(
+      drop: (event, ui) =>
+        @.make_move(event)
+    )
+  
 #-------- AboutProjectCtrl --------
 
 class AboutProjectCtrl extends Spine.Controller
@@ -1738,8 +1755,6 @@ jQuery.fn.validator = (opts) ->
       throw v[1] if parseInt(val) > v[0]
 
     equal: (v) ->
-      console.log(val)
-      console.log(v[0])
       throw v[1] unless parseInt(val) == v[0]
 
     format: (v) ->
