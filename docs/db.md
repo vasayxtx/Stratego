@@ -58,8 +58,8 @@
 + **name**          - *String*
 + **creator**       - *ObjectId*
 + **opponent**      - *ObjectId*
-+ **map**           - *ObjectId*
-+ **army**          - *ObjectId*
++ **map**           - *MAP [_id, name, width, height, structure]*
++ **army**          - *ARMY [_id, name, units]*
 + **placement**     - *Object*
     + **pl1**         - *PlPlacement* 
     + **pl2**         - *PlPlacement* 

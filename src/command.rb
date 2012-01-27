@@ -628,11 +628,13 @@ class CmdCreateGame < Cmd
 
     check_game(map, army)
 
+    map_fields = %w[_id name width height structure]
+    army_fields = %w[_id name units]
     @@db['games'].insert(
       'name'       => req['name'],
       'creator'    => user['_id'],
-      'map'        => map['_id'],
-      'army'       => army['_id'],
+      'map'        => h_slice(map, map_fields),
+      'army'       => h_slice(army, army_fields),
       'created_at' => Time.now.utc
     )
     
@@ -656,16 +658,10 @@ class CmdGetGameParams < Cmd
     get_user(req['sid'])
 
     game = get_by_name('games', req['name'])
-    map  = get_by_id('maps', game['map'])
-    army = get_by_id('armies', game['army'])
+    map  = h_slice(game['map'], %w[name width height structure])
+    army = h_slice(game['army'], %w[name units])
     
-    [
-      {
-        'map'  => h_slice(map, %w[name width height structure]),
-        'army' => h_slice(army, %w[name units])
-      },
-      {}, {}
-    ]
+    [{ 'map' => map, 'army' => army }, {}, {}]
   end
 end
 
@@ -763,7 +759,7 @@ class CmdGetGame < Cmd
   def_init self, 'sid'
 
   def prepare_process(game, is_pl1, pl, opp)
-    map = get_by_id('maps', game['map'])
+    map = game['map']
 
     s = map['width'] * map['height']
     p = game['placement']
@@ -813,7 +809,7 @@ class CmdGetGame < Cmd
 
     resp['game_name'] = game['name']
 
-    army = get_by_id('armies', game['army'])
+    army = game['army']
     units = {}
     army['units'].each_pair do |u_name, u_count|
       u = @@db['units'].find_one('name' => u_name)
@@ -848,8 +844,7 @@ class CmdSetPlacement < Cmd
       raise ResponseBadAction, 'Game has already started'
     end
 
-    map = get_by_id 'maps', game['map']
-
+    map = game['map']
     pl, opp =
       if user['_id'] == game['creator']
         %w[pl1 opponent]
@@ -870,9 +865,7 @@ class CmdSetPlacement < Cmd
       end
                                             
     check_placement(
-      req['placement'], pl, map,
-      get_by_id('armies', game['army'])['units']
-    )
+      req['placement'], pl, map, game['army']['units'])
     
     c_update = { "placement.#{pl}" => req['placement'] }
     c_update['moves'] = { 'pl1' => [], 'pl2' => [] } if r
@@ -911,7 +904,7 @@ class CmdMakeMove < Cmd
     pl1, pl2, opp = is_pl1 ? %w[pl1 pl2 opponent] : %w[pl2 pl1 creator]
     opp_id = game[opp]
 
-    map = get_by_id('maps', game['map'])
+    map = game['map']
 
     pl_duel, opp_duel, is_end = make_move(
       game, map, req['posFrom'], req['posTo'], is_pl1)
@@ -1114,8 +1107,8 @@ class CmdGetGameTactics < Cmd
     pl = game['creator'] == user['_id'] ? 'pl1' : 'pl2'
 
     db_tactics = @@db['tactics'].find(
-      'map'  => game['map'],
-      'army' => game['army']
+      'map'  => game['map']['_id'],
+      'army' => game['army']['_id']
     )
     tactics = Hash.new
     db_tactics.each { |t| tactics[t['name']] = t['placement'][pl] }
