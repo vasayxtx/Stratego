@@ -311,22 +311,23 @@ class AvailableGamesCtrl extends Spine.Controller
 
 class MapsEditorCtrl extends Spine.Controller
   elements:
-    '#maps_editor':                 '_location'
+    '#maps_editor':                   '_location'
 
-    '#maps_editor .tools':          '_tools'
+    '#maps_editor .tools':            '_tools'
 
-    '#maps_editor .list_maps':      '_list_maps'
-    '#maps_editor .map':            '_map'
-    '#maps_editor #name_map':       '_name_map'
-    '#maps_editor #width_map':      '_width_map'
-    '#maps_editor #height_map':     '_height_map'
+    '#maps_editor .list_maps':        '_list_maps'
+    '#maps_editor .map':              '_map'
+    '#maps_editor #name_map':         '_name_map'
+    '#maps_editor #width_map':        '_width_map'
+    '#maps_editor #height_map':       '_height_map'
 
-    '#maps_editor .btn_del':        '_btn_del'
-    '#maps_editor .btn_save':       '_btn_save'
-    '#maps_editor #btn_clean_map':  '_btn_clean'
-    '#maps_editor #btn_gen_map':    '_btn_generate'
+    '#maps_editor .btn_del':          '_btn_del'
+    '#maps_editor .btn_save':         '_btn_save'
+    '#maps_editor #btn_clean_map':    '_btn_clean'
+    '#maps_editor #btn_gen_map':      '_btn_generate'
+    '#maps_editor #btn_reflect_map':  '_btn_reflect'
 
-    '#modal_map_del':               '_modal_del'
+    '#modal_map_del':                 '_modal_del'
 
   events:
     'click #maps_editor .btn_new':        'add_map'
@@ -335,6 +336,7 @@ class MapsEditorCtrl extends Spine.Controller
 
     'click #btn_gen_map':                 'generate_map'
     'click #btn_clean_map':               'clean_map'
+    'click #btn_reflect_map':             'reflect_map'
 
     'click #maps_editor .tools li':       'select_tool'
     'click #maps_editor .map .map_cell':  'set_map_cell'
@@ -369,10 +371,11 @@ class MapsEditorCtrl extends Spine.Controller
       @["_#{el}_map"].val('')
     
     Utils.hide(
-      @_name_map,
-      @_width_map,
-      @_height_map,
+      @_name_map
+      @_width_map
+      @_height_map
       @_btn_clean
+      @_btn_reflect
       @_btn_generate
       @_tools
     )
@@ -409,7 +412,7 @@ class MapsEditorCtrl extends Spine.Controller
     @.update_tools()
 
     Utils.enable(@_btn_save)
-    @_btn_clean.show()
+    Utils.show(@_btn_clean, @_btn_reflect)
 
     @_last_width = width
 
@@ -422,7 +425,7 @@ class MapsEditorCtrl extends Spine.Controller
       @_height_map
       @_btn_generate
     )
-    Utils.hide(@_tools, @_btn_clean)
+    Utils.hide(@_tools, @_btn_clean, @_btn_reflect)
     Utils.disable(@_btn_del, @_btn_save)
     Utils.enable(@_name_map)
     Utils.unselect(@_list_maps)
@@ -552,6 +555,21 @@ class MapsEditorCtrl extends Spine.Controller
 
   clean_map: ->
     @_map.find('.map_cell').removeClass('pl1 pl2 obst')
+
+  reflect_map: ->
+    h = @_map.find('tr').size()
+    w = @_map.find('tr:first-child td').size()
+    high = h * w - 1
+    for i in [0..high/2] by 1
+      cell_1 = @_map.find("#cell_#{i}")
+      cell_2 = @_map.find("#cell_#{high-i}")
+      tmp_cl = cell_1.attr('class')
+      cell_1
+        .attr('class', cell_2.attr('class'))
+        .attr('id', "cell_#{high-i}")
+      cell_2
+        .attr('class', tmp_cl)
+        .attr('id', "cell_#{i}")
 
   select_tool: (event) ->
     obj = $(event.currentTarget)
