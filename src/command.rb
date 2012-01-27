@@ -154,12 +154,12 @@ class CmdSignup < Cmd
 
     [
       {
-        'sid' => sid,
+        'sid'   => sid,
         'login' => req['login']
       },
       {
         :all => {
-          'cmd' => 'addUserOnline',
+          'cmd'   => 'addUserOnline',
           'login' => req['login']
         }
       },
@@ -186,18 +186,18 @@ class CmdLogin < Cmd
     sid = encode(user['login'], Time.now.utc)
 
     @@db['users'].update(
-      { '_id' => user['_id'] },
+      { '_id'  => user['_id'] },
       { '$set' => { 'status' => :online, 'sid' => sid } }
     )
 
     [
       {
-        'sid' => sid,
+        'sid'   => sid,
         'login' => user['login']
       },
       {
         :all => {
-          'cmd' => 'addUserOnline',
+          'cmd'   => 'addUserOnline',
           'login' => user['login']
         },
       },
