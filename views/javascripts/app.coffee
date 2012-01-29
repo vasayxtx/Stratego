@@ -849,8 +849,25 @@ class GameCreationCtrl extends Spine.Controller
   validate_inputs: ->
     return @_name_game.validator(ConstValidations::NAME)
 
+  check_compatibility: ->
+    units_count = 0
+    @_army.find('.unit_count').each (i, el) ->
+      units_count += parseInt($(el).html(), 10)
+    cells_count = @_map.find('.pl1').size()
+
+    unless cells_count == units_count
+      console.log('break')
+      Notifications.add(
+        type: 'error'
+        text: "Army and map aren't compatibility"
+      )
+      return false
+
+    return true
+
   create_game: ->
-    return unless @.validate_inputs()
+    unless @.validate_inputs() && @.check_compatibility()
+      return
 
     @ws.send(
       {
@@ -1414,7 +1431,7 @@ class AppCtrl extends Spine.Controller
 
   constructor: ->
     super
-    Utils.restore_model(Session, 'Session')
+    Session.loadSession()
 
     @ctrls = {}
     @ctrls.about_project = new AboutProjectCtrl(@_content)
@@ -1460,7 +1477,7 @@ class AppCtrl extends Spine.Controller
     @ctrls.maps_editor      = new MapsEditorCtrl(@_content, @ws)
     @ctrls.armies_editor    = new ArmiesEditorCtrl(@_content, @ws)
 
-    Utils.restore_model(Game, 'Game')
+    Game.loadSession()
 
     s = Session.first()
     AppCtrl.update_menu(Game.first())
@@ -1620,11 +1637,6 @@ class Utils
   @get_selected: (ul_cont) ->
     obj = ul_cont.find('li.selected')
     return Utils.strip(obj.html())
-
-  @restore_model: (model, model_name) ->
-    data = $.parseJSON(sessionStorage.getItem(model_name))
-    sessionStorage.removeItem(model_name)
-    model.create(data[0]) if data?
 
   @disable: (args...) ->
     for obj in _.flatten(args)

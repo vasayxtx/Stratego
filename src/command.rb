@@ -386,6 +386,10 @@ class CmdDestroyMap < Cmd
     map = get_by_name('maps', req['name'])
     check_access(user, map)
 
+    if @@db['tactics'].find('map' => map['_id']).count > 0
+      raise ResponseBadAction, 'Map used in the tactics'
+    end
+
     @@db['maps'].remove('_id' => map['_id'])
 
     [{},{},{}]
@@ -508,6 +512,10 @@ class CmdDestroyArmy < Cmd
     user = get_user(req['sid'])
     army = get_by_name('armies', req['name'])
     check_access(user, army)
+
+    if @@db['tactics'].find('army' => army['_id']).count > 0
+      raise ResponseBadAction, 'Army used in the tactics'
+    end
 
     @@db['armies'].remove('_id' => army['_id'])
 
@@ -1075,9 +1083,11 @@ class CmdCreateTactic < Cmd
     Validator.validate(@@db['tactics'], req, V_TACTIC)
 
     user = get_user(req['sid'])
-    map  = get_by_name('maps', req['nameMap'])
-    army = get_by_name('armies', req['nameArmy'])
 
+    map  = get_by_name('maps', req['nameMap'])
+    check_access(user, map)
+    army = get_by_name('armies', req['nameArmy'])
+    check_access(user, army)
 
     %w[pl1 pl2].each do |pl|
       check_placement(
@@ -1095,6 +1105,9 @@ class CmdCreateTactic < Cmd
 
     [{},{},{}]
   end
+end
+
+class CmdEditTactic < Cmd
 end
 
 class CmdGetGameTactics < Cmd
