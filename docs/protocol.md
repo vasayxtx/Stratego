@@ -488,6 +488,14 @@
                 ...
             }
         },
+        "units": {
+            "pl1": {
+                <name of the unit>: count,
+            },
+            "pl2": {
+                <name of the unit>: count
+            }
+        },
         "state": {
             "pl1": {                            //"pl1": [...] - if not placed
                 <position>: <name of the unit>,

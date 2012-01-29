@@ -1166,6 +1166,7 @@ class GameProcessCtrl extends Spine.Controller
     '#game_process .map':             '_map'
     '#game_process .left_side h3':    '_game_name'
     '#game_process .turn_display':    '_turn_display'
+    '#game_process .units_place ul':  '_units'
 
   events:
     'mousedown #game_process .map_cell.pl1':          'take_unit'
@@ -1196,6 +1197,7 @@ class GameProcessCtrl extends Spine.Controller
         pl1: game.state.pl1
         pl2: game.state.pl2
       @.render_map(map.width, map.height, structure)
+      @.render_units(game.units, game.army)
       @_game_name.html(game.game_name)
       @.update_turn(game.isTurn)
 
@@ -1207,6 +1209,18 @@ class GameProcessCtrl extends Spine.Controller
     RMap.render(@_map, width, height, structure)
     @.init_draggable(@_map.find('.pl1'))
     @.init_droppable(@_map.find('.map_cell:not(.pl1,.obst)'))
+
+  render_units: (game_units, army) ->
+    units = (
+      for k, v of army.units
+        {
+          name: k
+          pl1: game_units.pl1[k] || 0
+          pl2: game_units.pl2[k] || 0
+          count: v.count
+        }
+    )
+    @_units.templater('#templ_game_units', { units: units })
 
   opponent_move: (move) ->
     @.update_turn(true)
@@ -1231,6 +1245,8 @@ class GameProcessCtrl extends Spine.Controller
       protector:  d.protector
       result:     d.result
       handle_ok:  =>
+        @.update_units(['pl2', 'pl1'], d)
+
         if d.result in ['loss', 'draw']
           cell_to
             .attr('class', 'map_cell')
@@ -1331,6 +1347,8 @@ class GameProcessCtrl extends Spine.Controller
         protector:  d.protector
         result:     d.result
         handle_ok:  =>
+          @.update_units(['pl1', 'pl2'], d)
+
           if d.result == 'win'
             obj_cell
               .removeClass('pl2')
@@ -1362,6 +1380,37 @@ class GameProcessCtrl extends Spine.Controller
   update_turn: (@is_turn) ->
     pl = if @is_turn then 'You' else 'Opponent'
     @_turn_display.html("Turn: #{pl}")
+
+  update_units: (pl, duel) ->
+    re_begin = /^(\d+)*/
+    re_end = /(\d+)*$/
+    m = [[duel.attacker, pl[0]], [duel.protector, pl[1]]]
+    a = (
+      for el in m
+        obj = @_units.find(".img_unit_#{el[0]}")
+        obj_li = obj.parent().parent()
+        res_obj = obj_li.find(".#{el[1]}")
+        val = Utils.strip(res_obj.html())
+        res_cur_count = parseInt(val.match(re_begin)[1], 10)
+        res_total_count = parseInt(val.match(re_end)[1], 10)
+
+        [res_cur_count, res_total_count, res_obj]
+    )
+    attacker = a[0]
+    protector = a[1]
+
+    a = 
+      switch duel.result
+        when 'draw'
+          [attacker, protector]
+        when 'win'
+          [if pl[0] == 'pl1' then protector else attacker]
+        when 'loss'
+          [if pl[0] == 'pl1' then attacker else protector]
+    el[0] -= 1 for el in a
+
+    attacker[2].html(attacker[0] + ' / ' + attacker[1])
+    protector[2].html(protector[0] + ' / ' + protector[1])
   
   init_draggable: (obj) ->
     obj_tbl = @_map.find('table')
@@ -1515,11 +1564,7 @@ class Notifications
     obj_notif.hide()
     @counter += 1
 
-    obj_notif.templater(
-      '#templ_notification',
-      opts
-    )
-
+    obj_notif.templater('#templ_notification', opts)
     obj_notif.fadeIn(Notifications::FADE_DELAY);
 
     obj_notif.find('.close').on 'click', (event) =>

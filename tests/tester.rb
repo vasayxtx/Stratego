@@ -75,7 +75,9 @@ class Tester
               puts "RESP:\n#{resp}"
               puts "Diff\n"
               exp_resp.each_pair do |k, v|
-                puts "#{v}\n#{resp[k]}\n" unless v == resp[k]
+                unless v == resp[k]
+                  puts "EXP_RESP:\n#{v}\nRESP:\n#{resp[k]}\n" 
+                end
               end
               puts "\n\n"
             end

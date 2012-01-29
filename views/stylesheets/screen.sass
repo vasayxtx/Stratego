@@ -612,7 +612,7 @@ $top_side_height: 50px
     .army
       +army
       ul
-        $w: 4 * $bgrid_width - 1px
+        $w: $left_col_count * $bgrid_width - 1px
         border-right: 1px solid black
         width: $w
 
@@ -663,6 +663,68 @@ $top_side_height: 50px
 
       h3
         text-align: center
+
+    .units_place
+      border-right: 1px solid black
+      width: $left_col_count * $bgrid_width - 1px
+      overflow: hidden
+
+      // .game_units_header
+      //   padding: 10px 0px
+      //   text-align: center
+      //   overflow: hidden
+      //   border-bottom: 1px solid black
+
+      //   h4:first-child
+      //     +float-left
+
+      //   h4:last-child
+      //     +float-right
+      //     margin-right: 10px
+
+      ul
+        +column(4)
+        width: inherit
+        list-style-type: none
+        padding: 0px
+        margin: 10px 0px 0px 0px
+        
+        li
+          +container
+          width: inherit
+          vertical-align: middle
+          margin-bottom: 10px
+
+          &:last-child
+            margin-bottom: 0px
+          
+          &:hover
+            background-color: $selected_color
+
+          span
+            height: $map_cell_size
+            text-align: center
+            line-height: $map_cell_size
+            text-size: 1.1em
+
+            &.pl1, &.pl2
+              +column(1)
+
+            &.middle
+              $col_count: 2
+              +column($col_count)
+              width: $col_count * $bgrid_width - 1px
+
+              span
+                display: block
+                width: $map_cell_size - 2px
+                height: $map_cell_size - 2px
+                border: 1px solid black
+                margin-left: ($col_count * $bgrid_width - $map_cell_size) / 2
+                @each $f in Flag, Spy, Scout, Miner, Sergeant, Captain, Major, Colonel, General, Marshal, Bomb, Lieutenant
+                  &.img_unit_#{$f}
+                    background-image: image-url("/images/#{$f}.png")
+                    background-repeat: no-repeat
 
   .right_side
     .top_side

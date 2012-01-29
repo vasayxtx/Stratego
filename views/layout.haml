@@ -189,7 +189,11 @@
               .left_side
                 .top_side
                   %h3
-                / .army
+                .units_place
+                  / .game_units_header
+                  /   %h4 You
+                  /   %h4 Opponent
+                  %ul
               .right_side
                 .top_side
                   .left_side
@@ -391,4 +395,13 @@
       </p>
       </div>
 
-
+    %script{ :type => "text/template", :id => "templ_game_units" }
+      <% for (var i = 0; i < units.length; ++i) { %>
+      <% var u = units[i]; %>
+      <% var li = '<li>'; %>
+      <% li += '<span class="pl1">' + u.pl1 + ' / ' + u.count + '</span>'; %>
+      <% li += '<span class="middle"><span class="img_unit_' + u.name + '"></span></span>'; %>
+      <% li += '<span class="pl2">' + u.pl2 + ' / ' + u.count + '</span>'; %>
+      <% li += '</li>'; %>
+      <%= li %>
+      <% } %>

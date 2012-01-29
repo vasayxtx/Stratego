@@ -92,7 +92,6 @@ class GameProcess
 
     s1, s2 = sender, (sender + 1) % 2
 
-
     res[1][s1].merge!('duel' => results[0])
     res[1][s2].merge!('duel' => results[1])
 
@@ -119,21 +118,31 @@ class GameProcess
   end
 
   def get_game
+    a = [@pl_placement, @opp_placement]
+
     res = Array.new(2) do |i|
+      pl_units, opp_units = Hash.new(0), Hash.new(0)
+      a[i].values.each { |u| pl_units[u] += 1 }
+      a[(i+1)%2].values.each { |u| opp_units[u] += 1 }
+
       {
         i => {
-          'status' => 'ok',
+          'status'    => 'ok',
           'game_name' => GAME_MINI,
-          'players' => %w[User0 User1],
-          'army' => make_game_army
+          'players'   => %w[User0 User1],
+          'army'      => make_game_army,
+          'units'     => {
+            'pl1' => pl_units,
+            'pl2' => opp_units
+          }
         }
       }
     end
     
     res[0][0].merge!(
-      'map' => M,
+      'map'    => M,
       'isTurn' => @turn == :pl,
-      'state' => {
+      'state'  => {
         'pl1' => clone(@pl_placement),
         'pl2' => clone(@opp_placement.keys.map { |el| el.to_i })
       }
@@ -142,9 +151,9 @@ class GameProcess
     m = clone(M)
     m['obst'] = reflect_a(m['obst'], MAP_SIZE)
     res[1][1].merge!(
-      'map' => m,
+      'map'    => m,
       'isTurn' => @turn == :opp,
-      'state' => {
+      'state'  => {
         'pl1' => reflect_placement(@opp_placement, MAP_SIZE),
         'pl2' => reflect_a(
           @pl_placement.keys.map { |el| el.to_i },
@@ -195,7 +204,7 @@ t.push_test(initial_game_test)
 
 resp = {
   1 => {
-    'status' => 'badAction',
+    'status'  => 'badAction',
     'message' => 'Game isn\'t started'
   }
 }
@@ -209,14 +218,14 @@ req = {
 }
 resp0 = {
   1 => {
-    'status' => 'ok',
+    'status'        => 'ok',
     'isGameStarted' => false
   },
   0 => { 'cmd' => 'readyOpponent' }
 }
 resp1 = {
   0 => {
-    'status' => 'ok',
+    'status'        => 'ok',
     'isGameStarted' => true
   },
   1 => { 'cmd' => 'startGame' }
@@ -250,7 +259,7 @@ t.push_test([
 
 resp = {
   1 => {
-    'status' => 'badAction',
+    'status'  => 'badAction',
     'message' => 'It isn\'t your turn now'
   }
 }
@@ -260,7 +269,7 @@ t.push_test([[1, GameProcess.req_make_move_cmd(8, 20), resp]])
 #--------------------------------
 resp = {
   0 => {
-    'status' => 'badMove',
+    'status'  => 'badMove',
     'message' => 'Incorrect move'
   }
 }
@@ -279,7 +288,7 @@ t.push_test(test)
 #--------------------------------
 resp = {
   0 => {
-    'status' => 'badMove',
+    'status'  => 'badMove',
     'message' => 'Incorrect move'
   }
 }

@@ -128,3 +128,7 @@ def make_game_army(a = Generator::ARMY_MINI)
 
   army
 end
+
+def make_game_units(a = Generator::ARMY_MINI)
+  { 'pl1' => a['units'], 'pl2' => a['units'] }
+end

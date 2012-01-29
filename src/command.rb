@@ -801,7 +801,15 @@ class CmdGetGame < Cmd
       },
       'map' => m
     }
-    resp['isTurn'] = turn?(game, is_pl1) if game['moves']
+
+    if game['moves']
+      resp['isTurn'] = turn?(game, is_pl1)
+
+      units_pl, units_opp = Hash.new(0), Hash.new(0)
+      game['placement'][pl].values.each { |u| units_pl[u] += 1 }
+      game['placement'][opp].values.each { |u| units_opp[u] += 1 }
+      resp['units'] = { 'pl1' => units_pl, 'pl2' => units_opp }
+    end
 
     resp
   end

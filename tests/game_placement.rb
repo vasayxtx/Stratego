@@ -149,6 +149,7 @@ r0 = {
   'players'   => %w[User0 User1],
   'map'       => M,
   'army'      => make_game_army,
+  'units'     => make_game_units,
   'isTurn'    => true,
   'state' => {
     'pl1' => Generator::make_tactic(Generator::TACTIC_MINI),
