@@ -147,9 +147,15 @@ class AuthCtrl extends Spine.Controller
 
   logout: (event) ->
     event.preventDefault()
-    @ws.send(
-      { cmd: 'logout' },
-      $.proxy(@handler_logout, @)
+
+    new ModalYesNo(
+      header:     'Logout' 
+      text:       'Are you want logout'
+      handle_ok:  =>
+        @ws.send(
+          { cmd: 'logout' },
+          $.proxy(@handler_logout, @)
+        )
     )
 
   show_modal: (cmd) ->
@@ -1578,8 +1584,6 @@ class Notifications
       hide_notif,
       Notifications::HIDE_DELAY
     )
-
-
 
 #------------- Resources -------------
 
