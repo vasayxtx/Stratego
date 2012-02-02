@@ -21,18 +21,18 @@ $LOAD_PATH << File.dirname(__FILE__)
   clients_container
 ].each { |src_f| require File.join('src', src_f) }
 
-cnfg = YAML.load_file 'configure.yml'
+cnfg = YAML.load_file('configure.yml')
 
 db_conn = Mongo::Connection.new
 db = db_conn.db cnfg['db']['name']
 
-RequestHandler.set_db db_conn, db
-ClContainer.set_db db_conn, db
+RequestHandler.set_db(db_conn, db)
+ClContainer.set_db(db_conn, db)
 
 class App < Sinatra::Base
   configure do
     Compass.configuration do |config|
-      config.project_path = File.dirname __FILE__
+      config.project_path = File.dirname(__FILE__)
       config.sass_dir = 'views/stylesheets'
     end
 

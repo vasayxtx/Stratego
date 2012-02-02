@@ -1,0 +1,10 @@
+ws_server:
+  host: 'localhost'
+  port: 9001
+
+user:
+  login: 'SimpleAI'
+  password: 'chubaka'
+
+game:
+  name: 'MiniGame'
