@@ -16,7 +16,6 @@ class AiClient
     log = Logger.new(log_file)
 
     is_end = false
-    sync_resp = nil
 
     EM.run do
       conn = EventMachine::WebSocketClient.connect("ws://#{host}:#{port}/")
@@ -29,31 +28,23 @@ class AiClient
 
       conn.stream do |data|
         resp = JSON.parse(data)
-
         log.debug("Response: #{resp}")
 
         status = resp.delete('status')
         if (status && status != 'ok') || is_end
           log.close
           EM::stop_event_loop
-        elsif sync_resp.nil? || sync_resp == resp['cmd']
-          sync_resp = nil
-          req, opts = ai_player.handle(resp)
-
-          unless opts.nil?
-            if opts == 'die!'
-              is_end = true
-            else
-              sync_resp = opts
-            end
+        else
+          req, is_end = ai_player.handle(resp)
+          if !req.nil? && req.size > 1             # Empty or sid only
+            log.debug("Request: #{req}")
+            conn.send_msg(req.to_json)
           end
-
-          log.debug("Request: #{req}")
-          conn.send_msg(req.to_json)
         end
       end
 
       conn.disconnect do
+        puts 'By!'
       end
     end
   end
@@ -69,19 +60,42 @@ class AiPlayer
     @game = game
 
     @fb = Fiber.new do
+      # Fiber.yield({}) - wait action from second player
+
       # Login
       resp = Fiber.yield(cmd_login)
       @sid = resp['sid']
        
+      # Create/Join game
       if @is_creator
-        # Create game
-        Fiber.yield(cmd_create_game, 'startGamePlacement')
+        Fiber.yield(cmd_create_game)
+        Fiber.yield({})
       else
         Fiber.yield(cmd_join_game)
       end
+      
+      # Placement
+      placement = {}
+      if (t = @game['tactic']).instance_of?(Hash)
+        t.each_pair { |k, v| v.each { |p| placement[p.to_s] = k } }
+      end
+      resp = Fiber.yield(cmd_set_placement(placement))
+      Fiber.yield({}) unless resp['isGameStarted']
+
+      # Make move
+      cur_game = Fiber.yield({ cmd: 'getGame' })
+      parse_game(cur_game)
+      l = [
+        (-> { process_move(Fiber.yield(make_move)) }),
+        (-> { Fiber.yield({}) })
+      ]
+      l.reverse! unless @is_turn
+      loop do
+        l[0].(); l[1].()
+      end
 
       # Logout
-      Fiber.yield([cmd_logout, 'die!'])
+      Fiber.yield(cmd_logout)
     end
   end
 
@@ -90,10 +104,42 @@ class AiPlayer
   end
 
   def handle(resp)
-    req, opts = @fb.resume(resp)
-    req[:sid] = @sid if @sid
+    prepare_req = ->(req) do
+      is_end = req[:cmd] == 'logout' ? true : false
+      req[:sid] = @sid
+      [req, is_end]
+    end
 
-    [req, opts]
+    if resp.has_key?('cmd')
+      case resp['cmd']
+      when 'startGamePlacement'
+        return prepare_req.(@fb.resume)
+      when 'endGame'
+        return prepare_req.(cmd_logout)
+      when 'startGame'
+        return prepare_req.(@fb.resume)
+      when 'oppoentMove'
+        process_opponent_move(resp)
+        return prepare_req.(@fb.resume)
+      end
+      return
+    end
+
+    prepare_req.(@fb.resume(resp))
+  end
+
+  def parse_game(game)
+    @is_turn = game['isTurn']
+  end
+
+  def make_move
+    {}
+  end
+
+  def process_move(resp)
+  end
+
+  def process_opponent_move(resp)
   end
 
   #--------- Commands ---------
@@ -123,8 +169,16 @@ class AiPlayer
     { cmd: 'destroyGame' }
   end
 
+  def cmd_leave_game
+    { cmd: 'leaveGame' }
+  end
+
   def cmd_join_game
     { cmd: 'joinGame', name: @game['name'] }
+  end
+
+  def cmd_set_placement(placement)
+    { cmd: 'setPlacement', placement: placement }
   end
 end
 

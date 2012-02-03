@@ -4,7 +4,8 @@ require File.join(File.dirname(__FILE__), 'generator')
 
 class Seed
   ADMIN = ['Admin', 'password']
-  SIMPLE_AI = ['SimpleAI', 'chubaka']
+  SIMPLE_AI_1 = ['SimpleAI1', 'chubaka']
+  SIMPLE_AI_2 = ['SimpleAI2', 'chubaka']
 
   def self.seed_all(db)
     %w[users units maps armies tactics].each do |n|
@@ -34,7 +35,7 @@ class Seed
     end
 
     users = Generator.make_users
-    users << ADMIN << SIMPLE_AI
+    users << ADMIN << SIMPLE_AI_1 << SIMPLE_AI_2
 
     users.each do |user|
       t = Time.now.utc

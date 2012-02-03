@@ -1,0 +1,32 @@
+ws_server:
+  host: 'localhost'
+  port: 9001
+
+user:
+  login: 'SimpleAI2'
+  password: 'chubaka'
+  is_creator: false
+
+game:
+  name: 'ClassicalGame'
+  map: 'ClassicalMap'
+  army: 'ClassicalArmy'
+
+  tactic: {
+    Flag:        [12],
+    Bomb:        [2, 11, 13, 22, 28, 39],
+    Spy:         [10],
+    Scout:       [4, 5, 7, 9, 17, 30, 33, 37],
+    Miner:       [14, 23, 26, 27, 32],
+    Sergeant:    [1, 3, 18, 29],
+    Lieutenant:  [6, 8, 16, 35],
+    Captain:     [19, 21, 25, 34],
+    Major:       [0, 31, 36],
+    Colonel:     [24, 38],
+    General:     [15],
+    Marshal:     [20]
+  }
+
+  prepared_moves: []
+
+log_file: 'simple_ai_2.log'
