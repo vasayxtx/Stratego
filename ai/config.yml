@@ -5,6 +5,14 @@ ws_server:
 user:
   login: 'SimpleAI'
   password: 'chubaka'
+  is_creator: false
 
 game:
-  name: 'MiniGame'
+  name: 'ClassicalGame'
+  map: 'ClassicalMap'
+  army: 'ClassicalArmy'
+
+  tactic: 'ScoutGambit'
+  prepared_moves: []
+
+log_file: 'simple_ai.log'
