@@ -1115,9 +1115,6 @@ class CmdCreateTactic < Cmd
   end
 end
 
-class CmdEditTactic < Cmd
-end
-
 class CmdGetGameTactics < Cmd
   def_init self, 'sid'
 

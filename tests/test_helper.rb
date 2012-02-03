@@ -30,11 +30,14 @@ def create_armies
 end
 
 def create_tactics
-  [
-    [Generator::TACTIC_MINI, Generator::MAP_MINI, Generator::ARMY_MINI],
-    [Generator::TACTIC_TEST, Generator::MAP_MINI, Generator::ARMY_MINI],
-    [Generator::TACTIC_CL, Generator::MAP_CL, Generator::ARMY_CL],
-  ].map do |t|
+  tactics = []
+  [Generator::TACTIC_MINI, Generator::TACTIC_TEST].each do |t|
+    tactics << [t, Generator::MAP_MINI, Generator::ARMY_MINI]
+  end
+  Generator::TACTICS_CL.each do |t|
+    tactics << [t, Generator::MAP_CL, Generator::ARMY_CL]
+  end
+  tactics.map do |t|
     [
       0,
       {

@@ -58,7 +58,7 @@ t.push_test([
 
 #Test5
 #--------------------------------
-placement = Generator.make_tactic Generator::TACTIC_MINI
+placement = Generator.make_tactic(Generator::TACTIC_MINI)
 req = {
   'cmd' => 'setPlacement',
   'placement' => placement

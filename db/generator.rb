@@ -90,24 +90,42 @@ class Generator
 
   #---------- Tactics ----------
   
-  TACTIC_CL = 
-  {
-    'name' => "ScoutGambit",
-    'placement' => {
-      'Flag'        =>  [0], 
-      'Bomb'        =>  [1, 10, 14, 19, 21, 26], 
-      'Spy'         =>  [17], 
-      'Scout'       =>  [4, 7, 9, 24, 27, 30, 34, 39], 
-      'Miner'       =>  [3, 5, 12, 18, 36], 
-      'Sergeant'    =>  [2, 13, 22, 33], 
-      'Lieutenant'  =>  [6, 8, 16, 31], 
-      'Captain'     =>  [11, 29, 35, 37], 
-      'Major'       =>  [15, 20, 38], 
-      'Colonel'     =>  [23, 32], 
-      'General'     =>  [28],
-      'Marshal'     =>  [25]
+  TACTICS_CL = [
+    {
+      'name' => 'CycloneDefence',
+      'placement' => {
+        'Flag'        =>  [12], 
+        'Bomb'        =>  [2, 11, 13, 22, 28, 39], 
+        'Spy'         =>  [10], 
+        'Scout'       =>  [4, 5, 7, 9, 17, 30, 33, 37], 
+        'Miner'       =>  [14, 23, 26, 27, 32], 
+        'Sergeant'    =>  [1, 3, 18, 29], 
+        'Lieutenant'  =>  [6, 8, 16, 35], 
+        'Captain'     =>  [19, 21, 25, 34], 
+        'Major'       =>  [0, 31, 36], 
+        'Colonel'     =>  [24, 38], 
+        'General'     =>  [15],
+        'Marshal'     =>  [20]
+      }
+    },
+    {
+      'name' => "ScoutGambit",
+      'placement' => {
+        'Flag'        =>  [0], 
+        'Bomb'        =>  [1, 10, 14, 19, 21, 26], 
+        'Spy'         =>  [17], 
+        'Scout'       =>  [4, 7, 9, 24, 27, 30, 34, 39], 
+        'Miner'       =>  [3, 5, 12, 18, 36], 
+        'Sergeant'    =>  [2, 13, 22, 33], 
+        'Lieutenant'  =>  [6, 8, 16, 31], 
+        'Captain'     =>  [11, 29, 35, 37], 
+        'Major'       =>  [15, 20, 38], 
+        'Colonel'     =>  [23, 32], 
+        'General'     =>  [28],
+        'Marshal'     =>  [25]
+      }
     }
-  }
+  ]
 
   TACTIC_MINI = 
   {
@@ -172,7 +190,7 @@ class Generator
     [ARMY_CL, ARMY_MINI]
   end
 
-  def self.make_tactic(t = TACTIC_CL)
+  def self.make_tactic(t = TACTICS_CL[0])
     res = {}
     t['placement'].each_pair do |unit, positions|
       positions.each { |pos| res[pos.to_s] = unit }

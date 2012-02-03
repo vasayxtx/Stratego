@@ -116,23 +116,13 @@ class Seed
     coll = db['tactics']
     admin = db['users'].find_one('login' => ADMIN[0])
 
-    tactics = [
-      [
-        Generator::MAP_CL,
-        Generator::ARMY_CL,
-        Generator::TACTIC_CL
-      ],
-      [
-        Generator::MAP_MINI,
-        Generator::ARMY_MINI,
-        Generator::TACTIC_MINI
-      ],
-      [
-        Generator::MAP_MINI,
-        Generator::ARMY_MINI,
-        Generator::TACTIC_TEST
-      ]
-    ]
+    tactics = []
+    [Generator::TACTIC_MINI, Generator::TACTIC_TEST].each do |t|
+      tactics << [Generator::MAP_MINI, Generator::ARMY_MINI, t]
+    end
+    Generator::TACTICS_CL.each do |t|
+      tactics << [Generator::MAP_CL, Generator::ARMY_CL, t]
+    end
 
     tactics.each do |tactic|
       map   = db['maps'].find_one('name' => tactic[0]['name'])
