@@ -31,6 +31,17 @@ class Generator
     }
   }
 
+  MAP_AI = {
+    'name'      => 'AiMap',
+    'width'     => 10,
+    'height'    => 6,
+    'structure' => {
+      'pl1'  => (0..19).to_a,
+      'pl2'  => (40..59).to_a,
+      'obst' => [22, 23, 28, 32, 33, 38]
+    }
+  }
+
   #***** Units *****
   
   U_RANGE = 0..50
@@ -71,19 +82,37 @@ class Generator
   }
 
   ARMY_MINI = {
-    'name'  => "MiniArmy",
+    'name'  => 'MiniArmy',
     'units' => {
-      'Flag'       => 1, 
-      'Bomb'       => 1, 
-      'Spy'        => 1, 
+      'Flag'       => 1,
+      'Bomb'       => 1,
+      'Spy'        => 1,
       'Scout'      => 1,
-      'Miner'      => 1, 
-      'Sergeant'   => 1, 
+      'Miner'      => 1,
+      'Sergeant'   => 1,
+      'Lieutenant' => 1,
+      'Captain'    => 1,
+      'Major'      => 1,
+      'Colonel'    => 1,
+      'General'    => 1,
+      'Marshal'    => 1
+    }
+  }
+
+  ARMY_AI = {
+    'name'  => 'AiArmy',
+    'units' => {
+      'Flag'       => 1,
+      'Bomb'       => 4,
+      'Spy'        => 1,
+      'Scout'      => 4,
+      'Miner'      => 2,
+      'Sergeant'   => 1,
       'Lieutenant' => 1, 
-      'Captain'    => 1, 
-      'Major'      => 1, 
-      'Colonel'    => 1, 
-      'General'    => 1, 
+      'Captain'    => 1,
+      'Major'      => 1,
+      'Colonel'    => 2,
+      'General'    => 1,
       'Marshal'    => 1
     }
   }
@@ -92,7 +121,7 @@ class Generator
   
   TACTICS_CL = [
     {
-      'name' => 'CycloneDefence',
+      'name'      => 'CycloneDefence',
       'placement' => {
         'Flag'        =>  [12],
         'Bomb'        =>  [2, 11, 13, 22, 28, 39],
@@ -109,7 +138,7 @@ class Generator
       }
     },
     {
-      'name' => "ScoutGambit",
+      'name'      => "ScoutGambit",
       'placement' => {
         'Flag'        =>  [0],
         'Bomb'        =>  [1, 10, 14, 19, 21, 26],
@@ -127,9 +156,8 @@ class Generator
     }
   ]
 
-  TACTIC_MINI = 
-  {
-    'name' => "MiniTactic",
+  TACTIC_MINI =  {
+    'name'      => "MiniTactic",
     'placement' => {
       'Flag'        =>  [0], 
       'Bomb'        =>  [1], 
@@ -146,9 +174,8 @@ class Generator
     }
   }
 
-  TACTIC_TEST = 
-  {
-    'name' => "TestTactic",
+  TACTIC_TEST = {
+    'name'      => "TestTactic",
     'placement' => {
       'Sergeant'    =>  [0], 
       'Flag'        =>  [1], 
@@ -162,6 +189,42 @@ class Generator
       'Miner'       =>  [9], 
       'General'     =>  [10], 
       'Colonel'     =>  [11]
+    }
+  }
+
+  TACTIC_AI_1 = {
+    'name'      => 'AiTactic1',
+    'placement' => {
+      'Bomb'        =>  [1, 10, 14, 16], 
+      'Flag'        =>  [0], 
+      'Spy'         =>  [3], 
+      'Scout'       =>  [11, 15, 17, 19], 
+      'Miner'       =>  [13, 18], 
+      'Sergeant'    =>  [8], 
+      'Lieutenant'  =>  [6], 
+      'Captain'     =>  [9], 
+      'Major'       =>  [4], 
+      'Colonel'     =>  [7, 12],
+      'General'     =>  [5], 
+      'Marshal'     =>  [2],
+    }
+  }
+
+  TACTIC_AI_2 = {
+    'name'      => 'AiTactic2',
+    'placement' => {
+      'Bomb'        =>  [1, 7, 10, 17],
+      'Flag'        =>  [0],
+      'Spy'         =>  [2],
+      'Scout'       =>  [13, 14, 15, 18],
+      'Miner'       =>  [9, 16],
+      'Sergeant'    =>  [12],
+      'Lieutenant'  =>  [6],
+      'Captain'     =>  [4],
+      'Major'       =>  [8],
+      'Colonel'     =>  [5, 11],
+      'General'     =>  [19],
+      'Marshal'     =>  [3],
     }
   }
 
@@ -183,11 +246,11 @@ class Generator
   end
 
   def self.make_maps(map_name = MAP_CL['name'])
-    [MAP_CL, MAP_MINI]
+    [MAP_CL, MAP_MINI, MAP_AI]
   end
 
   def self.make_armies(map_army = ARMY_CL['name'])
-    [ARMY_CL, ARMY_MINI]
+    [ARMY_CL, ARMY_MINI, ARMY_AI]
   end
 
   def self.make_tactic(t = TACTICS_CL[0])

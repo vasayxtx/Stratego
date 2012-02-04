@@ -128,20 +128,6 @@ class AiPlayer
     prepare_req.(@fb.resume(resp))
   end
 
-  def parse_game(game)
-    @is_turn = game['isTurn']
-  end
-
-  def make_move
-    {}
-  end
-
-  def process_move(resp)
-  end
-
-  def process_opponent_move(resp)
-  end
-
   #--------- Commands ---------
 
   def cmd_login
@@ -179,6 +165,22 @@ class AiPlayer
 
   def cmd_set_placement(placement)
     { cmd: 'setPlacement', placement: placement }
+  end
+
+  #--------- Actions ---------
+
+  def parse_game(game)
+    @is_turn = game['isTurn']
+  end
+
+  def make_move
+    {}
+  end
+
+  def process_move(resp)
+  end
+
+  def process_opponent_move(resp)
   end
 end
 

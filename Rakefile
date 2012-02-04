@@ -7,7 +7,6 @@ connection = Mongo::Connection.new
 
 DB_NAME = 'stratego'
 
-
 task :clean do
   connection.drop_database DB_NAME
 end

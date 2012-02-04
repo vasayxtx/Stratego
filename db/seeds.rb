@@ -124,6 +124,9 @@ class Seed
     Generator::TACTICS_CL.each do |t|
       tactics << [Generator::MAP_CL, Generator::ARMY_CL, t]
     end
+    [Generator::TACTIC_AI_1, Generator::TACTIC_AI_2].each do |t|
+      tactics << [Generator::MAP_AI, Generator::ARMY_AI, t]
+    end
 
     tactics.each do |tactic|
       map   = db['maps'].find_one('name' => tactic[0]['name'])

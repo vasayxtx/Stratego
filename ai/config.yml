@@ -8,25 +8,26 @@ user:
   is_creator: true
 
 game:
-  name: 'ClassicalGame'
-  map: 'ClassicalMap'
-  army: 'ClassicalArmy'
+  name: 'AiGame'
+  map: 'AiMap'
+  army: 'AiArmy'
 
   tactic: {
+    Bomb:        [1, 10, 14, 16],
     Flag:        [0],
-    Bomb:        [1, 10, 14, 19, 21, 26],
-    Spy:         [17],
-    Scout:       [4, 7, 9, 24, 27, 30, 34, 39],
-    Miner:       [3, 5, 12, 18, 36],
-    Sergeant:    [2, 13, 22, 33],
-    Lieutenant:  [6, 8, 16, 31],
-    Captain:     [11, 29, 35, 37],
-    Major:       [15, 20, 38],
-    Colonel:     [23, 32],
-    General:     [28],
-    Marshal:     [25]
+    Spy:         [3],
+    Scout:       [11, 15, 17, 19],
+    Miner:       [13, 18],
+    Sergeant:    [8],
+    Lieutenant:  [6],
+    Captain:     [9],
+    Major:       [4],
+    Colonel:     [7, 12],
+    General:     [5],
+    Marshal:     [2]
   }
 
-  prepared_moves: []
+  moves: [
+  ]
 
 log_file: 'simple_ai_1.log'
