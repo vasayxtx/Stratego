@@ -580,7 +580,9 @@ class MapsEditorCtrl extends Spine.Controller
   select_tool: (event) ->
     obj = $(event.currentTarget)
     Utils.select_li(obj)
-    cl = obj.find('.map_cell').attr('class').split(' ')[1] || ''
+    obj_map_cell = obj.find('.map_cell')
+    cl = obj_map_cell.removeClass('map_cell').attr('class')
+    obj_map_cell.addClass('map_cell')
     @_map.find('.edt_selected').attr('class', "map_cell #{cl}")
     @.update_tools()
 
@@ -1076,7 +1078,9 @@ class GamePlacementCtrl extends Spine.Controller
       { tactics: tactics }
     )
     @_game_tactics.on 'click', (event) =>
-      tactic = tactics[@_game_tactics.val()]
+      tactic_name = @_game_tactics.val()
+      return unless tactics[tactic_name]
+      tactic = tactics[tactic_name]
       for k, v of tactic
         @_map.find("#cell_#{k}")
           .attr('class', "map_cell pl1 img_unit_#{v}")
@@ -1741,7 +1745,6 @@ class ModalAuth extends Modal
         @modal.find('input.login').val(),
         @modal.find('input.password').val(),
       )
-      @modal.modal('hide')
 
 class ModalYesNo extends Modal
   constructor: (opts) ->
