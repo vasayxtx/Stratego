@@ -28,15 +28,52 @@ module SimpleAi
 
   def make_move
     pos_from, pos_to = make_random_move
+    if @opp_positions.include?(pos_to)          # It will be duel
+      @my_attacker = @my_state.delete(pos_from)
+      @last_pos_to = pos_to
+    else
+      @my_state[pos_to] = @my_state.delete(pos_from)
+    end
+    @my_positions = @my_state.keys.sort
+
     cmd_make_move(pos_from, pos_to)
   end
 
-  def process_move(resp)
-    # Process Duel
+  def process_duel(resp)
+    duel = resp['duel']
+    return if duel.nil? || duel['result'] == 'loss'
+    if duel['result'] == 'win'
+      @my_state[@last_pos_to] = @my_attacker
+      @my_positions = @my_state.keys.sort
+    end
+
+    @opp_state.delete(@last_pos_to)
+    @opp_positions = @opp_state.keys.sort
   end
 
   def process_opponent_move(resp)
-    # Process Duel
+    pos_from, pos_to = resp['posFrom'], resp['posTo']
+    duel = resp['duel']
+
+    u = @opp_state.delete(pos_from)
+
+    if duel
+      case duel['result']
+      when 'win'
+        # That's ok
+      when 'loss'
+        @my_state.delete(pos_to)
+        @opp_state[pos_to] = u
+        @my_positions = @my_state.keys.sort
+      when 'draw'
+        @my_state.delete(pos_to)
+        @my_positions = @my_state.keys.sort
+      end
+    else
+      @opp_state[pos_to] = u
+    end
+
+    @opp_positions = @opp_state.keys.sort
   end
 
   #--------- Extra methods ---------
@@ -67,7 +104,10 @@ module SimpleAi
     active_positions = @my_positions.select { |p| @army_units[@my_state[p]]['moveLength'] > 0 }
     a =  active_positions.map { |p| [p, @directions.select { |d| available?(p, d) }] }
     a.select! { |el| !el[1].empty? }
-    puts a
+    p = a[rand(0...a.size)]
+    pos_from = p[0]
+
+    [pos_from, @move_directions[p[1][0]].call(pos_from)]
   end
 
   #--------- Helpers ---------
@@ -88,10 +128,5 @@ module SimpleAi
   end
 
   def opponent?(pos, direction)
-
-  end
-
-  def move(pos_from, direction)
-    [pos_from, @move_directions[direction].call(pos)]
   end
 end

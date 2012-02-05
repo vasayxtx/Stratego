@@ -52,7 +52,7 @@ module Commands
   end
 
   def cmd_make_move(pos_from, pos_to)
-    { cmd: 'makeMove', posfrom: pos_from, posTo: pos_to }
+    { cmd: 'makeMove', posFrom: pos_from, posTo: pos_to }
   end
 end
 
@@ -145,19 +145,22 @@ class AiPlayer
       l = [
         (-> do 
           @moves_counter += 1
-          sleep(2)
-          process_move(Fiber.yield(make_move))
+          # sleep(1)
+          resp = Fiber.yield(make_move)
+          process_duel(resp)
+          print_game_info
+          resp['isEnd']
         end),
         (-> do
-          process_opponent_move(Fiber.yield({}))
+          opp_move = Fiber.yield({})
+          process_opponent_move(opp_move)
+          print_game_info
+          opp_move['isEnd']
         end)
       ]
       l.reverse! unless @is_turn
       loop do
-        print_game_info
-        l[0].()
-        print_game_info
-        l[1].()
+        break if l[0].() || l[1].()
       end
 
       # Logout
@@ -171,9 +174,9 @@ class AiPlayer
 
   def handle(resp)
     prepare_req = ->(req) do
-      is_end = req[:cmd] == 'logout' ? true : false
+      is_logout = req[:cmd] == 'logout' ? true : false
       req[:sid] = @sid
-      [req, is_end]
+      [req, is_logout]
     end
 
     if resp.has_key?('cmd')
@@ -198,11 +201,13 @@ class AiPlayer
   #--------- Private methods ---------
 
   def print_game_info
+    @out.print('-' * 10  + @moves_counter.to_s + '-' * 10 + "\n")
     @out.print(draw_game_state)
-    @out.print('Opponent units:')
-    @out.print(pp_hash(@opp_state, 1))
-    @out.print('My units')
-    @out.print(pp_hash(@my_state))
+    @out.print("\n\n")
+    # @out.print('Opponent units:')
+    # @out.print(pp_hash(@opp_state, 1))
+    # @out.print('My units')
+    # @out.print(pp_hash(@my_state))
     @out.flush
   end
 end
