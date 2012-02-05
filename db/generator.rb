@@ -138,7 +138,7 @@ class Generator
       }
     },
     {
-      'name'      => "ScoutGambit",
+      'name'      => 'ScoutGambit',
       'placement' => {
         'Flag'        =>  [0],
         'Bomb'        =>  [1, 10, 14, 19, 21, 26],
@@ -152,6 +152,193 @@ class Generator
         'Colonel'     =>  [23, 32],
         'General'     =>  [28],
         'Marshal'     =>  [25]
+      }
+    },
+    {
+      'name'      => 'TheTempestDefense',
+      'placement' => {
+        'Flag'        => [1],
+        'Bomb'        => [0, 2, 11, 13, 16, 20],
+        'Spy'         => [17],
+        'Scout'       => [4, 7, 21, 22, 29, 30, 34, 37],
+        'Miner'       => [6, 8, 15, 23, 27],
+        'Sergeant'    => [3, 19, 35, 39],
+        'Lieutenant'  => [5, 12, 18, 26],
+        'Captain'     => [14, 25, 33, 36],
+        'Major'       => [9, 10, 31],
+        'Colonel'     => [24, 38],
+        'General'     => [32],
+        'Marshal'     => [28]
+      }
+    },
+    {
+      'name'      => 'TrippleThreat',
+      'placement' => {
+        'Flag'        => [1],
+        'Bomb'        => [0, 2, 3, 4, 8, 11],
+        'Spy'         => [27],
+        'Scout'       => [5, 7, 13, 23, 24, 30, 34, 38],
+        'Miner'       => [9, 14, 15, 19, 36],
+        'Sergeant'    => [18, 20, 29, 39],
+        'Lieutenant'  => [6, 10, 22, 35],
+        'Captain'     => [17, 21, 25, 33],
+        'Major'       => [12, 16, 28],
+        'Colonel'     => [32, 37],
+        'General'     => [31],
+        'Marshal'     => [26]
+      }
+    },
+    {
+      'name'      => 'OnGuard',
+      'placement' => {
+        'Flag'        => [2],
+        'Bomb'        => [1, 3, 12, 25, 27, 28],
+        'Spy'         => [23],
+        'Scout'       => [4, 5, 9, 18, 20, 30, 35, 39],
+        'Miner'       => [13, 15, 19, 24, 32],
+        'Sergeant'    => [0, 6, 7, 31],
+        'Lieutenant'  => [14, 17, 21, 26],
+        'Captain'     => [8, 16, 36, 37],
+        'Major'       => [11, 34, 38],
+        'Colonel'     => [22, 29],
+        'General'     => [10],
+        'Marshal'     => [33]
+      }
+    },
+    {
+      'name'      => 'ShorelineBluff',
+      'placement' => {
+        'Flag'        => [32],
+        'Bomb'        => [7, 13, 16, 31, 33, 37],
+        'Spy'         => [10],
+        'Scout'       => [0, 4, 5, 9, 26, 30, 35, 39],
+        'Miner'       => [1, 6, 15, 24, 28],
+        'Sergeant'    => [2, 21, 23, 27],
+        'Lieutenant'  => [12, 14, 17, 29],
+        'Captain'     => [3, 8, 19, 25],
+        'Major'       => [11, 18, 36],
+        'Colonel'     => [22, 38],
+        'General'     => [34],
+        'Marshal'     => [20]
+      }
+    },
+    {
+      'name'      => 'CornerFortress',
+      'placement' => {
+        'Flag'        => [0],
+        'Bomb'        => [2, 9, 11, 14, 17, 20],
+        'Spy'         => [16],
+        'Scout'       => [18, 21, 24, 25, 31, 34, 36, 39],
+        'Miner'       => [4, 7, 19, 26, 28],
+        'Sergeant'    => [1, 5, 10, 37],
+        'Lieutenant'  => [8, 13, 33, 38],
+        'Captain'     => [6, 15, 23, 30],
+        'Major'       => [3, 22, 29],
+        'Colonel'     => [12, 35],
+        'General'     => [32],
+        'Marshal'     => [27]
+      }
+    },
+    {
+      'name'      => 'ShieldDefense',
+      'placement' => {
+        'Flag'        => [4],
+        'Bomb'        => [3, 5, 14, 19, 27, 35],
+        'Spy'         => [12],
+        'Scout'       => [6, 13, 24, 28, 31, 33, 34, 38],
+        'Miner'       => [0, 2, 8, 11, 16],
+        'Sergeant'    => [9, 15, 17, 22],
+        'Lieutenant'  => [18, 30, 36, 39],
+        'Captain'     => [1, 10, 23, 29],
+        'Major'       => [7, 20, 26],
+        'Colonel'     => [21, 25],
+        'General'     => [37],
+        'Marshal'     => [32] 
+      }
+    },
+    {
+      'name'      => 'CornerBlitz',
+      'placement' => {
+        'Flag'        => [0],
+        'Bomb'        => [1, 3, 6, 8, 10, 28],
+        'Spy'         => [14],
+        'Scout'       => [2, 7, 21, 25, 26, 30, 34, 39],
+        'Miner'       => [4, 9, 15, 19, 27],
+        'Sergeant'    => [5, 12, 16, 38],
+        'Lieutenant'  => [17, 20, 31, 35],
+        'Captain'     => [18, 22, 33, 36],
+        'Major'       => [11, 13, 24],
+        'Colonel'     => [23, 37],
+        'General'     => [32],
+        'Marshal'     => [29]
+      }
+    },
+    {
+      'name'      => 'WheelOfDanger',
+      'placement' => {
+        'Flag'        => [14],
+        'Bomb'        => [4, 13, 15, 21, 24, 27],
+        'Spy'         => [7],
+        'Scout'       => [1, 8, 30, 31, 34, 35, 37, 39],
+        'Miner'       => [3, 9, 17, 32, 38],
+        'Sergeant'    => [0, 2, 18, 22],
+        'Lieutenant'  => [20, 23, 25, 28],
+        'Captain'     => [10, 16, 19, 26],
+        'Major'       => [5, 29, 33],
+        'Colonel'     => [6, 11],
+        'General'     => [36],
+        'Marshal'     => [12]
+      }
+    },
+    {
+      'name'      => 'Blitzkrieg',
+      'placement' => {
+        'Flag'        => [2],
+        'Bomb'        => [1, 3, 12, 17, 24, 29],
+        'Spy'         => [18],
+        'Scout'       => [0, 6, 11, 13, 23, 25, 27, 30],
+        'Miner'       => [5, 15, 21, 22, 39],
+        'Sergeant'    => [8, 9, 16, 33],
+        'Lieutenant'  => [7, 19, 20, 37],
+        'Captain'     => [4, 26, 32, 36],
+        'Major'       => [10, 14, 28],
+        'Colonel'     => [31, 38],
+        'General'     => [35],
+        'Marshal'     => [34]
+      }
+    },
+    {
+      'name'      => 'EarlyWarning',
+      'placement' => {
+        'Flag'        => [3],
+        'Bomb'        => [2, 4, 11, 13, 21, 35],
+        'Spy'         => [22],
+        'Scout'       => [0, 16, 29, 30, 33, 34, 36, 39],
+        'Miner'       => [5, 9, 14, 18, 28],
+        'Sergeant'    => [1, 15, 24, 31],
+        'Lieutenant'  => [6, 12, 19, 38],
+        'Captain'     => [7, 8, 10, 17],
+        'Major'       => [20, 23, 26],
+        'Colonel'     => [25, 37],
+        'General'     => [27],
+        'Marshal'     => [32]
+      }
+    },
+    {
+      'name'      => 'ManTheBarricades',
+      'placement' => {
+        'Flag'        => [0],
+        'Bomb'        => [20, 21, 24, 25, 28, 29],
+        'Spy'         => [27],
+        'Scout'       => [2, 4, 6, 9, 18, 34, 35, 38],
+        'Miner'       => [5, 8, 13, 16, 19],
+        'Sergeant'    => [3, 10, 11, 15],
+        'Lieutenant'  => [14, 22, 31, 37],
+        'Captain'     => [12, 17, 32, 39],
+        'Major'       => [23, 26, 30],
+        'Colonel'     => [7, 36],
+        'General'     => [33],
+        'Marshal'     => [1]
       }
     }
   ]
