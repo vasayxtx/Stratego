@@ -147,9 +147,16 @@ class AiPlayer
     prepare_req.(@fb.resume(resp))
   end
 
+  private
+
+  #--------- Private methods ---------
+
   def print_game_info
     @out.print(draw_game_state)
-    @out.print(draw_statistics)
+    @out.print('Opponent units:')
+    @out.print(pp_hash(@opp_state, 1))
+    @out.print('My units')
+    @out.print(pp_hash(@my_state))
     @out.flush
   end
 
@@ -195,12 +202,12 @@ end
 
 config = YAML.load_file(ARGV[0] || 'config.yml')
 
-game_file = File.open(config['game_process_file'], 'w')
+game_outer = File.open(config['game_process_file'], 'w')
 
 ai_player = AiPlayer.new(
   config['user'],
   config['game'],
-  game_file
+  game_outer
 )
 
 AiClient.run(
@@ -210,4 +217,4 @@ AiClient.run(
   config['log_file']
 )
 
-game_file.close
+game_outer.close

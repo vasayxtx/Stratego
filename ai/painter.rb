@@ -4,8 +4,13 @@ module Painter
   CELL_H = 5
   CELL_W = 2
 
+  INDENT_SIZE = 2
+
+  private
+
   def draw_game_state
     my_positions = @my_state.keys.map { |el| el.to_i }
+    opp_positions = @opp_state.keys.map { |el| el.to_i }
     res = ''
 
     (@map['height'] - 1).downto(0) do |i|
@@ -19,7 +24,7 @@ module Painter
           pos = i * @map['width'] + j
           a, c =
             if k == 0
-              [@opp_state, -> { "O_#{pos}" }]
+              [opp_positions, -> { "O_#{pos}" }]
             else
               [my_positions, -> { @my_state[pos.to_s][0, CELL_H] }]
             end
@@ -46,7 +51,22 @@ module Painter
     res
   end
 
-  def draw_statistics
+  #----- My implementation of the pretty print for hashes -----
 
+  def pp_hash(h, lim_depth = 0)
+    draw = ->(hh, d) do
+      r = "{\n"
+      hh.each_pair do |k, v|
+        r += ' ' * (d + 1) * INDENT_SIZE + k.to_s + ' => '
+        if v.instance_of?(Hash) && lim_depth != 0 && d < lim_depth - 1
+          r += draw.(v, d + 1)
+        else
+          r += v.to_s + "\n"
+        end
+      end
+      r + ' ' * d * INDENT_SIZE + "}\n"
+    end
+
+    draw.(h, 0)
   end
 end

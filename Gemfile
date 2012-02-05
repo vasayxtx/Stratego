@@ -25,4 +25,3 @@ gem 'em-websocket'
 #For testing
 gem 'rspec'
 gem 'em-websocket-client'
-
