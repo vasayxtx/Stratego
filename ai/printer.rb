@@ -1,6 +1,6 @@
 #coding: utf-8
 
-module Painter
+module Printer
   CELL_H = 5
   CELL_W = 2
 
@@ -9,8 +9,6 @@ module Painter
   private
 
   def draw_game_state
-    my_positions = @my_state.keys.map { |el| el.to_i }
-    opp_positions = @opp_state.keys.map { |el| el.to_i }
     res = ''
 
     (@map['height'] - 1).downto(0) do |i|
@@ -24,9 +22,9 @@ module Painter
           pos = i * @map['width'] + j
           a, c =
             if k == 0
-              [opp_positions, -> { "O_#{pos}" }]
+              [@opp_positions, -> { "O_#{pos}" }]
             else
-              [my_positions, -> { @my_state[pos.to_s][0, CELL_H] }]
+              [@my_positions, -> { @my_state[pos][0, CELL_H] }]
             end
           if @map['obst'].include?(pos)
             line += 'X' * CELL_H
@@ -51,7 +49,7 @@ module Painter
     res
   end
 
-  #----- My implementation of the pretty print for hashes -----
+  #----- My implementation of the pretty printer for hashes -----
 
   def pp_hash(h, lim_depth = 0)
     draw = ->(hh, d) do

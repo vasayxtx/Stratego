@@ -9,7 +9,52 @@
 ].each { |gem_file| require gem_file }
 
 require './simple_ai.rb'
-require './painter.rb'
+require './printer.rb'
+
+module Commands
+  private
+
+  def cmd_login
+    {
+      cmd: 'login',
+      login: @login,
+      password: @passw
+    }
+  end
+
+  def cmd_logout
+    { cmd: 'logout' }
+  end
+
+  def cmd_create_game
+    {
+      cmd: 'createGame',
+      name: @game['name'],
+      nameMap: @game['map'],
+      nameArmy: @game['army']
+    }
+  end
+
+  def cmd_destroy_game
+    { cmd: 'destroyGame' }
+  end
+
+  def cmd_leave_game
+    { cmd: 'leaveGame' }
+  end
+
+  def cmd_join_game
+    { cmd: 'joinGame', name: @game['name'] }
+  end
+
+  def cmd_set_placement(placement)
+    { cmd: 'setPlacement', placement: placement }
+  end
+
+  def cmd_make_move(pos_from, pos_to)
+    { cmd: 'makeMove', posfrom: pos_from, posTo: pos_to }
+  end
+end
 
 #--------------- Ai Client ---------------
 
@@ -58,8 +103,9 @@ end
 #--------------- Ai Player ---------------
 
 class AiPlayer
+  include Commands
   include SimpleAi
-  include Painter
+  include Printer
 
   def initialize(user_opts, game, out)
     @login = user_opts['login']
@@ -158,45 +204,6 @@ class AiPlayer
     @out.print('My units')
     @out.print(pp_hash(@my_state))
     @out.flush
-  end
-
-  #--------- Commands ---------
-
-  def cmd_login
-    {
-      cmd: 'login',
-      login: @login,
-      password: @passw
-    }
-  end
-
-  def cmd_logout
-    { cmd: 'logout' }
-  end
-
-  def cmd_create_game
-    {
-      cmd: 'createGame',
-      name: @game['name'],
-      nameMap: @game['map'],
-      nameArmy: @game['army']
-    }
-  end
-
-  def cmd_destroy_game
-    { cmd: 'destroyGame' }
-  end
-
-  def cmd_leave_game
-    { cmd: 'leaveGame' }
-  end
-
-  def cmd_join_game
-    { cmd: 'joinGame', name: @game['name'] }
-  end
-
-  def cmd_set_placement(placement)
-    { cmd: 'setPlacement', placement: placement }
   end
 end
 

@@ -27,5 +27,5 @@ game:
     Marshal:     [2]
   }
 
-log_file: 'simple_ai_1.log'
-game_process_file: 'simple_ai_1_game.txt'
+log_file: '1.log'
+game_process_file: '1.txt'
