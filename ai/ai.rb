@@ -8,6 +8,9 @@
   logger
 ].each { |gem_file| require gem_file }
 
+require './simple_ai.rb'
+require './painter.rb'
+
 #--------------- Ai Client ---------------
 
 class AiClient
@@ -45,6 +48,8 @@ class AiClient
 
       conn.disconnect do
         puts 'By!'
+        log.close
+        EM::stop_event_loop
       end
     end
   end
@@ -53,11 +58,17 @@ end
 #--------------- Ai Player ---------------
 
 class AiPlayer
-  def initialize(user_opts, game)
+  include SimpleAi
+  include Painter
+
+  def initialize(user_opts, game, out)
     @login = user_opts['login']
     @passw = user_opts['password']
     @is_creator = user_opts['is_creator']
     @game = game
+    @out = out
+
+    @moves_counter = 0
 
     @fb = Fiber.new do
       # Fiber.yield({}) - wait action from second player
@@ -86,12 +97,21 @@ class AiPlayer
       cur_game = Fiber.yield({ cmd: 'getGame' })
       parse_game(cur_game)
       l = [
-        (-> { process_move(Fiber.yield(make_move)) }),
-        (-> { Fiber.yield({}) })
+        (-> do 
+          @moves_counter += 1
+          sleep(2)
+          process_move(Fiber.yield(make_move))
+        end),
+        (-> do
+          process_opponent_move(Fiber.yield({}))
+        end)
       ]
       l.reverse! unless @is_turn
       loop do
-        l[0].(); l[1].()
+        print_game_info
+        l[0].()
+        print_game_info
+        l[1].()
       end
 
       # Logout
@@ -118,14 +138,19 @@ class AiPlayer
         return prepare_req.(cmd_logout)
       when 'startGame'
         return prepare_req.(@fb.resume)
-      when 'oppoentMove'
-        process_opponent_move(resp)
-        return prepare_req.(@fb.resume)
+      when 'opponentMakeMove'
+        return prepare_req.(@fb.resume(resp))
       end
       return
     end
 
     prepare_req.(@fb.resume(resp))
+  end
+
+  def print_game_info
+    @out.print(draw_game_state)
+    @out.print(draw_statistics)
+    @out.flush
   end
 
   #--------- Commands ---------
@@ -166,29 +191,16 @@ class AiPlayer
   def cmd_set_placement(placement)
     { cmd: 'setPlacement', placement: placement }
   end
-
-  #--------- Actions ---------
-
-  def parse_game(game)
-    @is_turn = game['isTurn']
-  end
-
-  def make_move
-    {}
-  end
-
-  def process_move(resp)
-  end
-
-  def process_opponent_move(resp)
-  end
 end
 
 config = YAML.load_file(ARGV[0] || 'config.yml')
 
+game_file = File.open(config['game_process_file'], 'w')
+
 ai_player = AiPlayer.new(
   config['user'],
-  config['game']
+  config['game'],
+  game_file
 )
 
 AiClient.run(
@@ -197,3 +209,5 @@ AiClient.run(
   ai_player,
   config['log_file']
 )
+
+game_file.close

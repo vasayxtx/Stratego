@@ -27,7 +27,5 @@ game:
     Marshal:     [2]
   }
 
-  moves: [
-  ]
-
 log_file: 'simple_ai_1.log'
+game_process_file: 'simple_ai_1_game.txt'
