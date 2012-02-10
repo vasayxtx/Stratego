@@ -31,27 +31,27 @@ ClContainer.set_db(db_conn, db)
 
 class App < Sinatra::Base
   configure do
-    Compass.configuration do |config|
-      config.project_path = File.dirname(__FILE__)
-      config.sass_dir = 'views/stylesheets'
-    end
+    # Compass.configuration do |config|
+    #   config.project_path = File.dirname(__FILE__)
+    #   config.sass_dir = 'views/stylesheets'
+    # end
 
     set :haml, :format => :html5
-    set :sass, Compass.sass_engine_options
+    # set :sass, Compass.sass_engine_options
   end
 
-  get "/javascripts/:name.js" do
-    coffee :"javascripts/#{params[:name]}"
-  end
+  # get "/javascripts/:name.js" do
+  #   coffee :"javascripts/#{params[:name]}"
+  # end
 
-  get "/javascripts/spine/:name.js" do
-    coffee :"javascripts/spine/#{params[:name]}"
-  end
+  # get "/javascripts/spine/:name.js" do
+  #   coffee :"javascripts/spine/#{params[:name]}"
+  # end
 
-  get "/stylesheets/:name.css" do
-    content_type 'text/css', :charset => 'utf-8'
-    sass :"stylesheets/#{params[:name]}"
-  end
+  # get "/stylesheets/:name.css" do
+  #   content_type 'text/css', :charset => 'utf-8'
+  #   sass :"stylesheets/#{params[:name]}"
+  # end
 
   get '/' do
     haml :layout

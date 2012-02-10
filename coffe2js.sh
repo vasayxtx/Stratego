@@ -1,0 +1,1 @@
+coffee -o public/javascripts/ -cw views/javascripts/
