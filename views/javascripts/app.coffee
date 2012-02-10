@@ -601,7 +601,8 @@ class MapsEditorCtrl extends Spine.Controller
 
     obj_cell = $(event.target)
     t = @_tools.find('li.selected .map_cell')
-    tool_cl = t.attr('class').split(' ')[1] || ''
+    tool_cl = t.removeClass('map_cell').attr('class')
+    t.addClass('map_cell')
     obj_cell.attr('class', "map_cell #{tool_cl}")
     @.update_tools()
 
