@@ -9,9 +9,9 @@
     %script{ :src => "/javascripts/jquery-ui-1.8.17.custom.min.js" }
     %script{ :src => "/javascripts/underscore-min.js" }
 
-    - %w[spine ajax list local manager relation route tabs tmpl session].each do |file|
+    - %w[spine session].each do |file|
       %script{ :src => "/javascripts/spine/#{file}.js" }
-
+      
     %script{ :src => "/javascripts/swfobject.js" }
     %script{ :src => "/javascripts/web_socket.js" }
 
